@@ -1,22 +1,132 @@
-"""Stub implementation for the LDA agent."""
+"""Implementation of the Legal Docket Analysis (LDA) agent."""
 
 from __future__ import annotations
 
-from typing import Any
+from datetime import datetime
+from typing import Any, Callable, Iterable
 
 from agents.base import BaseAgent
 
 
 class LDAAgent(BaseAgent):
-    """Placeholder implementation to be filled in with domain logic."""
+    """Summarise the fact pattern from the incoming matter payload."""
 
-    def __init__(self) -> None:
+    REQUIRED_TOOLS = ("document_parser", "timeline_builder")
+
+    def __init__(self, *, tools: dict[str, Callable[..., Any]] | None = None) -> None:
         super().__init__(name="lda")
+        default_tools: dict[str, Callable[..., Any]] = {
+            "document_parser": _default_document_parser,
+            "timeline_builder": _default_timeline_builder,
+        }
+        self.tools = default_tools | (tools or {})
+        missing = [tool for tool in self.REQUIRED_TOOLS if tool not in self.tools]
+        if missing:
+            missing_csv = ", ".join(missing)
+            raise ValueError(f"Missing required tools for LDA agent: {missing_csv}")
 
     async def run(self, matter: dict[str, Any]) -> dict[str, Any]:
-        """Return a mocked response illustrating expected structure."""
-        return {
-            "agent": self.name,
-            "summary": "TODO: implement lda reasoning",
-            "inputs": matter,
+        """Derive a structured fact summary from the provided matter."""
+
+        parsed_documents = self.tools["document_parser"](matter)
+        timeline = self.tools["timeline_builder"](matter, parsed_documents)
+
+        key_facts: list[str] = []
+        for doc in parsed_documents:
+            key_facts.extend(doc.get("key_facts", []))
+
+        parties = list(dict.fromkeys(matter.get("parties", [])))
+        unresolved: list[str] = []
+        if not parsed_documents:
+            unresolved.append("No source documents were provided for fact extraction.")
+        if not parties:
+            unresolved.append("Matter payload did not list any known parties.")
+
+        facts_payload = {
+            "fact_pattern_summary": key_facts,
+            "timeline": timeline,
+            "parties": parties,
+            "matter_overview": matter.get("summary")
+            or matter.get("description")
+            or "Summary unavailable from provided matter.",
         }
+
+        provenance = {
+            "source_documents": [doc.get("document") for doc in parsed_documents],
+            "tools_used": list(self.tools.keys()),
+        }
+
+        return self._build_response(
+            core={"facts": facts_payload},
+            provenance=provenance,
+            unresolved_issues=unresolved,
+        )
+
+
+def _default_document_parser(matter: dict[str, Any]) -> list[dict[str, Any]]:
+    """Extract coarse document summaries and key facts."""
+
+    documents: Iterable[dict[str, Any]] = matter.get("documents", [])
+    parsed: list[dict[str, Any]] = []
+    for index, document in enumerate(documents, start=1):
+        title = document.get("title") or f"document-{index}"
+        summary = (document.get("summary") or document.get("content") or "").strip()
+        summary = summary[:280] + ("..." if len(summary) > 280 else "")
+        key_facts = document.get("facts")
+        if isinstance(key_facts, str):
+            key_facts = [key_facts]
+        elif not isinstance(key_facts, Iterable) or isinstance(key_facts, dict):
+            key_facts = []
+        key_facts = [str(fact).strip() for fact in key_facts if str(fact).strip()]
+
+        parsed.append(
+            {
+                "document": title,
+                "summary": summary or "No summary available.",
+                "key_facts": key_facts,
+                "date": document.get("date"),
+            }
+        )
+
+    return parsed
+
+
+def _default_timeline_builder(
+    matter: dict[str, Any],
+    parsed_documents: list[dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
+    """Build a chronological list of events from the matter payload."""
+
+    events: list[dict[str, Any]] = []
+    for raw_event in matter.get("events", []):
+        description = raw_event.get("description") or raw_event.get("summary")
+        date_str = raw_event.get("date")
+        events.append(
+            {
+                "date": date_str,
+                "description": description or "Event description unavailable.",
+            }
+        )
+
+    if not events and parsed_documents:
+        for doc in parsed_documents:
+            if doc.get("date"):
+                events.append(
+                    {
+                        "date": doc["date"],
+                        "description": f"Document produced: {doc['document']}",
+                    }
+                )
+
+    def _sort_key(event: dict[str, Any]) -> tuple[int, str]:
+        date_str = event.get("date")
+        if not date_str:
+            return (1, "")
+        try:
+            parsed_date = datetime.fromisoformat(date_str)
+        except (TypeError, ValueError):
+            return (0, date_str)
+        return (0, parsed_date.isoformat())
+
+    events.sort(key=_sort_key)
+    return events
