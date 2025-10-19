@@ -141,8 +141,7 @@ Implement the `AgentProtocol` (see `agents/base.py`) and register the agent in t
 
 ## Roadmap
 
-- [ ] Expand practice packs (employment, regulatory, M&A diligence).
-- [ ] Add courtroom presentation agent for visuals and demonstratives.
+- [ ] Expand practice packs (personal injury, employment, regulatory, M&A diligence).
 - [ ] Integrate docket monitoring with push notifications.
 - [ ] Support structured knowledge graphs for long matters.
 - [ ] Publish benchmark suite for legal multi-agent systems.
