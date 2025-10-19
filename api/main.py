@@ -1,8 +1,11 @@
 """FastAPI surface for the Themis orchestrator."""
 
+from __future__ import annotations
+
 from fastapi import FastAPI
 
-from orchestrator.router import router as orchestrator_router
+from orchestrator.router import configure_service, router as orchestrator_router
+from orchestrator.service import OrchestratorService
 
 app = FastAPI(title="Themis Orchestrator API")
 
@@ -10,9 +13,9 @@ app = FastAPI(title="Themis Orchestrator API")
 @app.on_event("startup")
 async def startup() -> None:
     """Perform startup initialization hooks."""
-    # Load orchestrator configuration, register agents, warm caches, etc.
-    # Implementations should replace this stub with real startup logic.
-    pass
+    service = OrchestratorService()
+    configure_service(service)
+    app.state.orchestrator_service = service
 
 
 app.include_router(orchestrator_router, prefix="/orchestrator", tags=["orchestrator"])
