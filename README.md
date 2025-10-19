@@ -82,38 +82,6 @@ pip install -e .
 cp .env.example .env  # populate with API keys & service credentials
 ```
 
-### Scaffolding the Repository
-
-The repo ships with a **minimal runnable scaffold** so you can experiment immediately:
-
-```text
-themis-framework/
-├── api/                  # FastAPI app surface (uvicorn api.main:app --reload)
-├── orchestrator/         # Planning/execution services + shared state helpers
-├── agents/               # Stub LDA/DEA/LSA agents implementing the BaseAgent API
-├── tools/                # Tool registry placeholder for future integrations
-├── packs/pi_demand/      # Sample practice pack with an async CLI entry point
-├── qa/                   # Placeholder for autorater + guardrail tests
-├── infra/                # Deployment artifacts (add Docker/Terraform as needed)
-├── pyproject.toml        # Poetry/setuptools metadata + dependencies
-└── .env.example          # Template for API keys and service URLs
-```
-
-Key bootstrap commands:
-
-```bash
-# 1. Install runtime + dev dependencies
-pip install -e .[dev]
-
-# 2. Launch the FastAPI scaffold (serves /health + orchestrator stubs)
-uvicorn api.main:app --reload
-
-# 3. Exercise the sample practice pack (expects a YAML path)
-python -m packs.pi_demand.run --matter path/to/matter.yaml
-```
-
-As you add real logic, replace the stubbed TODOs in `agents/`, enrich the orchestrator service, and expand the tool registry.
-
 ### Quickstart
 
 Run the orchestrator API locally:
@@ -173,8 +141,7 @@ Implement the `AgentProtocol` (see `agents/base.py`) and register the agent in t
 
 ## Roadmap
 
-- [ ] Expand practice packs (employment, regulatory, M&A diligence).
-- [ ] Add courtroom presentation agent for visuals and demonstratives.
+- [ ] Expand practice packs (personal injury, employment, regulatory, M&A diligence).
 - [ ] Integrate docket monitoring with push notifications.
 - [ ] Support structured knowledge graphs for long matters.
 - [ ] Publish benchmark suite for legal multi-agent systems.
