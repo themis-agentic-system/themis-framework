@@ -6,6 +6,8 @@ from datetime import datetime
 from typing import Any, Callable, Iterable
 
 from agents.base import BaseAgent
+from tools.document_parser import parse_document_with_llm
+from tools.llm_client import get_llm_client
 
 
 class LDAAgent(BaseAgent):
@@ -64,29 +66,47 @@ class LDAAgent(BaseAgent):
 
 
 def _default_document_parser(matter: dict[str, Any]) -> list[dict[str, Any]]:
-    """Extract coarse document summaries and key facts."""
+    """Extract document summaries and key facts using LLM.
+
+    This is a synchronous wrapper that can be called from async context.
+    For true async usage, inject parse_document_with_llm directly.
+    """
+    import asyncio
 
     documents: Iterable[dict[str, Any]] = matter.get("documents", [])
     parsed: list[dict[str, Any]] = []
-    for index, document in enumerate(documents, start=1):
-        title = document.get("title") or f"document-{index}"
-        summary = (document.get("summary") or document.get("content") or "").strip()
-        summary = summary[:280] + ("..." if len(summary) > 280 else "")
-        key_facts = document.get("facts")
-        if isinstance(key_facts, str):
-            key_facts = [key_facts]
-        elif not isinstance(key_facts, Iterable) or isinstance(key_facts, dict):
-            key_facts = []
-        key_facts = [str(fact).strip() for fact in key_facts if str(fact).strip()]
 
-        parsed.append(
-            {
-                "document": title,
-                "summary": summary or "No summary available.",
-                "key_facts": key_facts,
-                "date": document.get("date"),
-            }
-        )
+    # Get or create event loop for async operations
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+    # Extract matter context for better analysis
+    matter_context = {
+        "summary": matter.get("summary") or matter.get("description"),
+        "parties": matter.get("parties", []),
+    }
+
+    for document in documents:
+        try:
+            # Use LLM-powered parser
+            parsed_doc = loop.run_until_complete(
+                parse_document_with_llm(document, matter_context)
+            )
+            parsed.append(parsed_doc)
+        except Exception as e:
+            # Fallback to basic parsing if LLM fails
+            title = document.get("title") or "Untitled Document"
+            parsed.append(
+                {
+                    "document": title,
+                    "summary": f"Error parsing document: {str(e)}",
+                    "key_facts": [],
+                    "date": document.get("date"),
+                }
+            )
 
     return parsed
 
