@@ -1,79 +1,104 @@
-"""SQLite-backed persistence for orchestrator state using SQLModel."""
+"""SQLite-backed repository for orchestrator state without external ORM dependencies."""
 
 from __future__ import annotations
 
+import json
+import sqlite3
+from pathlib import Path
 from typing import Any
-
-from sqlalchemy import Column, JSON
-from sqlmodel import Field, Session, SQLModel, create_engine
 
 from orchestrator.state import OrchestratorState
 
 
-class OrchestratorStateRecord(SQLModel, table=True):
-    """SQLModel mapping for persisting orchestrator state."""
-
-    key: str = Field(default="singleton", primary_key=True)
-    memory: dict[str, Any] = Field(
-        default_factory=dict,
-        sa_column=Column(JSON, nullable=False),
-    )
-    plans: dict[str, Any] = Field(
-        default_factory=dict,
-        sa_column=Column(JSON, nullable=False),
-    )
-    executions: dict[str, Any] = Field(
-        default_factory=dict,
-        sa_column=Column(JSON, nullable=False),
-    )
-
-
 class SQLiteOrchestratorStateRepository:
-    """Repository persisting orchestrator state to a SQLite database."""
+    """Persist orchestrator state using the standard library sqlite3 module."""
 
     def __init__(self, database_url: str = "sqlite:///./orchestrator_state.db") -> None:
-        self.engine = create_engine(database_url, echo=False)
-        SQLModel.metadata.create_all(self.engine)
+        if not database_url.startswith("sqlite:///"):
+            raise ValueError("Only file-based sqlite URLs are supported, e.g. 'sqlite:///./state.db'")
+
+        database_path = database_url.replace("sqlite:///", "", 1)
+        self.path = Path(database_path).expanduser().resolve()
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self._initialise()
+
+    def _connect(self) -> sqlite3.Connection:
+        return sqlite3.connect(self.path)
+
+    def _initialise(self) -> None:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS orchestrator_state (
+                    key TEXT PRIMARY KEY,
+                    memory TEXT NOT NULL,
+                    plans TEXT NOT NULL,
+                    executions TEXT NOT NULL
+                )
+                """
+            )
+            connection.commit()
 
     def load_state(self) -> OrchestratorState:
-        """Load the orchestrator state from storage."""
+        """Load the orchestrator state from the backing store."""
 
-        with Session(self.engine) as session:
-            record = session.get(OrchestratorStateRecord, "singleton")
-            if record is None:
-                return OrchestratorState()
-            return OrchestratorState(
-                memory=dict(record.memory or {}),
-                plans=dict(record.plans or {}),
-                executions=dict(record.executions or {}),
+        with self._connect() as connection:
+            cursor = connection.execute(
+                "SELECT memory, plans, executions FROM orchestrator_state WHERE key = ?", ("singleton",)
             )
+            row = cursor.fetchone()
+
+        if row is None:
+            return OrchestratorState()
+
+        memory_json, plans_json, executions_json = row
+        return OrchestratorState(
+            memory=self._loads(memory_json),
+            plans=self._loads(plans_json),
+            executions=self._loads(executions_json),
+        )
 
     def save_state(self, state: OrchestratorState) -> None:
-        """Persist the orchestrator state to storage."""
+        """Persist the orchestrator state to the backing store."""
 
         payload = {
-            "memory": dict(state.memory),
-            "plans": dict(state.plans),
-            "executions": dict(state.executions),
+            "memory": json.dumps(state.memory),
+            "plans": json.dumps(state.plans),
+            "executions": json.dumps(state.executions),
         }
 
-        with Session(self.engine) as session:
-            record = session.get(OrchestratorStateRecord, "singleton")
-            if record is None:
-                record = OrchestratorStateRecord(key="singleton", **payload)
-            else:
-                record.memory = payload["memory"]
-                record.plans = payload["plans"]
-                record.executions = payload["executions"]
-
-            session.add(record)
-            session.commit()
+        with self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO orchestrator_state (key, memory, plans, executions)
+                VALUES (:key, :memory, :plans, :executions)
+                ON CONFLICT(key) DO UPDATE SET
+                    memory = excluded.memory,
+                    plans = excluded.plans,
+                    executions = excluded.executions
+                """,
+                {"key": "singleton", **payload},
+            )
+            connection.commit()
 
     def clear(self) -> None:
         """Remove any persisted orchestrator state."""
 
-        with Session(self.engine) as session:
-            record = session.get(OrchestratorStateRecord, "singleton")
-            if record is not None:
-                session.delete(record)
-                session.commit()
+        with self._connect() as connection:
+            connection.execute("DELETE FROM orchestrator_state WHERE key = ?", ("singleton",))
+            connection.commit()
+
+    @staticmethod
+    def _loads(value: Any) -> dict[str, Any]:
+        if value in (None, ""):
+            return {}
+        try:
+            data = json.loads(value)
+        except (TypeError, json.JSONDecodeError):
+            return {}
+        if not isinstance(data, dict):
+            return {}
+        return data
+
+
+__all__ = ["SQLiteOrchestratorStateRepository"]

@@ -143,6 +143,21 @@ Implement the `AgentProtocol` (see `agents/base.py`) and register the agent in t
 2. Author QA scenarios in `qa/<pack_name>/`.
 3. Run `make qa PACK=<pack_name>` to validate.
 
+### Refreshing PI Demand Fixtures
+
+The PI demand pack ships with curated matter payloads in `packs/pi_demand/fixtures/`. Integration coverage (`tests/packs/test_pi_demand.py`) runs the full orchestrator pipeline against these payloads and verifies the generated timeline and demand letter artifacts.
+
+When the orchestrator schema or expected artifacts evolve:
+
+1. Update each fixture (for example `nominal_collision_matter.json` or `edgecase_sparse_slip_and_fall.json`) so the payload reflects the new schema.
+2. Execute the pack locally to confirm the orchestrator accepts the changes:
+
+   ```bash
+   python -m packs.pi_demand.run --matter packs/pi_demand/fixtures/nominal_collision_matter.json
+   ```
+
+3. Regenerate artifacts or adjust assertions as needed, then run `make test` to ensure the integration suite reflects the refreshed schema.
+
 ---
 
 ## Observability & Metrics

@@ -1,0 +1,43 @@
+{
+  "matter": {
+    "metadata": {
+      "id": "PI-2024-CHEN",
+      "title": "Chen v. Sunrise Market"
+    },
+    "summary": "Maya Chen slipped on a puddle near the produce misters at Sunrise Market on February 11, 2024, injuring her right ankle and wrist.",
+    "description": "Client reported no warning cones or signage and noted that employees had been mopping minutes earlier.",
+    "parties": [
+      "Maya Chen",
+      "Sunrise Market LLC"
+    ],
+    "documents": [
+      {
+        "title": "Store Incident Report",
+        "date": "2024-02-11",
+        "summary": "Assistant manager recorded moisture buildup beneath the produce display and acknowledged prior customer complaints about slick tiles.",
+        "facts": [
+          "CCTV footage captured the fall and delayed response by staff."
+        ]
+      }
+    ],
+    "issues": [
+      "Premises liability – failure to maintain safe conditions"
+    ],
+    "authorities": [],
+    "events": [],
+    "goals": {
+      "settlement": "$45,000"
+    },
+    "strengths": [
+      "Store emails show earlier complaints about the same hazard."
+    ],
+    "weaknesses": [
+      "Client delayed seeking treatment for five days."
+    ],
+    "concessions": [],
+    "evidentiary_gaps": [
+      "Need maintenance logs for the week preceding the fall."
+    ],
+    "confidence_score": "58"
+  }
+}

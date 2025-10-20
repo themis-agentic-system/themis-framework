@@ -1,0 +1,103 @@
+{
+  "matter": {
+    "metadata": {
+      "id": "PI-2024-LOPEZ",
+      "title": "Lopez v. Coastal Delivery"
+    },
+    "summary": "Maria Lopez suffered shoulder and knee injuries when a Coastal Delivery van merged into the bike lane and forced her into oncoming traffic on April 18, 2024. She continues to struggle with range of motion and balance required for her work as a dance instructor.",
+    "parties": [
+      "Maria Lopez (Client)",
+      "Coastal Delivery LLC"
+    ],
+    "counterparty": "Claims Specialist for Coastal Delivery",
+    "documents": [
+      {
+        "title": "Traffic Collision Report",
+        "date": "2024-04-18",
+        "summary": "Officer Nguyen documented that the Coastal Delivery driver failed to check blind spots prior to merging into the bike lane, striking Ms. Lopez and causing her to collide with a parked vehicle.",
+        "facts": [
+          "Driver admitted to rushing to complete deliveries before the lunch window.",
+          "Witnesses confirmed Ms. Lopez had a green cycling signal."
+        ]
+      },
+      {
+        "title": "Orthopedic Evaluation",
+        "date": "2024-05-01",
+        "summary": "Dr. Ibrahim diagnosed a torn rotator cuff and patellar tracking issues. Treatment plan calls for arthroscopic surgery and six months of physical therapy.",
+        "facts": [
+          "MRI confirms full-thickness supraspinatus tear.",
+          "Surgeon recommends post-operative therapy three times per week."
+        ]
+      },
+      {
+        "title": "Vocational Loss Assessment",
+        "date": "2024-06-12",
+        "summary": "Economic expert projects $42,000 in lost performance income and studio refunds over the next twelve months.",
+        "facts": [
+          "Cancelled workshops created $18,000 in refunds owed to clients.",
+          "Studio assistant payroll increased by $2,800 to cover missed classes."
+        ]
+      }
+    ],
+    "events": [
+      {
+        "date": "2024-04-18",
+        "description": "Collision at Embarcadero and Washington Street involving Coastal Delivery van."
+      },
+      {
+        "date": "2024-04-22",
+        "description": "Initial consultation and imaging with Dr. Ibrahim."
+      },
+      {
+        "date": "2024-06-05",
+        "description": "Coastal Delivery denies liability in email from claims specialist."
+      }
+    ],
+    "issues": [
+      {
+        "issue": "Negligence – failure to maintain safe lane change",
+        "facts": [
+          "Driver merged without clearing bike lane."
+        ]
+      },
+      {
+        "issue": "Damages – future medical and vocational losses",
+        "facts": [
+          "Surgery and extended therapy required to regain mobility."
+        ]
+      }
+    ],
+    "authorities": [
+      {
+        "cite": "Cal. Veh. Code § 22107",
+        "summary": "Requires drivers to execute lane changes safely without endangering others."
+      },
+      {
+        "cite": "CACI 3903D",
+        "summary": "Jury instruction on loss of earning capacity damages."
+      }
+    ],
+    "goals": {
+      "settlement": "$210,000",
+      "fallback": "$160,000"
+    },
+    "strengths": [
+      "Independent eyewitness corroborates liability.",
+      "Client maintained consistent treatment and documentation."
+    ],
+    "weaknesses": [
+      "Client missed two physical therapy sessions in May."
+    ],
+    "concessions": [
+      "Open to structured settlement that accelerates therapy budget."
+    ],
+    "evidentiary_gaps": [
+      "Pending updated cost estimate for post-surgery care."
+    ],
+    "confidence_score": 72,
+    "damages": {
+      "specials": 52000,
+      "generals": 118000
+    }
+  }
+}
