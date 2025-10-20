@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: Build and Validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Restore virtualenv
+        id: cache-venv
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('pyproject.toml', 'requirements*.txt', 'setup.cfg', 'setup.py') }}
+
+      - name: Install dependencies
+        if: steps.cache-venv.outputs.cache-hit != 'true'
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --upgrade pip
+          .venv/bin/pip install -e .[dev]
+
+      - name: Export virtualenv on PATH
+        run: |
+          echo "$(pwd)/.venv/bin" >> "$GITHUB_PATH"
+          echo "VIRTUAL_ENV=$(pwd)/.venv" >> "$GITHUB_ENV"
+
+      - name: Prepare artifact directory
+        run: mkdir -p artifacts/{lint,test,qa}
+
+      - name: Lint
+        run: |
+          set -o pipefail
+          make lint | tee artifacts/lint/output.log
+
+      - name: Test
+        env:
+          PYTEST_ADDOPTS: --junitxml=artifacts/test/junit.xml
+        run: |
+          set -o pipefail
+          make test | tee artifacts/test/output.log
+
+      - name: QA checks
+        env:
+          PYTEST_ADDOPTS: --junitxml=artifacts/qa/junit.xml
+        run: |
+          set -o pipefail
+          make qa | tee artifacts/qa/output.log
+
+      - name: Upload artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-artifacts
+          path: |
+            artifacts/**
+          if-no-files-found: warn

@@ -193,8 +193,9 @@ Have ideas? Open an issue or start a discussion!
 ## Contributing
 
 1. Fork the repository and create a feature branch.
-2. Ensure `make lint` and `make test` pass locally.
-3. Submit a pull request with context, screenshots (if applicable), and QA evidence.
+2. Ensure `make lint`, `make test`, and `make qa` pass locally.
+3. Push your branch and open a pull request with context, screenshots (if applicable), and QA evidence.
+4. Confirm the **CI** GitHub Actions workflow reports green checks (lint, test, QA) before merging.
 
 Please review the [code of conduct](CODE_OF_CONDUCT.md) (coming soon) before contributing.
 
