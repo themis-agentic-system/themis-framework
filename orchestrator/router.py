@@ -69,3 +69,25 @@ async def execute(request: ExecuteRequest) -> dict[str, Any]:
         return await service.execute(plan_id=request.plan_id, matter=request.matter)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.get("/plans/{plan_id}", summary="Retrieve a previously generated plan")
+async def get_plan(plan_id: str) -> dict[str, Any]:
+    """Fetch a plan definition by identifier."""
+
+    service = get_service()
+    try:
+        return await service.get_plan(plan_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.get("/artifacts/{plan_id}", summary="Retrieve execution artifacts for a plan")
+async def get_artifacts(plan_id: str) -> dict[str, Any]:
+    """Fetch artifacts generated during execution for a plan."""
+
+    service = get_service()
+    try:
+        return await service.get_artifacts(plan_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc

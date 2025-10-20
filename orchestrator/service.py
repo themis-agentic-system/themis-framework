@@ -8,16 +8,21 @@ from uuid import uuid4
 
 from agents.base import AgentProtocol
 from agents.dea import DEAAgent
-from agents.lda import LDAAgent
 from agents.lsa import LSAAgent
-from orchestrator.state import OrchestratorState
+from agents.lda import LDAAgent
+from orchestrator.storage.sqlite_repository import SQLiteOrchestratorStateRepository
 
 
 class OrchestratorService:
     """Service responsible for planning and executing agent workflows."""
 
-    def __init__(self, agents: dict[str, AgentProtocol] | None = None) -> None:
-        self.state = OrchestratorState()
+    def __init__(
+        self,
+        agents: dict[str, AgentProtocol] | None = None,
+        repository: SQLiteOrchestratorStateRepository | None = None,
+    ) -> None:
+        self.repository = repository or SQLiteOrchestratorStateRepository()
+        self.state = self.repository.load_state()
         self.agents = agents or {
             "lda": LDAAgent(),
             "dea": DEAAgent(),
@@ -58,6 +63,8 @@ class OrchestratorService:
 
     async def plan(self, matter: dict[str, Any]) -> dict[str, Any]:
         """Create an executable plan across the registered agents."""
+
+        self.state = self.repository.load_state()
         plan_id = str(uuid4())
         steps: list[dict[str, Any]] = []
         previous_step_id: str | None = None
@@ -89,6 +96,7 @@ class OrchestratorService:
         }
 
         self.state.remember_plan(plan_id, deepcopy(plan))
+        self.repository.save_state(self.state)
         return plan
 
     async def execute(
@@ -98,6 +106,7 @@ class OrchestratorService:
     ) -> dict[str, Any]:
         """Execute a plan by invoking each registered agent in order."""
 
+        self.state = self.repository.load_state()
         if plan_id is not None:
             plan = self.state.recall_plan(plan_id)
             if plan is None:
@@ -105,6 +114,7 @@ class OrchestratorService:
             if matter is not None:
                 plan["matter"] = matter
                 self.state.remember_plan(plan_id, deepcopy(plan))
+                self.repository.save_state(self.state)
         else:
             if matter is None:
                 raise ValueError("Matter payload is required when no plan_id is provided")
@@ -162,5 +172,24 @@ class OrchestratorService:
         plan["status"] = overall_status
         self.state.remember_plan(plan_id, deepcopy(plan))
         self.state.remember_execution(plan_id, deepcopy(execution_record))
+        self.repository.save_state(self.state)
 
         return execution_record
+
+    async def get_plan(self, plan_id: str) -> dict[str, Any]:
+        """Retrieve a persisted plan by identifier."""
+
+        self.state = self.repository.load_state()
+        plan = self.state.recall_plan(plan_id)
+        if plan is None:
+            raise ValueError(f"Plan '{plan_id}' does not exist")
+        return deepcopy(plan)
+
+    async def get_artifacts(self, plan_id: str) -> dict[str, Any]:
+        """Retrieve execution artifacts for a given plan identifier."""
+
+        self.state = self.repository.load_state()
+        execution = self.state.recall_execution(plan_id)
+        if execution is None:
+            raise ValueError(f"Execution for plan '{plan_id}' does not exist")
+        return deepcopy(execution.get("artifacts", {}))
