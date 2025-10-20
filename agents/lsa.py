@@ -24,11 +24,11 @@ class LSAAgent(BaseAgent):
             missing_csv = ", ".join(missing)
             raise ValueError(f"Missing required tools for LSA agent: {missing_csv}")
 
-    async def run(self, matter: dict[str, Any]) -> dict[str, Any]:
+    async def _run(self, matter: dict[str, Any]) -> dict[str, Any]:
         """Combine facts and legal theories into a strategy recommendation."""
 
-        strategy = self.tools["strategy_template"](matter)
-        risks = self.tools["risk_assessor"](matter, strategy)
+        strategy = self._call_tool("strategy_template", matter)
+        risks = self._call_tool("risk_assessor", matter, strategy)
 
         unresolved: list[str] = []
         if not strategy.get("objectives"):

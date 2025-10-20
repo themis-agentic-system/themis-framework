@@ -14,9 +14,10 @@
 4. [Getting Started](#getting-started)
 5. [Usage Patterns](#usage-patterns)
 6. [Development Guide](#development-guide)
-7. [Roadmap](#roadmap)
-8. [Contributing](#contributing)
-9. [License](#license)
+7. [Observability & Metrics](#observability--metrics)
+8. [Roadmap](#roadmap)
+9. [Contributing](#contributing)
+10. [License](#license)
 
 ---
 
@@ -136,6 +137,25 @@ Implement the `AgentProtocol` (see `agents/base.py`) and register the agent in t
 1. Create fixtures under `packs/<pack_name>/fixtures/`.
 2. Author QA scenarios in `qa/<pack_name>/`.
 3. Run `make qa PACK=<pack_name>` to validate.
+
+---
+
+## Observability & Metrics
+
+Structured telemetry is available via the orchestrator API once agents begin processing matters. The `/metrics` endpoint emits [Prometheus exposition format](https://prometheus.io/docs/instrumenting/exposition_formats/) text describing agent performance:
+
+```bash
+# With the API running locally on the default port
+curl -s http://localhost:8000/metrics | grep themis_agent
+```
+
+Key series include:
+
+- `themis_agent_run_seconds_bucket` – histogram buckets describing agent execution latency.
+- `themis_agent_tool_invocations_total` – counter of tool calls made by each agent.
+- `themis_agent_run_errors_total` – counter of run failures, useful for alerting.
+
+Unit coverage for the metrics registry and endpoint lives in `tests/test_metrics.py` (`pytest tests/test_metrics.py`).
 
 ---
 
