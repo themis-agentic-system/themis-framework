@@ -101,15 +101,20 @@ Open `http://localhost:8000/docs` to explore the OpenAPI interface and trigger m
 Each `packs/<pack_name>` directory bundles tailored prompts, guardrails, and tools. For example, the `pi_demand` pack:
 
 ```bash
-python -m packs.pi_demand.run --matter data/sample_matter.yaml
+python -m packs.pi_demand.run --matter packs/pi_demand/fixtures/sample_matter.yaml
 ```
+
+The CLI validates that the supplied file exists and that it conforms to the orchestrator's
+matter schema. The repo ships with `packs/pi_demand/fixtures/sample_matter.yaml` (and a
+JSON twin) to make it easy to experiment; feel free to duplicate and adapt the fixtures
+for your own cases.
 
 The orchestrator will:
 
 1. Extract facts and figures through the LDA agent.
 2. Compile doctrinal analysis with the DEA agent, citing sources.
 3. Draft a negotiation-ready demand package via the LSA agent.
-4. Run reflection checks before producing the final deliverables in `/outputs/`.
+4. Persist the resulting timeline spreadsheet and draft demand letter in `outputs/<matter>/`.
 
 ### Building Custom Agents
 

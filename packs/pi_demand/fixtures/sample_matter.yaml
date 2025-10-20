@@ -1,0 +1,74 @@
+matter:
+  metadata:
+    id: PI-DEMAND-001
+    title: "Smith v. Central Logistics"
+    jurisdiction: "California"
+  summary: |
+    Jane Smith suffered cervical and lumbar injuries when a Central Logistics delivery truck rear-ended her vehicle
+    at a red light on March 14, 2024. She has completed eight weeks of physical therapy but continues to experience
+    chronic pain that interferes with her work as a dental hygienist.
+  parties:
+    - Jane Smith (Client)
+    - Central Logistics, Inc.
+  counterparty: "Counsel for Central Logistics, Inc."
+  documents:
+    - title: "Police Collision Report"
+      date: "2024-03-14"
+      summary: |
+        Officer Hernandez recorded that the Central Logistics driver failed to stop at a red light and struck Ms. Smith's
+        vehicle at approximately 35 mph. Witness statements confirm Ms. Smith had the right of way.
+      facts:
+        - "Defendant admitted to looking at dispatch tablet at time of impact."
+        - "Weather and road conditions were clear."
+    - title: "Medical Treatment Summary"
+      date: "2024-05-30"
+      summary: |
+        Dr. Patel documented cervical strain and lumbar sprain with radiculopathy. Treatment included imaging,
+        medication, and physical therapy. Prognosis notes continuing pain and recommendation for future follow-up.
+      facts:
+        - "MRI shows C5-C6 disc protrusion causing nerve impingement."
+        - "Therapist notes ongoing pain level of 6/10 affecting work duties."
+    - title: "Lost Wages Calculation"
+      date: "2024-06-10"
+      summary: "Spreadsheet showing four weeks of lost wages and projected reduced hours for three months."
+      facts:
+        - "Lost wages to date total $8,750."
+        - "Projected reduced hours cause an additional $6,400 loss."
+  events:
+    - date: "2024-03-14"
+      description: "Rear-end collision at Mission & 5th in San Francisco."
+    - date: "2024-03-20"
+      description: "Initial consultation and treatment plan with Dr. Patel."
+    - date: "2024-05-15"
+      description: "Employer provided letter confirming reduced work hours."
+  issues:
+    - issue: "Negligence under Cal. Civ. Code § 1714"
+      facts:
+        - "Driver failed to maintain proper lookout and stop at red light."
+    - issue: "Damages for future medical care"
+      facts:
+        - "Ongoing pain management anticipated for 12 months."
+  authorities:
+    - cite: "Cal. Civ. Code § 1714"
+      summary: "Establishes general duty of care for motorists."
+    - cite: "CACI 401"
+      summary: "Jury instruction outlining elements of negligence."
+    - cite: "CACI 3903A"
+      summary: "Jury instruction for past and future medical expenses."
+  goals:
+    settlement: "$150,000"
+    fallback: "$115,000"
+  strengths:
+    - "Clear liability documented by police and witness statements."
+    - "Consistent medical treatment supporting causation."
+  weaknesses:
+    - "Client had prior chiropractic treatment two years before incident."
+  concessions:
+    - "Open to structured settlement with partial upfront payment."
+  evidentiary_gaps:
+    - "Pending updated radiology report from June 2024 scan."
+  confidence_score: 75
+  damages:
+    specials: 32000
+    generals: 90000
+    punitive: null
