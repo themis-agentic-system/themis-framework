@@ -8,6 +8,10 @@ on:
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   build:
     name: Build and Validate
@@ -36,21 +40,32 @@ jobs:
           .venv/bin/pip install --upgrade pip
           .venv/bin/pip install -e .[dev]
 
-      - name: Update PATH
-        run: echo "$(pwd)/.venv/bin" >> $GITHUB_PATH
+      - name: Export virtualenv on PATH
+        run: |
+          echo "$(pwd)/.venv/bin" >> "$GITHUB_PATH"
+          echo "VIRTUAL_ENV=$(pwd)/.venv" >> "$GITHUB_ENV"
 
-      - name: Install project in editable mode when cached
-        if: steps.cache-venv.outputs.cache-hit == 'true'
-        run: pip install -e .[dev]
+      - name: Prepare artifact directory
+        run: mkdir -p artifacts/{lint,test,qa}
 
       - name: Lint
-        run: make lint
+        run: |
+          set -o pipefail
+          make lint | tee artifacts/lint/output.log
 
       - name: Test
-        run: make test
+        env:
+          PYTEST_ADDOPTS: --junitxml=artifacts/test/junit.xml
+        run: |
+          set -o pipefail
+          make test | tee artifacts/test/output.log
 
       - name: QA checks
-        run: make qa
+        env:
+          PYTEST_ADDOPTS: --junitxml=artifacts/qa/junit.xml
+        run: |
+          set -o pipefail
+          make qa | tee artifacts/qa/output.log
 
       - name: Upload artifacts on failure
         if: failure()
@@ -58,6 +73,5 @@ jobs:
         with:
           name: ci-artifacts
           path: |
-            **/*.log
-            outputs/**
-          if-no-files-found: ignore
+            artifacts/**
+          if-no-files-found: warn
