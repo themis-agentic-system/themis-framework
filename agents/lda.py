@@ -25,11 +25,11 @@ class LDAAgent(BaseAgent):
             missing_csv = ", ".join(missing)
             raise ValueError(f"Missing required tools for LDA agent: {missing_csv}")
 
-    async def run(self, matter: dict[str, Any]) -> dict[str, Any]:
+    async def _run(self, matter: dict[str, Any]) -> dict[str, Any]:
         """Derive a structured fact summary from the provided matter."""
 
-        parsed_documents = self.tools["document_parser"](matter)
-        timeline = self.tools["timeline_builder"](matter, parsed_documents)
+        parsed_documents = self._call_tool("document_parser", matter)
+        timeline = self._call_tool("timeline_builder", matter, parsed_documents)
 
         key_facts: list[str] = []
         for doc in parsed_documents:

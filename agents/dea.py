@@ -24,11 +24,11 @@ class DEAAgent(BaseAgent):
             missing_csv = ", ".join(missing)
             raise ValueError(f"Missing required tools for DEA agent: {missing_csv}")
 
-    async def run(self, matter: dict[str, Any]) -> dict[str, Any]:
+    async def _run(self, matter: dict[str, Any]) -> dict[str, Any]:
         """Derive legal issues and map them to supporting authorities."""
 
-        spotted_issues = self.tools["issue_spotter"](matter)
-        citations = self.tools["citation_retriever"](matter, spotted_issues)
+        spotted_issues = self._call_tool("issue_spotter", matter)
+        citations = self._call_tool("citation_retriever", matter, spotted_issues)
 
         unresolved: list[str] = []
         if not spotted_issues:
