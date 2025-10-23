@@ -11,9 +11,14 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
+from api.logging_config import configure_logging
+from api.middleware import AuditLoggingMiddleware, CostTrackingMiddleware, RequestLoggingMiddleware
 from orchestrator.router import configure_service, router as orchestrator_router
 from orchestrator.service import OrchestratorService
 from tools.metrics import metrics_registry
+
+# Configure logging first
+configure_logging()
 
 logger = logging.getLogger("themis.api")
 
@@ -51,6 +56,11 @@ app = FastAPI(
 # Attach rate limiter to app state and add exception handler
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Add middleware (order matters - last added is executed first)
+app.add_middleware(AuditLoggingMiddleware)
+app.add_middleware(CostTrackingMiddleware)
+app.add_middleware(RequestLoggingMiddleware)
 
 app.include_router(orchestrator_router, prefix="/orchestrator", tags=["orchestrator"])
 

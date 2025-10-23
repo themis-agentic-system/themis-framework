@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+import time
 from copy import deepcopy
 from typing import Any
 from uuid import uuid4
@@ -12,22 +14,37 @@ from agents.lsa import LSAAgent
 from agents.lda import LDAAgent
 from orchestrator.storage.sqlite_repository import SQLiteOrchestratorStateRepository
 
+logger = logging.getLogger("themis.orchestrator")
+
 
 class OrchestratorService:
-    """Service responsible for planning and executing agent workflows."""
+    """Service responsible for planning and executing agent workflows.
+
+    Implements in-memory caching with TTL to reduce database reads.
+    """
 
     def __init__(
         self,
         agents: dict[str, AgentProtocol] | None = None,
         repository: SQLiteOrchestratorStateRepository | None = None,
+        cache_ttl_seconds: int = 60,
     ) -> None:
         self.repository = repository or SQLiteOrchestratorStateRepository()
-        self.state = self.repository.load_state()
         self.agents = agents or {
             "lda": LDAAgent(),
             "dea": DEAAgent(),
             "lsa": LSAAgent(),
         }
+
+        # State caching with TTL
+        self._state_cache = None
+        self._cache_timestamp = None
+        self._cache_ttl = cache_ttl_seconds
+        self._dirty = False
+
+        # Initialize cache
+        self.state = self._load_state()
+
         self._default_plan = (
             (
                 "lda",
@@ -61,10 +78,52 @@ class OrchestratorService:
             ),
         )
 
+    def _load_state(self):
+        """Load state from repository with caching logic.
+
+        Uses in-memory cache with TTL to reduce database reads.
+        Returns cached state if fresh, otherwise loads from database.
+        """
+        now = time.time()
+
+        # Check if cache is valid
+        if (
+            self._state_cache is not None
+            and self._cache_timestamp is not None
+            and (now - self._cache_timestamp) < self._cache_ttl
+        ):
+            logger.debug("State cache hit (age: %.2fs)", now - self._cache_timestamp)
+            return self._state_cache
+
+        # Cache miss - load from database
+        logger.debug("State cache miss - loading from database")
+        self._state_cache = self.repository.load_state()
+        self._cache_timestamp = now
+        self._dirty = False
+        return self._state_cache
+
+    def _save_state(self):
+        """Save state to repository and update cache.
+
+        Uses write-through caching to keep cache synchronized.
+        """
+        logger.debug("Saving state to database")
+        self.repository.save_state(self.state)
+        self._state_cache = self.state
+        self._cache_timestamp = time.time()
+        self._dirty = False
+
+    def _invalidate_cache(self):
+        """Invalidate the state cache, forcing next read to hit database."""
+        logger.debug("Cache invalidated")
+        self._state_cache = None
+        self._cache_timestamp = None
+        self._dirty = False
+
     async def plan(self, matter: dict[str, Any]) -> dict[str, Any]:
         """Create an executable plan across the registered agents."""
 
-        self.state = self.repository.load_state()
+        self.state = self._load_state()
         plan_id = str(uuid4())
         steps: list[dict[str, Any]] = []
         previous_step_id: str | None = None
@@ -96,7 +155,7 @@ class OrchestratorService:
         }
 
         self.state.remember_plan(plan_id, deepcopy(plan))
-        self.repository.save_state(self.state)
+        self._save_state()
         return plan
 
     async def execute(
@@ -106,7 +165,7 @@ class OrchestratorService:
     ) -> dict[str, Any]:
         """Execute a plan by invoking each registered agent in order."""
 
-        self.state = self.repository.load_state()
+        self.state = self._load_state()
         if plan_id is not None:
             plan = self.state.recall_plan(plan_id)
             if plan is None:
@@ -114,7 +173,7 @@ class OrchestratorService:
             if matter is not None:
                 plan["matter"] = matter
                 self.state.remember_plan(plan_id, deepcopy(plan))
-                self.repository.save_state(self.state)
+                self._save_state()
         else:
             if matter is None:
                 raise ValueError("Matter payload is required when no plan_id is provided")
@@ -186,14 +245,14 @@ class OrchestratorService:
         plan["status"] = overall_status
         self.state.remember_plan(plan_id, deepcopy(plan))
         self.state.remember_execution(plan_id, deepcopy(execution_record))
-        self.repository.save_state(self.state)
+        self._save_state()
 
         return execution_record
 
     async def get_plan(self, plan_id: str) -> dict[str, Any]:
         """Retrieve a persisted plan by identifier."""
 
-        self.state = self.repository.load_state()
+        self.state = self._load_state()
         plan = self.state.recall_plan(plan_id)
         if plan is None:
             raise ValueError(f"Plan '{plan_id}' does not exist")
@@ -202,7 +261,7 @@ class OrchestratorService:
     async def get_artifacts(self, plan_id: str) -> dict[str, Any]:
         """Retrieve execution artifacts for a given plan identifier."""
 
-        self.state = self.repository.load_state()
+        self.state = self._load_state()
         execution = self.state.recall_execution(plan_id)
         if execution is None:
             raise ValueError(f"Execution for plan '{plan_id}' does not exist")
