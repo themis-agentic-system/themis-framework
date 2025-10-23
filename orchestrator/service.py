@@ -34,8 +34,8 @@ class OrchestratorService:
                 "Extract facts and figures from the supplied matter payload.",
                 [
                     {
-                        "name": "fact_pattern_summary",
-                        "description": "Structured summary of key facts and timeline details.",
+                        "name": "facts",
+                        "description": "Structured fact pattern including timeline, parties, and key details.",
                     }
                 ],
             ),
@@ -44,8 +44,8 @@ class OrchestratorService:
                 "Apply doctrinal analysis over the fact pattern to surface legal issues.",
                 [
                     {
-                        "name": "legal_theories",
-                        "description": "List of legal theories and supporting authorities.",
+                        "name": "legal_analysis",
+                        "description": "Structured doctrinal analysis tying issues to supporting authorities.",
                     }
                 ],
             ),
@@ -54,8 +54,8 @@ class OrchestratorService:
                 "Craft negotiation and settlement strategy leveraging prior analysis.",
                 [
                     {
-                        "name": "negotiation_strategy",
-                        "description": "Proposed negotiation framing, demands, and concessions.",
+                        "name": "strategy",
+                        "description": "Recommended course of action with positions, contingencies, and risks.",
                     }
                 ],
             ),
@@ -121,9 +121,10 @@ class OrchestratorService:
             plan = await self.plan(matter)
             plan_id = plan["plan_id"]
 
-        plan_matter = plan.get("matter", {})
+        plan_matter = deepcopy(plan.get("matter", {}))
         steps_results: list[dict[str, Any]] = []
         artifacts: dict[str, Any] = {}
+        propagated: dict[str, Any] = {}
         overall_status = "complete"
 
         for step in plan["steps"]:
@@ -145,8 +146,12 @@ class OrchestratorService:
                 steps_results.append(step_result)
                 continue
 
+            produced_artifacts: dict[str, Any] = {}
+
             try:
-                output = await agent.run(plan_matter)
+                agent_input = deepcopy(plan_matter)
+                agent_input.update(propagated)
+                output = await agent.run(agent_input)
             except Exception as exc:  # pragma: no cover - defensive programming
                 step_result["status"] = "failed"
                 step_result["error"] = str(exc)
@@ -157,6 +162,15 @@ class OrchestratorService:
                 step_result["status"] = "complete"
                 step_result["output"] = output
                 artifacts[agent_name] = output
+                propagated[agent_name] = output
+                produced_artifacts = _collect_expected_artifacts(
+                    output, step.get("expected_artifacts", [])
+                )
+                if produced_artifacts:
+                    propagated.update(produced_artifacts)
+                    plan_matter.update(produced_artifacts)
+                    step_result["artifacts"] = produced_artifacts
+                    step["artifacts"] = produced_artifacts
                 step["status"] = "complete"
                 step["output"] = output
 
@@ -193,3 +207,36 @@ class OrchestratorService:
         if execution is None:
             raise ValueError(f"Execution for plan '{plan_id}' does not exist")
         return deepcopy(execution.get("artifacts", {}))
+
+
+def _collect_expected_artifacts(
+    payload: dict[str, Any], expected_artifacts: list[dict[str, Any]]
+) -> dict[str, Any]:
+    """Extract advertised artifacts from an agent payload."""
+
+    collected: dict[str, Any] = {}
+    for artifact in expected_artifacts or []:
+        if not isinstance(artifact, dict):
+            continue
+        name = artifact.get("name")
+        if not name:
+            continue
+        value = payload.get(name)
+        if value is None:
+            value = _find_nested_artifact(payload, name)
+        if value is not None:
+            collected[name] = value
+    return collected
+
+
+def _find_nested_artifact(payload: dict[str, Any], artifact_name: str) -> Any:
+    """Locate a nested artifact within the payload."""
+
+    for value in payload.values():
+        if isinstance(value, dict):
+            if artifact_name in value:
+                return value[artifact_name]
+            nested = _find_nested_artifact(value, artifact_name)
+            if nested is not None:
+                return nested
+    return None
