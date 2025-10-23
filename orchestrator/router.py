@@ -4,13 +4,19 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
+from api.security import verify_api_key
 from orchestrator.service import OrchestratorService
 
 router = APIRouter()
 _service: OrchestratorService | None = None
+
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
 
 
 class PlanRequest(BaseModel):
@@ -47,18 +53,34 @@ def get_service() -> OrchestratorService:
 
 
 @router.post("/plan", summary="Create an execution plan for a legal matter")
-async def plan(request: PlanRequest) -> dict[str, Any]:
-    """Generate a draft plan given a matter payload."""
+@limiter.limit("20/minute")  # 20 requests per minute per IP
+async def plan(
+    request_body: PlanRequest,
+    request: Request,
+    api_key: str = Depends(verify_api_key),
+) -> dict[str, Any]:
+    """Generate a draft plan given a matter payload.
 
+    Requires authentication via Bearer token if THEMIS_API_KEY is set.
+    Rate limited to 20 requests per minute per IP address.
+    """
     service = get_service()
-    return await service.plan(request.matter)
+    return await service.plan(request_body.matter)
 
 
 @router.post("/execute", summary="Run a plan through registered agents")
-async def execute(request: ExecuteRequest) -> dict[str, Any]:
-    """Run a matter through the orchestrated workflow."""
+@limiter.limit("10/minute")  # 10 requests per minute per IP (lower limit for expensive operations)
+async def execute(
+    request_body: ExecuteRequest,
+    request: Request,
+    api_key: str = Depends(verify_api_key),
+) -> dict[str, Any]:
+    """Run a matter through the orchestrated workflow.
 
-    if request.plan_id is None and request.matter is None:
+    Requires authentication via Bearer token if THEMIS_API_KEY is set.
+    Rate limited to 10 requests per minute per IP address.
+    """
+    if request_body.plan_id is None and request_body.matter is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Provide either an existing plan_id or a matter payload to execute.",
@@ -66,15 +88,23 @@ async def execute(request: ExecuteRequest) -> dict[str, Any]:
 
     service = get_service()
     try:
-        return await service.execute(plan_id=request.plan_id, matter=request.matter)
+        return await service.execute(plan_id=request_body.plan_id, matter=request_body.matter)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
 
 @router.get("/plans/{plan_id}", summary="Retrieve a previously generated plan")
-async def get_plan(plan_id: str) -> dict[str, Any]:
-    """Fetch a plan definition by identifier."""
+@limiter.limit("60/minute")  # 60 requests per minute per IP (higher limit for read operations)
+async def get_plan(
+    plan_id: str,
+    request: Request,
+    api_key: str = Depends(verify_api_key),
+) -> dict[str, Any]:
+    """Fetch a plan definition by identifier.
 
+    Requires authentication via Bearer token if THEMIS_API_KEY is set.
+    Rate limited to 60 requests per minute per IP address.
+    """
     service = get_service()
     try:
         return await service.get_plan(plan_id)
@@ -83,9 +113,17 @@ async def get_plan(plan_id: str) -> dict[str, Any]:
 
 
 @router.get("/artifacts/{plan_id}", summary="Retrieve execution artifacts for a plan")
-async def get_artifacts(plan_id: str) -> dict[str, Any]:
-    """Fetch artifacts generated during execution for a plan."""
+@limiter.limit("60/minute")  # 60 requests per minute per IP (higher limit for read operations)
+async def get_artifacts(
+    plan_id: str,
+    request: Request,
+    api_key: str = Depends(verify_api_key),
+) -> dict[str, Any]:
+    """Fetch artifacts generated during execution for a plan.
 
+    Requires authentication via Bearer token if THEMIS_API_KEY is set.
+    Rate limited to 60 requests per minute per IP address.
+    """
     service = get_service()
     try:
         return await service.get_artifacts(plan_id)
