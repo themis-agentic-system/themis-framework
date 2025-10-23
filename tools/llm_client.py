@@ -17,11 +17,20 @@ from __future__ import annotations
 
 import ast
 import json
+import logging
 import os
 import re
 from typing import Any, Iterable
 
 from anthropic import Anthropic
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
+
+logger = logging.getLogger("themis.llm_client")
 
 
 class LLMClient:
@@ -41,6 +50,34 @@ class LLMClient:
         self._stub_mode = not self.api_key
         self.client = None if self._stub_mode else Anthropic(api_key=self.api_key)
 
+    @retry(
+        retry=retry_if_exception_type((Exception,)),
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        reraise=True,
+    )
+    async def _call_anthropic_api(
+        self,
+        system_prompt: str,
+        messages: list[dict[str, str]],
+        max_tokens: int,
+    ) -> str:
+        """Call Anthropic API with retry logic.
+
+        Retries up to 3 times with exponential backoff (2s, 4s, 8s).
+        This handles transient network errors and rate limiting gracefully.
+        """
+        logger.debug(f"Calling Anthropic API (model: {self.model}, max_tokens: {max_tokens})")
+        response = self.client.messages.create(
+            model=self.model,
+            max_tokens=max_tokens,
+            system=system_prompt,
+            messages=messages,
+        )
+        content = response.content[0].text if response.content else ""
+        logger.debug(f"Received response from Anthropic API ({len(content)} chars)")
+        return content
+
     async def generate_structured(
         self,
         system_prompt: str,
@@ -48,8 +85,10 @@ class LLMClient:
         response_format: dict[str, Any] | None = None,
         max_tokens: int = 4096,
     ) -> dict[str, Any]:
-        """Generate a structured JSON response from the LLM."""
+        """Generate a structured JSON response from the LLM.
 
+        Automatically retries on failure with exponential backoff.
+        """
         if self._stub_mode:
             return self._generate_structured_stub(
                 system_prompt=system_prompt,
@@ -67,14 +106,7 @@ class LLMClient:
             )
             system_prompt = system_prompt + schema_instruction
 
-        response = self.client.messages.create(
-            model=self.model,
-            max_tokens=max_tokens,
-            system=system_prompt,
-            messages=messages,
-        )
-
-        content = response.content[0].text if response.content else ""
+        content = await self._call_anthropic_api(system_prompt, messages, max_tokens)
 
         try:
             start = content.find("{")
@@ -92,8 +124,10 @@ class LLMClient:
         user_prompt: str,
         max_tokens: int = 4096,
     ) -> str:
-        """Generate a plain-text response from the LLM."""
+        """Generate a plain-text response from the LLM.
 
+        Automatically retries on failure with exponential backoff.
+        """
         if self._stub_mode:
             return self._generate_text_stub(
                 system_prompt=system_prompt,
@@ -102,15 +136,7 @@ class LLMClient:
             )
 
         messages = [{"role": "user", "content": user_prompt}]
-
-        response = self.client.messages.create(
-            model=self.model,
-            max_tokens=max_tokens,
-            system=system_prompt,
-            messages=messages,
-        )
-
-        return response.content[0].text if response.content else ""
+        return await self._call_anthropic_api(system_prompt, messages, max_tokens)
 
     # ------------------------------------------------------------------
     # Stub implementation helpers

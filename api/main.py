@@ -2,23 +2,55 @@
 
 from __future__ import annotations
 
-from fastapi import FastAPI
+import logging
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, Request
 from fastapi.responses import PlainTextResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from orchestrator.router import configure_service, router as orchestrator_router
 from orchestrator.service import OrchestratorService
 from tools.metrics import metrics_registry
 
-app = FastAPI(title="Themis Orchestrator API")
+logger = logging.getLogger("themis.api")
+
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
 
 
-@app.on_event("startup")
-async def startup() -> None:
-    """Perform startup initialization hooks."""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manage application lifespan (startup and shutdown).
+
+    This replaces the deprecated @app.on_event decorators with
+    a modern context manager approach.
+    """
+    # Startup: Initialize the orchestrator service
+    logger.info("Starting Themis Orchestrator API")
     service = OrchestratorService()
     configure_service(service)
     app.state.orchestrator_service = service
+    logger.info("Orchestrator service initialized successfully")
 
+    yield
+
+    # Shutdown: Clean up resources (if needed in the future)
+    logger.info("Shutting down Themis Orchestrator API")
+
+
+app = FastAPI(
+    title="Themis Orchestration API",
+    description="Multi-agent legal analysis workflow orchestration.",
+    version="0.1.0",
+    lifespan=lifespan,
+)
+
+# Attach rate limiter to app state and add exception handler
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.include_router(orchestrator_router, prefix="/orchestrator", tags=["orchestrator"])
 
