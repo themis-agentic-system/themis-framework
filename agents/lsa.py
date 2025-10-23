@@ -29,8 +29,8 @@ class LSAAgent(BaseAgent):
     async def _run(self, matter: dict[str, Any]) -> dict[str, Any]:
         """Combine facts and legal theories into a strategy recommendation."""
 
-        strategy = self._call_tool("strategy_template", matter)
-        risks = self._call_tool("risk_assessor", matter, strategy)
+        strategy = await self._call_tool("strategy_template", matter)
+        risks = await self._call_tool("risk_assessor", matter, strategy)
 
         unresolved: list[str] = []
         if not strategy.get("objectives"):
@@ -57,16 +57,9 @@ class LSAAgent(BaseAgent):
         )
 
 
-def _default_strategy_template(matter: dict[str, Any]) -> dict[str, Any]:
+async def _default_strategy_template(matter: dict[str, Any]) -> dict[str, Any]:
     """Generate legal strategy using LLM analysis."""
     llm = get_llm_client()
-
-    # Get or create event loop
-    try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
 
     # Build comprehensive context from matter
     context_parts = []
@@ -153,13 +146,11 @@ Respond in JSON format:
     }
 
     try:
-        result = loop.run_until_complete(
-            llm.generate_structured(
-                system_prompt=system_prompt,
-                user_prompt=user_prompt,
-                response_format=response_format,
-                max_tokens=3000,
-            )
+        result = await llm.generate_structured(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            response_format=response_format,
+            max_tokens=3000,
         )
         return result
     except Exception:
@@ -193,16 +184,9 @@ Respond in JSON format:
         }
 
 
-def _default_risk_assessor(matter: dict[str, Any], strategy: dict[str, Any]) -> dict[str, Any]:
+async def _default_risk_assessor(matter: dict[str, Any], strategy: dict[str, Any]) -> dict[str, Any]:
     """Generate risk assessment using LLM analysis."""
     llm = get_llm_client()
-
-    # Get or create event loop
-    try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
 
     # Build context
     context_parts = []
@@ -266,12 +250,10 @@ Respond in JSON format:
     }
 
     try:
-        result = loop.run_until_complete(
-            llm.generate_structured(
-                system_prompt=system_prompt,
-                user_prompt=user_prompt,
-                response_format=response_format,
-            )
+        result = await llm.generate_structured(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            response_format=response_format,
         )
         # Ensure confidence is in valid range
         if "confidence" in result:

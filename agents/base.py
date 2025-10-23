@@ -86,8 +86,12 @@ class BaseAgent(ABC):
         """Execute the agent logic."""
         raise NotImplementedError
 
-    def _call_tool(self, name: str, *args: Any, **kwargs: Any) -> Any:
-        """Invoke a named tool while recording structured telemetry."""
+    async def _call_tool(self, name: str, *args: Any, **kwargs: Any) -> Any:
+        """Invoke a named tool while recording structured telemetry.
+
+        Supports both synchronous and asynchronous tools.
+        """
+        import asyncio
 
         if name not in getattr(self, "tools", {}):
             raise KeyError(f"Tool '{name}' is not registered for agent {self.name}.")
@@ -98,7 +102,12 @@ class BaseAgent(ABC):
         )
         self._tool_invocations += 1
         tool = self.tools[name]
-        return tool(*args, **kwargs)
+        result = tool(*args, **kwargs)
+
+        # Support both sync and async tools
+        if asyncio.iscoroutine(result):
+            return await result
+        return result
 
     def _build_response(
         self,

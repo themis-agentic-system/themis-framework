@@ -30,8 +30,8 @@ class LDAAgent(BaseAgent):
     async def _run(self, matter: dict[str, Any]) -> dict[str, Any]:
         """Derive a structured fact summary from the provided matter."""
 
-        parsed_documents = self._call_tool("document_parser", matter)
-        timeline = self._call_tool("timeline_builder", matter, parsed_documents)
+        parsed_documents = await self._call_tool("document_parser", matter)
+        timeline = await self._call_tool("timeline_builder", matter, parsed_documents)
 
         key_facts: list[str] = []
         for doc in parsed_documents:
@@ -65,23 +65,13 @@ class LDAAgent(BaseAgent):
         )
 
 
-def _default_document_parser(matter: dict[str, Any]) -> list[dict[str, Any]]:
+async def _default_document_parser(matter: dict[str, Any]) -> list[dict[str, Any]]:
     """Extract document summaries and key facts using LLM.
 
-    This is a synchronous wrapper that can be called from async context.
-    For true async usage, inject parse_document_with_llm directly.
+    This is now a properly async function that can be awaited.
     """
-    import asyncio
-
     documents: Iterable[dict[str, Any]] = matter.get("documents", [])
     parsed: list[dict[str, Any]] = []
-
-    # Get or create event loop for async operations
-    try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
 
     # Extract matter context for better analysis
     matter_context = {
@@ -92,9 +82,7 @@ def _default_document_parser(matter: dict[str, Any]) -> list[dict[str, Any]]:
     for document in documents:
         try:
             # Use LLM-powered parser
-            parsed_doc = loop.run_until_complete(
-                parse_document_with_llm(document, matter_context)
-            )
+            parsed_doc = await parse_document_with_llm(document, matter_context)
             parsed.append(parsed_doc)
         except Exception as e:
             # Fallback to basic parsing if LLM fails

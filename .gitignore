@@ -61,5 +61,6 @@ Thumbs.db
 logs/
 
 # Themis specific
+outputs/
 packs/*/output/
 packs/*/artifacts/
