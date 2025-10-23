@@ -9,14 +9,19 @@ from agents.lsa import LSAAgent
 
 class Orchestrator:
     """Simple orchestrator that runs LDA -> DEA -> LSA in sequence."""
- def __init__(self, agents: Dict[str, Any] | None = None) -> None:
+
+    def __init__(self, agents: Dict[str, Any] | None = None) -> None:
         self.agents = agents or {
             "lda": LDAAgent(),
             "dea": DEAAgent(),
             "lsa": LSAAgent(),
         }
         self._default_plan = [
-            ("lda", "Extract facts and figures", [{"name": "facts", "description": "Structured facts"}]),
+            (
+                "lda",
+                "Extract facts and figures",
+                [{"name": "facts", "description": "Structured facts"}],
+            ),
             (
                 "dea",
                 "Apply doctrinal analysis",
@@ -31,14 +36,44 @@ class Orchestrator:
 
     async def run_matter(self, matter: Dict[str, Any]) -> Dict[str, Any]:
         artifacts: Dict[str, Any] = {}
-        for agent_name, _, _ in self._default_plan:
+        propagated: Dict[str, Any] = {}
+
+        for agent_name, _, expected_artifacts in self._default_plan:
             agent = self.agents.get(agent_name)
             if agent is None:
                 raise ValueError(f"Agent '{agent_name}' is not registered.")
+
             input_matter = deepcopy(matter)
-            # inject prior outputs into the next agent's matter context
-            for art_name, art_value in artifacts.items():
-                input_matter[art_name] = art_value
+            input_matter.update(propagated)
+
             result = await agent.run(input_matter)
             artifacts[agent_name] = result
+
+            # Maintain backwards compatibility by providing raw outputs under
+            # the agent name while also surfacing the advertised artifact keys
+            # for downstream agents.
+            propagated[agent_name] = result
+            for artifact in expected_artifacts or []:
+                name = artifact.get("name") if isinstance(artifact, dict) else None
+                if not name:
+                    continue
+                value = result.get(name)
+                if value is None:
+                    value = _find_nested_artifact(result, name)
+                if value is not None:
+                    propagated[name] = value
+
         return {"artifacts": artifacts}
+
+
+def _find_nested_artifact(payload: Dict[str, Any], artifact_name: str) -> Any:
+    """Locate an artifact nested within dictionaries of the payload."""
+
+    for value in payload.values():
+        if isinstance(value, dict):
+            if artifact_name in value:
+                return value[artifact_name]
+            nested = _find_nested_artifact(value, artifact_name)
+            if nested is not None:
+                return nested
+    return None
