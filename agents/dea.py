@@ -30,8 +30,8 @@ class DEAAgent(BaseAgent):
     async def _run(self, matter: dict[str, Any]) -> dict[str, Any]:
         """Derive legal issues and map them to supporting authorities."""
 
-        spotted_issues = self._call_tool("issue_spotter", matter)
-        citations = self._call_tool("citation_retriever", matter, spotted_issues)
+        spotted_issues = await self._call_tool("issue_spotter", matter)
+        citations = await self._call_tool("citation_retriever", matter, spotted_issues)
 
         unresolved: list[str] = []
         if not spotted_issues:
@@ -42,7 +42,7 @@ class DEAAgent(BaseAgent):
         legal_analysis = {
             "issues": spotted_issues,
             "authorities": citations,
-            "analysis": _synthesise_analysis(spotted_issues, citations, matter),
+            "analysis": await _synthesise_analysis(spotted_issues, citations, matter),
         }
 
         provenance = {
@@ -57,16 +57,9 @@ class DEAAgent(BaseAgent):
         )
 
 
-def _default_issue_spotter(matter: dict[str, Any]) -> list[dict[str, Any]]:
+async def _default_issue_spotter(matter: dict[str, Any]) -> list[dict[str, Any]]:
     """Identify legal issues using LLM analysis of the matter."""
     llm = get_llm_client()
-
-    # Get or create event loop
-    try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
 
     # Build context from matter
     context_parts = []
@@ -126,12 +119,10 @@ Respond in JSON format:
     }
 
     try:
-        result = loop.run_until_complete(
-            llm.generate_structured(
-                system_prompt=system_prompt,
-                user_prompt=user_prompt,
-                response_format=response_format,
-            )
+        result = await llm.generate_structured(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            response_format=response_format,
         )
         return result.get("issues", [])
     except Exception as e:
@@ -178,7 +169,7 @@ def _default_citation_retriever(
     return authorities
 
 
-def _synthesise_analysis(
+async def _synthesise_analysis(
     issues: list[dict[str, Any]],
     citations: list[dict[str, Any]],
     matter: dict[str, Any],
@@ -188,13 +179,6 @@ def _synthesise_analysis(
         return "No issues identified to analyse."
 
     llm = get_llm_client()
-
-    # Get or create event loop
-    try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
 
     # Build context
     issues_text = "\n".join(
@@ -235,12 +219,10 @@ Provide a comprehensive legal analysis (3-5 paragraphs) that:
 4. Provides preliminary conclusions on the strength of each claim"""
 
     try:
-        analysis = loop.run_until_complete(
-            llm.generate_text(
-                system_prompt=system_prompt,
-                user_prompt=user_prompt,
-                max_tokens=2000,
-            )
+        analysis = await llm.generate_text(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            max_tokens=2000,
         )
         return analysis
     except Exception:
