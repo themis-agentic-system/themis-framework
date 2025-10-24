@@ -138,7 +138,7 @@ def test_jurisdiction_aware_complaint_generation(tmp_path: Path) -> None:
     # Test California fixture
     ca_matter = pi_demand_run.load_matter(FIXTURE_DIR / "sample_matter.json")
     ca_execution = asyncio.run(service.execute(ca_matter))
-    ca_paths = pi_demand_run.persist_outputs(ca_matter, ca_execution, output_root=tmp_path)
+    pi_demand_run.persist_outputs(ca_matter, ca_execution, output_root=tmp_path)
 
     ca_complaint = (tmp_path / ca_matter["metadata"]["slug"] / "draft_complaint.txt").read_text()
 

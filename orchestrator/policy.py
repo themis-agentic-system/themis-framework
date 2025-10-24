@@ -166,8 +166,8 @@ class RoutingPolicy:
             "requested_output",
         )
         snippets: list[str] = []
-        for field in intent_fields:
-            value = matter.get(field)
+        for field_name in intent_fields:
+            value = matter.get(field_name)
             if isinstance(value, str):
                 snippets.append(value.lower())
         return " ".join(snippets)

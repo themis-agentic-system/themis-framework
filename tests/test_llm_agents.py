@@ -2,7 +2,6 @@
 """Test script to demonstrate LLM-powered legal agents in action."""
 
 import asyncio
-import json
 import os
 from dotenv import load_dotenv
 
@@ -154,7 +153,7 @@ async def main():
             print(f"    Area of Law: {issue.get('area_of_law', 'N/A')}")
             print(f"    Strength: {issue.get('strength', 'N/A')}")
             if issue.get("facts"):
-                print(f"    Supporting Facts:")
+                print("    Supporting Facts:")
                 for fact in issue['facts'][:3]:
                     print(f"      - {fact}")
 
@@ -173,14 +172,14 @@ async def main():
         lsa_result = artifacts["lsa"]
         strategy = lsa_result.get("strategy", {})
 
-        print(f"\nObjectives:")
+        print("\nObjectives:")
         print(f"  {strategy.get('recommended_actions', [{}])[0] if strategy.get('recommended_actions') else 'N/A'}")
 
-        print(f"\nRecommended Actions:")
+        print("\nRecommended Actions:")
         for i, action in enumerate(strategy.get("recommended_actions", [])[:5], 1):
             print(f"  {i}. {action}")
 
-        print(f"\nNegotiation Positions:")
+        print("\nNegotiation Positions:")
         positions = strategy.get("negotiation_positions", {})
         if positions:
             for key, value in positions.items():
@@ -188,16 +187,16 @@ async def main():
 
         risk = strategy.get("risk_assessment", {})
         if risk:
-            print(f"\nRisk Assessment:")
+            print("\nRisk Assessment:")
             print(f"  Confidence Score: {risk.get('confidence', 'N/A')}/100")
 
             if risk.get("weaknesses"):
-                print(f"  Weaknesses:")
+                print("  Weaknesses:")
                 for weakness in risk["weaknesses"][:3]:
                     print(f"    • {weakness}")
 
             if risk.get("evidentiary_gaps"):
-                print(f"  Evidentiary Gaps:")
+                print("  Evidentiary Gaps:")
                 for gap in risk["evidentiary_gaps"][:3]:
                     print(f"    • {gap}")
 

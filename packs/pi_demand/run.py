@@ -7,6 +7,7 @@ import asyncio
 import csv
 import json
 import re
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -795,7 +796,7 @@ def _create_matter_interactive(output_path: Path) -> None:
     # Save
     output_path.write_text(json.dumps(matter_data, indent=2), encoding="utf-8")
     print(f"\n✓ Matter file created: {output_path}")
-    print(f"\nYou can now edit this file to add more details, then run:")
+    print("\nYou can now edit this file to add more details, then run:")
     print(f"  python -m packs.pi_demand.run --matter {output_path}")
 
 

@@ -47,17 +47,15 @@ def generate_complaint(matter: dict[str, Any], execution_result: dict[str, Any])
     facts = lda.get("facts", {}) if isinstance(lda, dict) else {}
     fact_pattern = facts.get("fact_pattern_summary", []) if isinstance(facts, dict) else []
     timeline = facts.get("timeline", []) if isinstance(facts, dict) else []
-    damages_calc = facts.get("damages_calculation", {}) if isinstance(facts, dict) else {}
+    # damages_calc could be used for detailed calculation breakdown in future enhancements
 
     # DEA legal analysis
     dea = artifacts.get("dea") if isinstance(artifacts, dict) else {}
     legal_analysis = dea.get("legal_analysis", {}) if isinstance(dea, dict) else {}
     issues = legal_analysis.get("issues", []) if isinstance(legal_analysis, dict) else []
-    authorities = legal_analysis.get("authorities", []) if isinstance(legal_analysis, dict) else []
+    # authorities could be used for citation formatting in future enhancements
 
-    # LSA strategy
-    lsa = artifacts.get("lsa") if isinstance(artifacts, dict) else {}
-    strategy = lsa.get("strategy", {}) if isinstance(lsa, dict) else {}
+    # LSA strategy - data could be used for settlement context in future enhancements
 
     # Damages from matter
     damages = matter.get("damages", {}) if isinstance(matter.get("damages"), dict) else {}
@@ -261,7 +259,7 @@ def _format_header(jurisdiction: dict[str, Any], matter_name: str, plaintiff: st
     lines = []
     lines.append("=" * 80)
     lines.append(f"SUPERIOR COURT OF {jurisdiction.get('code', 'STATE')}")
-    lines.append(f"COUNTY OF [COUNTY NAME]")
+    lines.append("COUNTY OF [COUNTY NAME]")
     lines.append("")
     lines.append(f"{plaintiff},")
     lines.append("     Plaintiff,")

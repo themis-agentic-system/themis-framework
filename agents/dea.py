@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
-import json
 from typing import Any, Callable
 
 from agents.base import BaseAgent
@@ -39,10 +37,29 @@ class DEAAgent(BaseAgent):
         if not citations:
             unresolved.append("Unable to locate supporting authorities for the issues raised.")
 
+        # Separate authorities into controlling and contrary
+        controlling_auths = []
+        contrary_auths = []
+
+        for citation in citations:
+            # In a real implementation, this would use metadata or analysis
+            # For now, treat all as controlling (can be enhanced with LLM classification)
+            controlling_auths.append(citation.get("cite", ""))
+
+        # If we have no contrary authority, note it in unresolved
+        if not contrary_auths:
+            unresolved.append("No contrary authority identified - consider researching opposing arguments.")
+
         legal_analysis = {
             "issues": spotted_issues,
-            "authorities": citations,
+            "authorities": citations,  # Keep full citations for backward compatibility
             "analysis": await _synthesise_analysis(spotted_issues, citations, matter),
+        }
+
+        # Provide authorities in the expected signal format
+        authorities_signal = {
+            "controlling_authorities": controlling_auths,
+            "contrary_authorities": contrary_auths or ["None identified - further research recommended"],
         }
 
         provenance = {
@@ -51,7 +68,10 @@ class DEAAgent(BaseAgent):
         }
 
         return self._build_response(
-            core={"legal_analysis": legal_analysis},
+            core={
+                "legal_analysis": legal_analysis,
+                "authorities": authorities_signal,
+            },
             provenance=provenance,
             unresolved_issues=unresolved,
         )
@@ -73,7 +93,7 @@ async def _default_issue_spotter(matter: dict[str, Any]) -> list[dict[str, Any]]
     if isinstance(facts, dict) and facts.get("fact_pattern_summary"):
         fact_list = facts["fact_pattern_summary"]
         if fact_list:
-            context_parts.append(f"Key Facts:\n" + "\n".join(f"- {fact}" for fact in fact_list[:10]))
+            context_parts.append("Key Facts:\n" + "\n".join(f"- {fact}" for fact in fact_list[:10]))
 
     context = "\n\n".join(context_parts)
 
@@ -125,7 +145,7 @@ Respond in JSON format:
             response_format=response_format,
         )
         return result.get("issues", [])
-    except Exception as e:
+    except Exception:
         # Fallback to extracting from matter payload
         issues: list[dict[str, Any]] = []
         for entry in matter.get("issues", []):
