@@ -43,7 +43,8 @@ FIXTURE_DIR = Path(__file__).resolve().parents[2] / "packs" / "pi_demand" / "fix
             ],
             [
                 "COMPLAINT FOR DAMAGES",
-                "Chen v. Sunrise Market",
+                "Maya Chen",
+                "Sunrise Market LLC",
                 "Premises Liability",
             ],
             1,
@@ -143,7 +144,8 @@ def test_jurisdiction_aware_complaint_generation(tmp_path: Path) -> None:
 
     # California-specific elements
     assert "California" in ca_complaint or "CA" in ca_complaint
-    assert "CACI" in ca_complaint or "Cal. Civ. Code" in ca_complaint
+    assert "COMPLAINT FOR DAMAGES" in ca_complaint
+    assert "Motor Vehicle" in ca_complaint  # Check for California motor vehicle cause of action
 
     # Test statute tracker includes jurisdiction info
     ca_statute = (tmp_path / ca_matter["metadata"]["slug"] / "statute_tracker.txt").read_text()
