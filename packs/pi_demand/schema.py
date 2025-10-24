@@ -18,12 +18,24 @@ MATTER_SCHEMA: dict[str, Any] = {
                 "metadata": {
                     "type": "object",
                     "properties": {
-                        "id": {"type": "string", "description": "Unique matter identifier"},
-                        "title": {"type": "string", "description": "Matter title or case caption"},
+                        "id": {
+                            "type": "string",
+                            "description": "Unique matter identifier",
+                        },
+                        "title": {
+                            "type": "string",
+                            "description": "Matter title or case caption",
+                        },
                         "jurisdiction": {
                             "type": "string",
-                            "enum": ["California", "New York", "Texas", "Florida", "Illinois"],
-                            "description": "Jurisdiction where case will be filed"
+                            "enum": [
+                                "California",
+                                "New York",
+                                "Texas",
+                                "Florida",
+                                "Illinois",
+                            ],
+                            "description": "Jurisdiction where case will be filed",
                         },
                         "cause_of_action": {
                             "type": "string",
@@ -33,30 +45,30 @@ MATTER_SCHEMA: dict[str, Any] = {
                                 "premises_liability",
                                 "medical_malpractice",
                                 "product_liability",
-                                "dog_bite"
+                                "dog_bite",
                             ],
-                            "description": "Primary cause of action type"
-                        }
-                    }
+                            "description": "Primary cause of action type",
+                        },
+                    },
                 },
                 "summary": {
                     "type": "string",
                     "minLength": 10,
-                    "description": "Brief summary of the matter (required)"
+                    "description": "Brief summary of the matter (required)",
                 },
                 "description": {
                     "type": "string",
-                    "description": "Detailed description of the matter"
+                    "description": "Detailed description of the matter",
                 },
                 "parties": {
                     "type": "array",
                     "minItems": 1,
                     "items": {"type": "string"},
-                    "description": "List of parties involved (minimum 1 required)"
+                    "description": "List of parties involved (minimum 1 required)",
                 },
                 "counterparty": {
                     "type": "string",
-                    "description": "Name of opposing counsel or defendant"
+                    "description": "Name of opposing counsel or defendant",
                 },
                 "documents": {
                     "type": "array",
@@ -65,19 +77,31 @@ MATTER_SCHEMA: dict[str, Any] = {
                         "type": "object",
                         "required": ["title"],
                         "properties": {
-                            "title": {"type": "string", "description": "Document title"},
-                            "date": {"type": "string", "description": "Document date (YYYY-MM-DD format)"},
-                            "summary": {"type": "string", "description": "Document summary"},
-                            "content": {"type": "string", "description": "Document content"},
+                            "title": {
+                                "type": "string",
+                                "description": "Document title",
+                            },
+                            "date": {
+                                "type": "string",
+                                "description": "Document date (YYYY-MM-DD format)",
+                            },
+                            "summary": {
+                                "type": "string",
+                                "description": "Document summary",
+                            },
+                            "content": {
+                                "type": "string",
+                                "description": "Document content",
+                            },
                             "facts": {
                                 "type": "array",
                                 "items": {"type": "string"},
-                                "description": "Key facts from this document"
+                                "description": "Key facts from this document",
                             },
-                            "type": {"type": "string", "description": "Document type"}
-                        }
+                            "type": {"type": "string", "description": "Document type"},
+                        },
                     },
-                    "description": "Documents related to the matter (minimum 1 required)"
+                    "description": "Documents related to the matter (minimum 1 required)",
                 },
                 "events": {
                     "type": "array",
@@ -85,11 +109,17 @@ MATTER_SCHEMA: dict[str, Any] = {
                         "type": "object",
                         "required": ["description"],
                         "properties": {
-                            "date": {"type": "string", "description": "Event date (YYYY-MM-DD format)"},
-                            "description": {"type": "string", "description": "Event description"}
-                        }
+                            "date": {
+                                "type": "string",
+                                "description": "Event date (YYYY-MM-DD format)",
+                            },
+                            "description": {
+                                "type": "string",
+                                "description": "Event description",
+                            },
+                        },
                     },
-                    "description": "Timeline of key events"
+                    "description": "Timeline of key events",
                 },
                 "issues": {
                     "type": "array",
@@ -100,17 +130,20 @@ MATTER_SCHEMA: dict[str, Any] = {
                                 "type": "object",
                                 "required": ["issue"],
                                 "properties": {
-                                    "issue": {"type": "string", "description": "Legal issue or claim"},
+                                    "issue": {
+                                        "type": "string",
+                                        "description": "Legal issue or claim",
+                                    },
                                     "facts": {
                                         "type": "array",
                                         "items": {"type": "string"},
-                                        "description": "Facts supporting this issue"
-                                    }
-                                }
-                            }
+                                        "description": "Facts supporting this issue",
+                                    },
+                                },
+                            },
                         ]
                     },
-                    "description": "Legal issues or causes of action"
+                    "description": "Legal issues or causes of action",
                 },
                 "authorities": {
                     "type": "array",
@@ -121,71 +154,86 @@ MATTER_SCHEMA: dict[str, Any] = {
                                 "type": "object",
                                 "required": ["cite"],
                                 "properties": {
-                                    "cite": {"type": "string", "description": "Legal citation"},
-                                    "summary": {"type": "string", "description": "Authority summary or holding"}
-                                }
-                            }
+                                    "cite": {
+                                        "type": "string",
+                                        "description": "Legal citation",
+                                    },
+                                    "summary": {
+                                        "type": "string",
+                                        "description": "Authority summary or holding",
+                                    },
+                                },
+                            },
                         ]
                     },
-                    "description": "Legal authorities (cases, statutes, regulations)"
+                    "description": "Legal authorities (cases, statutes, regulations)",
                 },
                 "goals": {
                     "type": "object",
                     "properties": {
-                        "settlement": {"type": ["string", "number"], "description": "Desired settlement amount"},
-                        "fallback": {"type": ["string", "number"], "description": "Minimum acceptable settlement"},
-                        "remedy": {"type": "string", "description": "Desired remedy or outcome"}
+                        "settlement": {
+                            "type": ["string", "number"],
+                            "description": "Desired settlement amount",
+                        },
+                        "fallback": {
+                            "type": ["string", "number"],
+                            "description": "Minimum acceptable settlement",
+                        },
+                        "remedy": {
+                            "type": "string",
+                            "description": "Desired remedy or outcome",
+                        },
                     },
-                    "description": "Client goals and objectives"
+                    "description": "Client goals and objectives",
                 },
                 "strengths": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "Case strengths and advantages"
+                    "description": "Case strengths and advantages",
                 },
                 "weaknesses": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "Case weaknesses and vulnerabilities"
+                    "description": "Case weaknesses and vulnerabilities",
                 },
                 "concessions": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "Potential concessions in negotiation"
+                    "description": "Potential concessions in negotiation",
                 },
                 "evidentiary_gaps": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "Missing evidence or information gaps"
+                    "description": "Missing evidence or information gaps",
                 },
                 "confidence_score": {
                     "type": ["integer", "string"],
                     "minimum": 0,
                     "maximum": 100,
-                    "description": "Confidence score for case success (0-100)"
+                    "description": "Confidence score for case success (0-100)",
                 },
                 "damages": {
                     "type": "object",
                     "properties": {
                         "specials": {
                             "type": "number",
-                            "description": "Economic/special damages (medical, lost wages, etc.)"
+                            "description": "Economic/special damages (medical, lost wages, etc.)",
                         },
                         "generals": {
                             "type": "number",
-                            "description": "Non-economic/general damages (pain & suffering, etc.)"
+                            "description": "Non-economic/general damages (pain & suffering, etc.)",
                         },
                         "punitive": {
                             "type": ["number", "null"],
-                            "description": "Punitive damages (if applicable)"
-                        }
+                            "description": "Punitive damages (if applicable)",
+                        },
                     },
-                    "description": "Damages breakdown"
-                }
-            }
+                    "description": "Damages breakdown",
+                },
+            },
         }
     },
-    "required": ["matter"]
+    "required": ["matter"],
 }
 
 
@@ -228,9 +276,7 @@ def validate_matter_schema(matter_data: dict[str, Any]) -> tuple[bool, list[str]
             "REQUIRED: Matter must include a 'parties' field listing all parties involved."
         )
     elif not isinstance(matter["parties"], list) or len(matter["parties"]) < 1:
-        errors.append(
-            "REQUIRED: 'parties' must be a list with at least one party."
-        )
+        errors.append("REQUIRED: 'parties' must be a list with at least one party.")
 
     if "documents" not in matter:
         errors.append(
@@ -249,7 +295,13 @@ def validate_matter_schema(matter_data: dict[str, Any]) -> tuple[bool, list[str]
         else:
             # Validate jurisdiction
             if "jurisdiction" in metadata:
-                valid_jurisdictions = ["California", "New York", "Texas", "Florida", "Illinois"]
+                valid_jurisdictions = [
+                    "California",
+                    "New York",
+                    "Texas",
+                    "Florida",
+                    "Illinois",
+                ]
                 if metadata["jurisdiction"] not in valid_jurisdictions:
                     errors.append(
                         f"Invalid jurisdiction '{metadata['jurisdiction']}'. "
@@ -259,8 +311,12 @@ def validate_matter_schema(matter_data: dict[str, Any]) -> tuple[bool, list[str]
             # Validate cause of action
             if "cause_of_action" in metadata:
                 valid_causes = [
-                    "negligence", "motor_vehicle", "premises_liability",
-                    "medical_malpractice", "product_liability", "dog_bite"
+                    "negligence",
+                    "motor_vehicle",
+                    "premises_liability",
+                    "medical_malpractice",
+                    "product_liability",
+                    "dog_bite",
                 ]
                 if metadata["cause_of_action"] not in valid_causes:
                     errors.append(
@@ -323,9 +379,7 @@ def validate_matter_schema(matter_data: dict[str, Any]) -> tuple[bool, list[str]
         )
 
     if "issues" not in matter or not matter.get("issues"):
-        warnings.append(
-            "RECOMMENDED: Include 'issues' to identify legal claims."
-        )
+        warnings.append("RECOMMENDED: Include 'issues' to identify legal claims.")
 
     if "goals" not in matter or not matter.get("goals"):
         warnings.append(
@@ -334,7 +388,7 @@ def validate_matter_schema(matter_data: dict[str, Any]) -> tuple[bool, list[str]
 
     # Append warnings after errors (if any)
     if warnings and not errors:
-        errors.extend(["", "=== RECOMMENDATIONS ===" ] + warnings)
+        errors.extend(["", "=== RECOMMENDATIONS ==="] + warnings)
 
     is_valid = len(errors) == 0 or all("RECOMMENDED" in e for e in errors)
     return is_valid, errors
@@ -345,7 +399,7 @@ def format_validation_errors(errors: list[str]) -> str:
     if not errors:
         return "Matter file is valid!"
 
-    lines = ["Matter validation errors:",""]
+    lines = ["Matter validation errors:", ""]
     for idx, error in enumerate(errors, start=1):
         if error.startswith("===") or error == "":
             lines.append(error)

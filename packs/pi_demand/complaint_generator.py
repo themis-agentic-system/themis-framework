@@ -16,15 +16,21 @@ def generate_complaint(matter: dict[str, Any], execution_result: dict[str, Any])
     """Generate a formal civil complaint based on matter details and agent analysis."""
 
     # Extract jurisdiction
-    metadata = matter.get("metadata", {}) if isinstance(matter.get("metadata"), dict) else {}
-    jurisdiction_name = metadata.get("jurisdiction") or "California"  # Default to California
+    metadata = (
+        matter.get("metadata", {}) if isinstance(matter.get("metadata"), dict) else {}
+    )
+    jurisdiction_name = (
+        metadata.get("jurisdiction") or "California"
+    )  # Default to California
     jurisdiction = get_jurisdiction(jurisdiction_name)
 
     if not jurisdiction:
         return f"ERROR: Jurisdiction '{jurisdiction_name}' is not supported.\n"
 
     # Infer cause of action type
-    cause_type = metadata.get("cause_of_action") or infer_cause_of_action(matter, jurisdiction_name)
+    cause_type = metadata.get("cause_of_action") or infer_cause_of_action(
+        matter, jurisdiction_name
+    )
     cause_of_action = get_cause_of_action(jurisdiction_name, cause_type)
 
     if not cause_of_action:
@@ -32,29 +38,43 @@ def generate_complaint(matter: dict[str, Any], execution_result: dict[str, Any])
         cause_of_action = get_cause_of_action(jurisdiction_name, "negligence")
 
     # Extract matter details
-    matter_name = metadata.get("title") or matter.get("matter_name") or "Untitled Matter"
+    matter_name = (
+        metadata.get("title") or matter.get("matter_name") or "Untitled Matter"
+    )
     matter_id = metadata.get("id") or matter.get("matter_id") or "UNKNOWN"
     parties = matter.get("parties", [])
     plaintiff = parties[0] if parties else "Jane Doe"
-    defendant = matter.get("counterparty") or (parties[1] if len(parties) > 1 else "Unknown Defendant")
+    defendant = matter.get("counterparty") or (
+        parties[1] if len(parties) > 1 else "Unknown Defendant"
+    )
     summary = matter.get("summary") or matter.get("description") or ""
 
     # Extract artifacts from agent execution
-    artifacts = execution_result.get("artifacts", {}) if isinstance(execution_result, dict) else {}
+    artifacts = (
+        execution_result.get("artifacts", {})
+        if isinstance(execution_result, dict)
+        else {}
+    )
 
     # LDA facts
     lda = artifacts.get("lda") if isinstance(artifacts, dict) else {}
     facts = lda.get("facts", {}) if isinstance(lda, dict) else {}
-    fact_pattern = facts.get("fact_pattern_summary", []) if isinstance(facts, dict) else []
+    fact_pattern = (
+        facts.get("fact_pattern_summary", []) if isinstance(facts, dict) else []
+    )
     timeline = facts.get("timeline", []) if isinstance(facts, dict) else []
 
     # DEA legal analysis
     dea = artifacts.get("dea") if isinstance(artifacts, dict) else {}
     legal_analysis = dea.get("legal_analysis", {}) if isinstance(dea, dict) else {}
-    issues = legal_analysis.get("issues", []) if isinstance(legal_analysis, dict) else []
+    issues = (
+        legal_analysis.get("issues", []) if isinstance(legal_analysis, dict) else []
+    )
 
     # Damages from matter
-    damages = matter.get("damages", {}) if isinstance(matter.get("damages"), dict) else {}
+    damages = (
+        matter.get("damages", {}) if isinstance(matter.get("damages"), dict) else {}
+    )
     specials = damages.get("specials", 0)
     generals = damages.get("generals", 0)
     punitives = damages.get("punitive")
@@ -77,16 +97,22 @@ def generate_complaint(matter: dict[str, Any], execution_result: dict[str, Any])
     # Parties
     lines.append("PARTIES")
     lines.append("")
-    lines.append(f"1. Plaintiff {plaintiff} is an individual residing in {jurisdiction_name}.")
+    lines.append(
+        f"1. Plaintiff {plaintiff} is an individual residing in {jurisdiction_name}."
+    )
     lines.append("")
-    lines.append(f"2. Defendant {defendant} is a person or entity that, at all relevant times, " +
-                 f"conducted business in {jurisdiction_name}.")
+    lines.append(
+        f"2. Defendant {defendant} is a person or entity that, at all relevant times, "
+        + f"conducted business in {jurisdiction_name}."
+    )
     lines.append("")
 
     # Jurisdiction and Venue
     lines.append("JURISDICTION AND VENUE")
     lines.append("")
-    lines.append("3. This Court has jurisdiction over this action pursuant to applicable state law.")
+    lines.append(
+        "3. This Court has jurisdiction over this action pursuant to applicable state law."
+    )
     lines.append("")
     lines.append("4. Venue is proper in this judicial district.")
     lines.append("")
@@ -135,8 +161,10 @@ def generate_complaint(matter: dict[str, Any], execution_result: dict[str, Any])
         paragraph_num += 1
 
     # Reference statute
-    lines.append(f"{paragraph_num}. As a direct and proximate result of Defendant's conduct, " +
-                 "Plaintiff has suffered and continues to suffer injuries and damages as set forth below.")
+    lines.append(
+        f"{paragraph_num}. As a direct and proximate result of Defendant's conduct, "
+        + "Plaintiff has suffered and continues to suffer injuries and damages as set forth below."
+    )
     lines.append("")
     paragraph_num += 1
 
@@ -148,7 +176,9 @@ def generate_complaint(matter: dict[str, Any], execution_result: dict[str, Any])
                 lines.append(f"{_ordinal(cause_number).upper()} CAUSE OF ACTION")
                 lines.append(f"({issue['issue']})")
                 lines.append("")
-                lines.append(f"{paragraph_num}. Plaintiff incorporates by reference all preceding allegations.")
+                lines.append(
+                    f"{paragraph_num}. Plaintiff incorporates by reference all preceding allegations."
+                )
                 lines.append("")
                 paragraph_num += 1
 
@@ -160,8 +190,10 @@ def generate_complaint(matter: dict[str, Any], execution_result: dict[str, Any])
                         lines.append("")
                         paragraph_num += 1
 
-                lines.append(f"{paragraph_num}. As a direct result of the conduct alleged above, " +
-                             "Plaintiff has been damaged.")
+                lines.append(
+                    f"{paragraph_num}. As a direct result of the conduct alleged above, "
+                    + "Plaintiff has been damaged."
+                )
                 lines.append("")
                 paragraph_num += 1
                 cause_number += 1
@@ -169,8 +201,10 @@ def generate_complaint(matter: dict[str, Any], execution_result: dict[str, Any])
     # Damages
     lines.append("DAMAGES")
     lines.append("")
-    lines.append(f"{paragraph_num}. As a direct and proximate result of Defendant's conduct, " +
-                 "Plaintiff has suffered the following damages:")
+    lines.append(
+        f"{paragraph_num}. As a direct and proximate result of Defendant's conduct, "
+        + "Plaintiff has suffered the following damages:"
+    )
     lines.append("")
 
     # Economic damages
@@ -192,23 +226,31 @@ def generate_complaint(matter: dict[str, Any], execution_result: dict[str, Any])
 
     # Damage amounts if available
     if specials or generals:
-        lines.append(f"{paragraph_num + 1}. Plaintiff's economic damages exceed ${specials:,}.")
+        lines.append(
+            f"{paragraph_num + 1}. Plaintiff's economic damages exceed ${specials:,}."
+        )
         lines.append("")
         if generals:
-            lines.append(f"{paragraph_num + 2}. Plaintiff's non-economic damages exceed ${generals:,}.")
+            lines.append(
+                f"{paragraph_num + 2}. Plaintiff's non-economic damages exceed ${generals:,}."
+            )
             lines.append("")
 
     # Punitive damages if applicable
     if punitives:
         punitive_standard = jurisdiction.get("damages", {}).get("punitive_standard", "")
-        lines.append(f"{paragraph_num + 3}. Plaintiff is entitled to punitive damages because " +
-                     f"Defendant's conduct meets the standard for such damages: {punitive_standard}")
+        lines.append(
+            f"{paragraph_num + 3}. Plaintiff is entitled to punitive damages because "
+            + f"Defendant's conduct meets the standard for such damages: {punitive_standard}"
+        )
         lines.append("")
 
     # Prayer for Relief
     lines.append("PRAYER FOR RELIEF")
     lines.append("")
-    lines.append("WHEREFORE, Plaintiff respectfully requests that this Court enter judgment in Plaintiff's favor and against Defendant, and award:")
+    lines.append(
+        "WHEREFORE, Plaintiff respectfully requests that this Court enter judgment in Plaintiff's favor and against Defendant, and award:"
+    )
     lines.append("")
     lines.append("1. Economic damages according to proof;")
     lines.append("")
@@ -221,13 +263,17 @@ def generate_complaint(matter: dict[str, Any], execution_result: dict[str, Any])
         lines.append("")
         lines.append("5. Attorney's fees as allowed by law;")
         lines.append("")
-        lines.append("6. Such other and further relief as the Court deems just and proper.")
+        lines.append(
+            "6. Such other and further relief as the Court deems just and proper."
+        )
     else:
         lines.append("3. Costs of suit;")
         lines.append("")
         lines.append("4. Attorney's fees as allowed by law;")
         lines.append("")
-        lines.append("5. Such other and further relief as the Court deems just and proper.")
+        lines.append(
+            "5. Such other and further relief as the Court deems just and proper."
+        )
     lines.append("")
     lines.append("")
 
@@ -250,7 +296,9 @@ def generate_complaint(matter: dict[str, Any], execution_result: dict[str, Any])
     return "\n".join(lines)
 
 
-def _format_header(jurisdiction: dict[str, Any], matter_name: str, plaintiff: str, defendant: str) -> str:
+def _format_header(
+    jurisdiction: dict[str, Any], matter_name: str, plaintiff: str, defendant: str
+) -> str:
     """Format the complaint header based on jurisdiction."""
     lines = []
     lines.append("=" * 80)
@@ -269,7 +317,9 @@ def _format_header(jurisdiction: dict[str, Any], matter_name: str, plaintiff: st
     return "\n".join(lines)
 
 
-def _format_caption(jurisdiction: dict[str, Any], plaintiff: str, defendant: str, case_id: str) -> str:
+def _format_caption(
+    jurisdiction: dict[str, Any], plaintiff: str, defendant: str, case_id: str
+) -> str:
     """Format the case caption."""
     lines = []
     lines.append(f"Case No. {case_id}")

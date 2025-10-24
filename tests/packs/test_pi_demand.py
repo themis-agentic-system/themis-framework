@@ -15,7 +15,12 @@ FIXTURE_DIR = Path(__file__).resolve().parents[2] / "packs" / "pi_demand" / "fix
 
 
 @pytest.mark.parametrize(
-    ("fixture_name", "expected_demand_phrases", "expected_complaint_phrases", "min_timeline_rows"),
+    (
+        "fixture_name",
+        "expected_demand_phrases",
+        "expected_complaint_phrases",
+        "min_timeline_rows",
+    ),
     [
         (
             "nominal_collision_matter.json",
@@ -102,12 +107,16 @@ def test_pi_demand_pack_generates_artifacts(
     # Validate demand letter
     letter_content = letter_file.read_text(encoding="utf-8")
     for phrase in expected_demand_phrases:
-        assert phrase in letter_content, f"Expected phrase '{phrase}' not in demand letter"
+        assert phrase in letter_content, (
+            f"Expected phrase '{phrase}' not in demand letter"
+        )
 
     # Validate complaint
     complaint_content = complaint_file.read_text(encoding="utf-8")
     for phrase in expected_complaint_phrases:
-        assert phrase in complaint_content, f"Expected phrase '{phrase}' not in complaint"
+        assert phrase in complaint_content, (
+            f"Expected phrase '{phrase}' not in complaint"
+        )
 
     # Validate checklist
     checklist_content = checklist_file.read_text(encoding="utf-8")
@@ -125,7 +134,9 @@ def test_pi_demand_pack_generates_artifacts(
     assert jurisdiction in statute_content
 
     # Running persist_outputs again should be idempotent and not raise
-    second_saved_paths = pi_demand_run.persist_outputs(matter, execution, output_root=tmp_path)
+    second_saved_paths = pi_demand_run.persist_outputs(
+        matter, execution, output_root=tmp_path
+    )
     assert len(second_saved_paths) == 6
 
 
@@ -140,14 +151,20 @@ def test_jurisdiction_aware_complaint_generation(tmp_path: Path) -> None:
     ca_execution = asyncio.run(service.execute(ca_matter))
     pi_demand_run.persist_outputs(ca_matter, ca_execution, output_root=tmp_path)
 
-    ca_complaint = (tmp_path / ca_matter["metadata"]["slug"] / "draft_complaint.txt").read_text()
+    ca_complaint = (
+        tmp_path / ca_matter["metadata"]["slug"] / "draft_complaint.txt"
+    ).read_text()
 
     # California-specific elements
     assert "California" in ca_complaint or "CA" in ca_complaint
     assert "COMPLAINT FOR DAMAGES" in ca_complaint
-    assert "Motor Vehicle" in ca_complaint  # Check for California motor vehicle cause of action
+    assert (
+        "Motor Vehicle" in ca_complaint
+    )  # Check for California motor vehicle cause of action
 
     # Test statute tracker includes jurisdiction info
-    ca_statute = (tmp_path / ca_matter["metadata"]["slug"] / "statute_tracker.txt").read_text()
+    ca_statute = (
+        tmp_path / ca_matter["metadata"]["slug"] / "statute_tracker.txt"
+    ).read_text()
     assert "California" in ca_statute
     assert "2 years" in ca_statute  # CA SOL for PI

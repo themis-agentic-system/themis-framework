@@ -56,7 +56,9 @@ def load_matter(path: Path) -> dict[str, Any]:
         print(format_validation_errors(validation_errors))
         print("")
 
-    matter_payload = data.get("matter") if isinstance(data.get("matter"), dict) else data
+    matter_payload = (
+        data.get("matter") if isinstance(data.get("matter"), dict) else data
+    )
     return _normalise_matter(matter_payload, source=path)
 
 
@@ -68,8 +70,12 @@ def persist_outputs(
 ) -> list[Path]:
     """Persist derived artifacts from the orchestrator execution."""
 
-    metadata = matter.get("metadata", {}) if isinstance(matter.get("metadata"), dict) else {}
-    slug_source = metadata.get("slug") or matter.get("matter_name") or metadata.get("title")
+    metadata = (
+        matter.get("metadata", {}) if isinstance(matter.get("metadata"), dict) else {}
+    )
+    slug_source = (
+        metadata.get("slug") or matter.get("matter_name") or metadata.get("title")
+    )
     slug = _slugify(str(slug_source or "matter"))
 
     matter_output_dir = output_root / slug
@@ -144,7 +150,9 @@ def _normalise_matter(raw: dict[str, Any], *, source: Path) -> dict[str, Any]:
     if not isinstance(raw, dict):
         raise ValueError("Matter payload must be an object")
 
-    existing_metadata = raw.get("metadata") if isinstance(raw.get("metadata"), dict) else {}
+    existing_metadata = (
+        raw.get("metadata") if isinstance(raw.get("metadata"), dict) else {}
+    )
     summary_value = raw.get("summary") or raw.get("description")
     if not isinstance(summary_value, str) or not summary_value.strip():
         raise ValueError("Matter summary or description is required")
@@ -204,7 +212,11 @@ def _normalise_matter(raw: dict[str, Any], *, source: Path) -> dict[str, Any]:
     matter_name = str(title_value).strip() or matter_id
 
     slug_value = existing_metadata.get("slug")
-    slug = _slugify(str(slug_value)) if isinstance(slug_value, str) and slug_value.strip() else _slugify(matter_name)
+    slug = (
+        _slugify(str(slug_value))
+        if isinstance(slug_value, str) and slug_value.strip()
+        else _slugify(matter_name)
+    )
 
     metadata: dict[str, Any] = dict(existing_metadata)
     metadata.update(
@@ -278,7 +290,9 @@ def _normalise_documents(value: Any) -> list[dict[str, Any]]:
         if not isinstance(entry, dict):
             continue
         title = entry.get("title") or entry.get("name") or f"document-{index}"
-        summary = entry.get("summary") or entry.get("description") or entry.get("content")
+        summary = (
+            entry.get("summary") or entry.get("description") or entry.get("content")
+        )
         content = entry.get("content")
         facts_value = entry.get("facts") or entry.get("key_facts")
         facts = _coerce_str_list(facts_value)
@@ -348,7 +362,9 @@ def _normalise_authorities(value: Any) -> list[dict[str, Any]]:
         if isinstance(entry, str):
             cite = entry.strip()
             if cite:
-                authorities.append({"cite": cite, "summary": "Reference provided as free text."})
+                authorities.append(
+                    {"cite": cite, "summary": "Reference provided as free text."}
+                )
             continue
         if not isinstance(entry, dict):
             continue
@@ -358,7 +374,9 @@ def _normalise_authorities(value: Any) -> list[dict[str, Any]]:
         authorities.append(
             {
                 "cite": str(cite).strip(),
-                "summary": str(entry.get("summary") or entry.get("notes") or "").strip(),
+                "summary": str(
+                    entry.get("summary") or entry.get("notes") or ""
+                ).strip(),
             }
         )
     return authorities
@@ -369,15 +387,28 @@ def _slugify(value: str) -> str:
     return slug or "matter"
 
 
-def _compose_draft_letter(matter: dict[str, Any], execution_result: dict[str, Any]) -> str:
-    metadata = matter.get("metadata", {}) if isinstance(matter.get("metadata"), dict) else {}
-    matter_name = metadata.get("title") or matter.get("matter_name") or metadata.get("id") or "Matter"
+def _compose_draft_letter(
+    matter: dict[str, Any], execution_result: dict[str, Any]
+) -> str:
+    metadata = (
+        matter.get("metadata", {}) if isinstance(matter.get("metadata"), dict) else {}
+    )
+    matter_name = (
+        metadata.get("title")
+        or matter.get("matter_name")
+        or metadata.get("id")
+        or "Matter"
+    )
     matter_id = metadata.get("id") or matter.get("matter_id") or ""
     parties = ", ".join(matter.get("parties", []))
     counterparty = matter.get("counterparty") or "Opposing Counsel"
     summary = matter.get("summary") or matter.get("description") or ""
 
-    artifacts = execution_result.get("artifacts", {}) if isinstance(execution_result, dict) else {}
+    artifacts = (
+        execution_result.get("artifacts", {})
+        if isinstance(execution_result, dict)
+        else {}
+    )
 
     lda = artifacts.get("lda") if isinstance(artifacts, dict) else {}
     facts = lda.get("facts", {}) if isinstance(lda, dict) else {}
@@ -389,9 +420,15 @@ def _compose_draft_letter(matter: dict[str, Any], execution_result: dict[str, An
 
     lsa = artifacts.get("lsa") if isinstance(artifacts, dict) else {}
     strategy = lsa.get("strategy", {}) if isinstance(lsa, dict) else {}
-    positions = strategy.get("negotiation_positions", {}) if isinstance(strategy, dict) else {}
-    actions = strategy.get("recommended_actions", []) if isinstance(strategy, dict) else []
-    contingencies = strategy.get("contingencies", []) if isinstance(strategy, dict) else []
+    positions = (
+        strategy.get("negotiation_positions", {}) if isinstance(strategy, dict) else {}
+    )
+    actions = (
+        strategy.get("recommended_actions", []) if isinstance(strategy, dict) else []
+    )
+    contingencies = (
+        strategy.get("contingencies", []) if isinstance(strategy, dict) else []
+    )
     risk = strategy.get("risk_assessment", {}) if isinstance(strategy, dict) else {}
 
     lines: list[str] = []
@@ -443,7 +480,9 @@ def _compose_draft_letter(matter: dict[str, Any], execution_result: dict[str, An
                 lines.append(f"  - {unknown}")
         lines.append("")
 
-    lines.append("Please review the enclosed materials and contact us to discuss resolution.")
+    lines.append(
+        "Please review the enclosed materials and contact us to discuss resolution."
+    )
     lines.append("")
     lines.append("Sincerely,")
     lines.append(parties or "Your Legal Team")
@@ -451,14 +490,18 @@ def _compose_draft_letter(matter: dict[str, Any], execution_result: dict[str, An
     return "\n".join(lines).strip() + "\n"
 
 
-def _generate_evidence_checklist(matter: dict[str, Any], execution_result: dict[str, Any]) -> str:
+def _generate_evidence_checklist(
+    matter: dict[str, Any], execution_result: dict[str, Any]
+) -> str:
     """Generate an evidence checklist for case preparation."""
     lines: list[str] = []
     lines.append("EVIDENCE CHECKLIST")
     lines.append("=" * 80)
     lines.append("")
 
-    metadata = matter.get("metadata", {}) if isinstance(matter.get("metadata"), dict) else {}
+    metadata = (
+        matter.get("metadata", {}) if isinstance(matter.get("metadata"), dict) else {}
+    )
     matter_name = metadata.get("title") or matter.get("matter_name") or "Matter"
     lines.append(f"Case: {matter_name}")
     lines.append("")
@@ -503,7 +546,11 @@ def _generate_evidence_checklist(matter: dict[str, Any], execution_result: dict[
     artifacts = execution_result.get("artifacts", {})
     dea = artifacts.get("dea") if isinstance(artifacts, dict) else {}
     legal_analysis = dea.get("legal_analysis", {}) if isinstance(dea, dict) else {}
-    authorities = legal_analysis.get("authorities", []) if isinstance(legal_analysis, dict) else []
+    authorities = (
+        legal_analysis.get("authorities", [])
+        if isinstance(legal_analysis, dict)
+        else []
+    )
 
     if authorities:
         lines.append("LEGAL AUTHORITIES TO RESEARCH:")
@@ -526,7 +573,9 @@ def _generate_evidence_checklist(matter: dict[str, Any], execution_result: dict[
     return "\n".join(lines)
 
 
-def _generate_medical_summary(matter: dict[str, Any], execution_result: dict[str, Any]) -> str:
+def _generate_medical_summary(
+    matter: dict[str, Any], execution_result: dict[str, Any]
+) -> str:
     """Generate a CSV summary of medical expenses."""
     lines: list[str] = []
     lines.append("Date,Provider,Service,Amount,Status")
@@ -534,8 +583,14 @@ def _generate_medical_summary(matter: dict[str, Any], execution_result: dict[str
     artifacts = execution_result.get("artifacts", {})
     lda = artifacts.get("lda") if isinstance(artifacts, dict) else {}
     facts = lda.get("facts", {}) if isinstance(lda, dict) else {}
-    damages_calc = facts.get("damages_calculation", {}) if isinstance(facts, dict) else {}
-    medical_expenses = damages_calc.get("medical_expenses", []) if isinstance(damages_calc, dict) else []
+    damages_calc = (
+        facts.get("damages_calculation", {}) if isinstance(facts, dict) else {}
+    )
+    medical_expenses = (
+        damages_calc.get("medical_expenses", [])
+        if isinstance(damages_calc, dict)
+        else []
+    )
 
     if medical_expenses:
         for expense in medical_expenses:
@@ -566,7 +621,9 @@ def _generate_medical_summary(matter: dict[str, Any], execution_result: dict[str
         lines.append(",,Future medical care estimate,,")
 
     # Add totals if damages available
-    damages = matter.get("damages", {}) if isinstance(matter.get("damages"), dict) else {}
+    damages = (
+        matter.get("damages", {}) if isinstance(matter.get("damages"), dict) else {}
+    )
     specials = damages.get("specials", 0)
     if specials:
         lines.append("")
@@ -575,14 +632,18 @@ def _generate_medical_summary(matter: dict[str, Any], execution_result: dict[str
     return "\n".join(lines)
 
 
-def _generate_statute_tracker(matter: dict[str, Any], execution_result: dict[str, Any]) -> str:
+def _generate_statute_tracker(
+    matter: dict[str, Any], execution_result: dict[str, Any]
+) -> str:
     """Generate statute of limitations tracker."""
     lines: list[str] = []
     lines.append("STATUTE OF LIMITATIONS TRACKER")
     lines.append("=" * 80)
     lines.append("")
 
-    metadata = matter.get("metadata", {}) if isinstance(matter.get("metadata"), dict) else {}
+    metadata = (
+        matter.get("metadata", {}) if isinstance(matter.get("metadata"), dict) else {}
+    )
     matter_name = metadata.get("title") or matter.get("matter_name") or "Matter"
     lines.append(f"Case: {matter_name}")
     lines.append("")
@@ -625,7 +686,9 @@ def _generate_statute_tracker(matter: dict[str, Any], execution_result: dict[str
                 lines.append(f"  Period: {period}")
                 lines.append(f"  Statute: {statute}")
                 if incident_date:
-                    lines.append(f"  Deadline: {incident_date} + {period} = [Calculate deadline]")
+                    lines.append(
+                        f"  Deadline: {incident_date} + {period} = [Calculate deadline]"
+                    )
                 lines.append("")
 
     lines.append("IMPORTANT DEADLINES:")
@@ -689,13 +752,18 @@ def _create_matter_interactive(output_path: Path) -> None:
 
     # Metadata
     print("--- Metadata ---")
-    matter_id = input("Matter ID (e.g., PI-2024-001): ").strip() or f"PI-{datetime.now().year}-TEMP"
+    matter_id = (
+        input("Matter ID (e.g., PI-2024-001): ").strip()
+        or f"PI-{datetime.now().year}-TEMP"
+    )
     title = input("Matter Title (e.g., Doe v. Smith): ").strip() or "Untitled Matter"
 
     print("\nAvailable jurisdictions: California, New York, Texas, Florida, Illinois")
     jurisdiction = input("Jurisdiction: ").strip() or "California"
 
-    print("\nAvailable causes of action: negligence, motor_vehicle, premises_liability,")
+    print(
+        "\nAvailable causes of action: negligence, motor_vehicle, premises_liability,"
+    )
     print("  medical_malpractice, product_liability, dog_bite")
     cause_of_action = input("Cause of Action: ").strip() or "negligence"
 
@@ -817,14 +885,35 @@ Examples:
 
   # Create a new matter file interactively
   python -m packs.pi_demand.run --create-matter --output new_matter.json
-        """
+        """,
     )
-    parser.add_argument("--matter", type=Path, help="Path to the matter YAML or JSON file")
-    parser.add_argument("--validate-only", action="store_true", help="Only validate the matter file without executing")
-    parser.add_argument("--list-fixtures", action="store_true", help="List available fixture files")
-    parser.add_argument("--create-matter", action="store_true", help="Interactively create a new matter file")
-    parser.add_argument("--output", type=Path, help="Output path for created matter file (use with --create-matter)")
-    parser.add_argument("--output-dir", type=Path, default=Path("outputs"), help="Output directory for artifacts (default: outputs/)")
+    parser.add_argument(
+        "--matter", type=Path, help="Path to the matter YAML or JSON file"
+    )
+    parser.add_argument(
+        "--validate-only",
+        action="store_true",
+        help="Only validate the matter file without executing",
+    )
+    parser.add_argument(
+        "--list-fixtures", action="store_true", help="List available fixture files"
+    )
+    parser.add_argument(
+        "--create-matter",
+        action="store_true",
+        help="Interactively create a new matter file",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        help="Output path for created matter file (use with --create-matter)",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path("outputs"),
+        help="Output directory for artifacts (default: outputs/)",
+    )
 
     args = parser.parse_args()
 
@@ -851,7 +940,9 @@ Examples:
         try:
             matter = load_matter(args.matter)
             print(f"✓ Matter file '{args.matter}' is valid!")
-            print(f"  Jurisdiction: {matter.get('metadata', {}).get('jurisdiction', 'Not specified')}")
+            print(
+                f"  Jurisdiction: {matter.get('metadata', {}).get('jurisdiction', 'Not specified')}"
+            )
             print(f"  Parties: {len(matter.get('parties', []))}")
             print(f"  Documents: {len(matter.get('documents', []))}")
         except (FileNotFoundError, ValueError) as exc:
@@ -866,7 +957,9 @@ Examples:
     except (FileNotFoundError, ValueError) as exc:
         parser.error(str(exc))
 
-    print(f"Executing workflow for: {matter.get('metadata', {}).get('title', 'Untitled Matter')}")
+    print(
+        f"Executing workflow for: {matter.get('metadata', {}).get('title', 'Untitled Matter')}"
+    )
     print("")
 
     result = await service.execute(matter)

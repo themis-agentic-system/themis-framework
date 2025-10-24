@@ -79,14 +79,32 @@ JURISDICTIONS: dict[str, dict[str, Any]] = {
             },
         },
         "damages": {
-            "economic": ["Medical expenses (past and future)", "Lost wages and earning capacity", "Property damage"],
-            "non_economic": ["Pain and suffering", "Emotional distress", "Loss of enjoyment of life", "Disfigurement"],
+            "economic": [
+                "Medical expenses (past and future)",
+                "Lost wages and earning capacity",
+                "Property damage",
+            ],
+            "non_economic": [
+                "Pain and suffering",
+                "Emotional distress",
+                "Loss of enjoyment of life",
+                "Disfigurement",
+            ],
             "punitive_standard": "Clear and convincing evidence of malice, oppression, or fraud (Cal. Civ. Code § 3294)",
         },
         "statutes_of_limitation": {
-            "personal_injury": {"period": "2 years", "statute": "Cal. Code Civ. Proc. § 335.1"},
-            "medical_malpractice": {"period": "3 years or 1 year from discovery", "statute": "Cal. Code Civ. Proc. § 340.5"},
-            "premises_liability": {"period": "2 years", "statute": "Cal. Code Civ. Proc. § 335.1"},
+            "personal_injury": {
+                "period": "2 years",
+                "statute": "Cal. Code Civ. Proc. § 335.1",
+            },
+            "medical_malpractice": {
+                "period": "3 years or 1 year from discovery",
+                "statute": "Cal. Code Civ. Proc. § 340.5",
+            },
+            "premises_liability": {
+                "period": "2 years",
+                "statute": "Cal. Code Civ. Proc. § 335.1",
+            },
         },
     },
     "New York": {
@@ -140,13 +158,24 @@ JURISDICTIONS: dict[str, dict[str, Any]] = {
             },
         },
         "damages": {
-            "economic": ["Past and future medical expenses", "Lost earnings", "Loss of earning capacity"],
-            "non_economic": ["Pain and suffering", "Loss of enjoyment of life", "Emotional distress"],
+            "economic": [
+                "Past and future medical expenses",
+                "Lost earnings",
+                "Loss of earning capacity",
+            ],
+            "non_economic": [
+                "Pain and suffering",
+                "Loss of enjoyment of life",
+                "Emotional distress",
+            ],
             "punitive_standard": "Intentional or reckless conduct (NY CPLR § 8701)",
         },
         "statutes_of_limitation": {
             "personal_injury": {"period": "3 years", "statute": "NY CPLR § 214"},
-            "medical_malpractice": {"period": "2.5 years from malpractice or end of continuous treatment", "statute": "NY CPLR § 214-a"},
+            "medical_malpractice": {
+                "period": "2.5 years from malpractice or end of continuous treatment",
+                "statute": "NY CPLR § 214-a",
+            },
         },
     },
     "Texas": {
@@ -199,14 +228,29 @@ JURISDICTIONS: dict[str, dict[str, Any]] = {
             },
         },
         "damages": {
-            "economic": ["Medical care expenses", "Lost wages and earning capacity", "Property damage"],
-            "non_economic": ["Physical pain", "Mental anguish", "Disfigurement", "Physical impairment"],
+            "economic": [
+                "Medical care expenses",
+                "Lost wages and earning capacity",
+                "Property damage",
+            ],
+            "non_economic": [
+                "Physical pain",
+                "Mental anguish",
+                "Disfigurement",
+                "Physical impairment",
+            ],
             "punitive_standard": "Fraud, malice, or gross negligence (Tex. Civ. Prac. & Rem. Code § 41.003)",
             "caps": "Non-economic damages capped at $250,000 per defendant in medical malpractice (Tex. Civ. Prac. & Rem. Code § 74.301)",
         },
         "statutes_of_limitation": {
-            "personal_injury": {"period": "2 years", "statute": "Tex. Civ. Prac. & Rem. Code § 16.003"},
-            "medical_malpractice": {"period": "2 years", "statute": "Tex. Civ. Prac. & Rem. Code § 74.251"},
+            "personal_injury": {
+                "period": "2 years",
+                "statute": "Tex. Civ. Prac. & Rem. Code § 16.003",
+            },
+            "medical_malpractice": {
+                "period": "2 years",
+                "statute": "Tex. Civ. Prac. & Rem. Code § 74.251",
+            },
         },
     },
     "Florida": {
@@ -260,13 +304,28 @@ JURISDICTIONS: dict[str, dict[str, Any]] = {
             },
         },
         "damages": {
-            "economic": ["Past and future medical expenses", "Lost wages and earning capacity", "Property damage"],
-            "non_economic": ["Pain and suffering", "Mental anguish", "Loss of enjoyment of life", "Inconvenience"],
+            "economic": [
+                "Past and future medical expenses",
+                "Lost wages and earning capacity",
+                "Property damage",
+            ],
+            "non_economic": [
+                "Pain and suffering",
+                "Mental anguish",
+                "Loss of enjoyment of life",
+                "Inconvenience",
+            ],
             "punitive_standard": "Intentional misconduct or gross negligence (Fla. Stat. § 768.72)",
         },
         "statutes_of_limitation": {
-            "personal_injury": {"period": "4 years", "statute": "Fla. Stat. § 95.11(3)(a)"},
-            "medical_malpractice": {"period": "2 years", "statute": "Fla. Stat. § 95.11(4)(b)"},
+            "personal_injury": {
+                "period": "4 years",
+                "statute": "Fla. Stat. § 95.11(3)(a)",
+            },
+            "medical_malpractice": {
+                "period": "2 years",
+                "statute": "Fla. Stat. § 95.11(4)(b)",
+            },
         },
     },
     "Illinois": {
@@ -321,12 +380,20 @@ JURISDICTIONS: dict[str, dict[str, Any]] = {
         },
         "damages": {
             "economic": ["Medical expenses", "Lost income", "Loss of earning capacity"],
-            "non_economic": ["Pain and suffering", "Disability", "Disfigurement", "Loss of normal life"],
+            "non_economic": [
+                "Pain and suffering",
+                "Disability",
+                "Disfigurement",
+                "Loss of normal life",
+            ],
             "punitive_standard": "Evil motive or reckless indifference (735 ILCS 5/2-1115.05)",
         },
         "statutes_of_limitation": {
             "personal_injury": {"period": "2 years", "statute": "735 ILCS 5/13-202"},
-            "medical_malpractice": {"period": "2 years", "statute": "735 ILCS 5/13-212"},
+            "medical_malpractice": {
+                "period": "2 years",
+                "statute": "735 ILCS 5/13-212",
+            },
         },
     },
 }
@@ -337,7 +404,9 @@ def get_jurisdiction(jurisdiction_name: str) -> dict[str, Any] | None:
     return JURISDICTIONS.get(jurisdiction_name)
 
 
-def get_cause_of_action(jurisdiction_name: str, cause_type: str) -> dict[str, Any] | None:
+def get_cause_of_action(
+    jurisdiction_name: str, cause_type: str
+) -> dict[str, Any] | None:
     """Retrieve a specific cause of action for a jurisdiction."""
     jurisdiction = get_jurisdiction(jurisdiction_name)
     if not jurisdiction:
@@ -354,11 +423,20 @@ def infer_cause_of_action(matter: dict[str, Any], jurisdiction_name: str) -> str
     # Check matter summary/description for keywords
     summary = (matter.get("summary") or matter.get("description") or "").lower()
 
-    if any(keyword in summary for keyword in ["vehicle", "car", "truck", "collision", "rear-end", "traffic"]):
+    if any(
+        keyword in summary
+        for keyword in ["vehicle", "car", "truck", "collision", "rear-end", "traffic"]
+    ):
         return "motor_vehicle"
-    elif any(keyword in summary for keyword in ["slip", "fall", "premises", "store", "property"]):
+    elif any(
+        keyword in summary
+        for keyword in ["slip", "fall", "premises", "store", "property"]
+    ):
         return "premises_liability"
-    elif any(keyword in summary for keyword in ["doctor", "medical", "hospital", "surgeon", "malpractice"]):
+    elif any(
+        keyword in summary
+        for keyword in ["doctor", "medical", "hospital", "surgeon", "malpractice"]
+    ):
         return "medical_malpractice"
     elif any(keyword in summary for keyword in ["product", "defect", "manufacturing"]):
         return "product_liability"
