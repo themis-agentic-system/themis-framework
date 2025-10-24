@@ -7,7 +7,6 @@ from typing import Any, Callable, Iterable
 
 from agents.base import BaseAgent
 from tools.document_parser import parse_document_with_llm
-from tools.llm_client import get_llm_client
 
 
 class LDAAgent(BaseAgent):

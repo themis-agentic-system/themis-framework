@@ -55,7 +55,7 @@ async def parse_document_with_llm(
     # Build context string if matter context is provided
     context_str = ""
     if matter_context:
-        context_str = f"\n\nMatter Context:\n"
+        context_str = "\n\nMatter Context:\n"
         if matter_context.get("summary"):
             context_str += f"Summary: {matter_context['summary']}\n"
         if matter_context.get("parties"):

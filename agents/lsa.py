@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 from typing import Any, Callable
 
 from agents.base import BaseAgent
@@ -45,13 +44,30 @@ class LSAAgent(BaseAgent):
             "risk_assessment": risks,
         }
 
+        # Build client-safe summary for the draft signal
+        objectives = strategy.get("objectives", "")
+        confidence = risks.get("confidence", 60)
+        client_safe_text = f"Based on our analysis, we recommend pursuing {objectives}. "
+        client_safe_text += f"Our confidence in achieving a favorable outcome is {confidence}%. "
+
+        if strategy.get("actions"):
+            next_steps = strategy["actions"][:3]  # Top 3 actions
+            client_safe_text += f"Next steps: {'; '.join(next_steps)}."
+
+        # Create draft structure with client-safe summary
+        draft = {
+            "client_safe_summary": client_safe_text,
+            "next_steps": strategy.get("actions", []),
+            "risk_level": "low" if confidence > 70 else "moderate" if confidence > 50 else "high",
+        }
+
         provenance = {
             "tools_used": list(self.tools.keys()),
             "assumptions": strategy.get("assumptions", []),
         }
 
         return self._build_response(
-            core={"strategy": plan},
+            core={"strategy": plan, "draft": draft},
             provenance=provenance,
             unresolved_issues=unresolved,
         )
@@ -88,7 +104,7 @@ async def _default_strategy_template(matter: dict[str, Any]) -> dict[str, Any]:
     if facts:
         fact_summary = facts.get("fact_pattern_summary", [])
         if fact_summary:
-            context_parts.append(f"Key Facts:\n" + "\n".join(f"  - {f}" for f in fact_summary[:5]))
+            context_parts.append("Key Facts:\n" + "\n".join(f"  - {f}" for f in fact_summary[:5]))
 
     # Goals
     goals = matter.get("goals", {})
@@ -208,7 +224,7 @@ async def _default_risk_assessor(matter: dict[str, Any], strategy: dict[str, Any
         context_parts.append(f"Proposed Strategy Objectives: {strategy.get('objectives', 'N/A')}")
         actions = strategy.get("actions", [])
         if actions:
-            context_parts.append(f"Planned Actions:\n" + "\n".join(f"  - {a}" for a in actions[:5]))
+            context_parts.append("Planned Actions:\n" + "\n".join(f"  - {a}" for a in actions[:5]))
 
     context = "\n\n".join(context_parts)
 
