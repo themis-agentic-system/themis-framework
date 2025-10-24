@@ -1,0 +1,163 @@
+{
+  "matter": {
+    "metadata": {
+      "id": "PI-2024-MED-NY-001",
+      "title": "Williams v. Metropolitan Hospital",
+      "jurisdiction": "New York",
+      "cause_of_action": "medical_malpractice"
+    },
+    "summary": "Patricia Williams, 52, underwent routine gallbladder surgery at Metropolitan Hospital on March 12, 2024. Surgeon Dr. Richard Hayes negligently severed her common bile duct, requiring emergency corrective surgery and causing permanent liver damage and ongoing complications.",
+    "parties": [
+      "Patricia Williams",
+      "Metropolitan Hospital",
+      "Dr. Richard Hayes, M.D."
+    ],
+    "counterparty": "Risk Management, Metropolitan Hospital",
+    "documents": [
+      {
+        "title": "Operative Report - Initial Surgery",
+        "date": "2024-03-12",
+        "summary": "Laparoscopic cholecystectomy performed by Dr. Hayes. Report notes 'difficult anatomy' but does not mention bile duct injury. Patient experienced severe pain and jaundice post-op.",
+        "facts": [
+          "Surgery duration was 3.5 hours (typical duration: 45-90 minutes)",
+          "No intraoperative cholangiogram performed despite difficult anatomy",
+          "Patient's bilirubin levels rose dramatically within 24 hours"
+        ]
+      },
+      {
+        "title": "Emergency Department Records",
+        "date": "2024-03-14",
+        "summary": "Patient returned to ED with severe abdominal pain, jaundice, and fever. CT scan revealed bile leak and fluid collection. Emergency surgery scheduled.",
+        "facts": [
+          "Bilirubin level: 8.5 mg/dL (normal: 0.1-1.2)",
+          "Clear signs of bile peritonitis",
+          "Delay in recognition of bile duct injury"
+        ]
+      },
+      {
+        "title": "Corrective Surgery Report",
+        "date": "2024-03-15",
+        "summary": "Hepatobiliary surgeon Dr. Chen performed emergency hepaticojejunostomy to repair severed common bile duct. Report confirms complete transection of duct.",
+        "facts": [
+          "Common bile duct was completely severed 2cm from bifurcation",
+          "Significant bile peritonitis requiring extensive washout",
+          "Patient required ICU admission for 5 days"
+        ]
+      },
+      {
+        "title": "Expert Review - Dr. Sarah Mitchell, M.D.",
+        "date": "2024-08-10",
+        "summary": "Board-certified general surgeon reviewed records. Opines that Dr. Hayes departed from accepted standards of care by failing to obtain intraoperative cholangiogram and failing to properly identify critical structures.",
+        "facts": [
+          "Standard of care requires cholangiogram when anatomy is unclear",
+          "Bile duct injury is a known complication but departure from standard of care caused injury",
+          "Earlier recognition of injury would have reduced complications"
+        ]
+      },
+      {
+        "title": "Gastroenterology Follow-up",
+        "date": "2024-10-01",
+        "summary": "Dr. Patel documents ongoing liver dysfunction, chronic cholangitis, and need for lifelong monitoring. Patient cannot return to work as elementary school teacher.",
+        "facts": [
+          "Permanent liver damage with elevated enzymes",
+          "Recurrent infections requiring hospitalizations",
+          "Unable to work due to fatigue and frequent medical needs"
+        ]
+      }
+    ],
+    "events": [
+      {
+        "date": "2024-03-12",
+        "description": "Initial gallbladder surgery with bile duct injury"
+      },
+      {
+        "date": "2024-03-14",
+        "description": "Return to ER with complications"
+      },
+      {
+        "date": "2024-03-15",
+        "description": "Emergency corrective surgery"
+      },
+      {
+        "date": "2024-03-20",
+        "description": "Discharged from hospital after 8-day stay"
+      },
+      {
+        "date": "2024-05-15",
+        "description": "Attempted return to work; unable to complete day"
+      },
+      {
+        "date": "2024-08-10",
+        "description": "Expert medical review completed"
+      }
+    ],
+    "issues": [
+      {
+        "issue": "Medical Malpractice - Surgical Negligence",
+        "facts": [
+          "Failure to perform intraoperative cholangiogram",
+          "Failure to properly identify anatomical structures",
+          "Failure to recognize injury intraoperatively"
+        ]
+      },
+      {
+        "issue": "Vicarious Liability of Hospital",
+        "facts": [
+          "Surgery performed at hospital facility",
+          "Dr. Hayes was hospital employee or apparent agent",
+          "Hospital credentialed and supervised surgeon"
+        ]
+      }
+    ],
+    "authorities": [
+      {
+        "cite": "NY CPLR § 214-a",
+        "summary": "2.5 year statute of limitations for medical malpractice"
+      },
+      {
+        "cite": "NY PJI 2:150",
+        "summary": "Pattern jury instruction for medical malpractice"
+      },
+      {
+        "cite": "Pike v. Honsinger, 155 N.Y. 201 (1898)",
+        "summary": "Standard of care for physicians in New York"
+      },
+      {
+        "cite": "CPLR § 3012-a",
+        "summary": "Certificate of merit requirement - satisfied with Dr. Mitchell's affidavit"
+      }
+    ],
+    "goals": {
+      "settlement": "$1,850,000",
+      "fallback": "$1,200,000"
+    },
+    "strengths": [
+      "Clear deviation from standard of care per expert",
+      "Well-documented injury with objective medical evidence",
+      "Permanent disability preventing return to work",
+      "Strong expert witness with impeccable credentials",
+      "Certificate of merit obtained"
+    ],
+    "weaknesses": [
+      "Bile duct injury is a known risk of surgery (informed consent defense possible)",
+      "Plaintiff had pre-existing gallbladder disease",
+      "Defense may argue injury was unavoidable complication"
+    ],
+    "concessions": [
+      "Willing to dismiss individual doctor if hospital accepts full liability",
+      "Open to structured settlement for future medical care",
+      "Flexible on confidentiality terms"
+    ],
+    "evidentiary_gaps": [
+      "Need life care plan and economic analysis",
+      "Pending vocational rehabilitation expert report",
+      "Need to depose Dr. Hayes and surgical team"
+    ],
+    "confidence_score": 78,
+    "damages": {
+      "specials": 425000,
+      "generals": 1425000,
+      "punitive": null
+    }
+  }
+}
