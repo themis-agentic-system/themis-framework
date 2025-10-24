@@ -10,8 +10,9 @@ from uuid import uuid4
 
 from agents.base import AgentProtocol
 from agents.dea import DEAAgent
-from agents.lsa import LSAAgent
 from agents.lda import LDAAgent
+from agents.lsa import LSAAgent
+from orchestrator.policy import RoutingPolicy
 from orchestrator.storage.sqlite_repository import SQLiteOrchestratorStateRepository
 
 logger = logging.getLogger("themis.orchestrator")
@@ -28,6 +29,7 @@ class OrchestratorService:
         agents: dict[str, AgentProtocol] | None = None,
         repository: SQLiteOrchestratorStateRepository | None = None,
         cache_ttl_seconds: int = 60,
+        policy: RoutingPolicy | None = None,
     ) -> None:
         self.repository = repository or SQLiteOrchestratorStateRepository()
         self.agents = agents or {
@@ -35,6 +37,7 @@ class OrchestratorService:
             "dea": DEAAgent(),
             "lsa": LSAAgent(),
         }
+        self.policy = policy or RoutingPolicy()
 
         # State caching with TTL
         self._state_cache = None
@@ -44,39 +47,6 @@ class OrchestratorService:
 
         # Initialize cache
         self.state = self._load_state()
-
-        self._default_plan = (
-            (
-                "lda",
-                "Extract facts and figures from the supplied matter payload.",
-                [
-                    {
-                        "name": "facts",
-                        "description": "Structured fact pattern including timeline, parties, and key details.",
-                    }
-                ],
-            ),
-            (
-                "dea",
-                "Apply doctrinal analysis over the fact pattern to surface legal issues.",
-                [
-                    {
-                        "name": "legal_analysis",
-                        "description": "Structured doctrinal analysis tying issues to supporting authorities.",
-                    }
-                ],
-            ),
-            (
-                "lsa",
-                "Craft negotiation and settlement strategy leveraging prior analysis.",
-                [
-                    {
-                        "name": "strategy",
-                        "description": "Recommended course of action with positions, contingencies, and risks.",
-                    }
-                ],
-            ),
-        )
 
     def _load_state(self):
         """Load state from repository with caching logic.
@@ -125,27 +95,7 @@ class OrchestratorService:
 
         self.state = self._load_state()
         plan_id = str(uuid4())
-        steps: list[dict[str, Any]] = []
-        previous_step_id: str | None = None
-
-        for index, (agent_name, description, expected_artifacts) in enumerate(self._default_plan, start=1):
-            step_id = f"step-{index}"
-            dependencies = [previous_step_id] if previous_step_id else []
-            steps.append(
-                {
-                    "id": step_id,
-                    "agent": agent_name,
-                    "description": description,
-                    "status": "pending",
-                    "inputs": {
-                        "matter": matter,
-                        "dependencies": dependencies,
-                    },
-                    "dependencies": dependencies,
-                    "expected_artifacts": expected_artifacts,
-                }
-            )
-            previous_step_id = step_id
+        steps = self.policy.build_plan(matter)
 
         plan: dict[str, Any] = {
             "plan_id": plan_id,
@@ -185,6 +135,7 @@ class OrchestratorService:
         artifacts: dict[str, Any] = {}
         propagated: dict[str, Any] = {}
         overall_status = "complete"
+        needs_attention = False
 
         for step in plan["steps"]:
             agent_name = step["agent"]
@@ -194,6 +145,7 @@ class OrchestratorService:
                 "agent": agent_name,
                 "dependencies": step.get("dependencies", []),
                 "expected_artifacts": step.get("expected_artifacts", []),
+                "phase": step.get("phase"),
             }
 
             if agent is None:
@@ -233,6 +185,81 @@ class OrchestratorService:
                 step["status"] = "complete"
                 step["output"] = output
 
+            if step_result.get("status") == "failed":
+                steps_results.append(step_result)
+                step["status"] = "failed"
+                continue
+
+            supporting_outputs: list[dict[str, Any]] = []
+            support_failed = False
+            for supporting in step.get("supporting_agents", []) or []:
+                support_agent_name = supporting.get("agent")
+                support_agent = self.agents.get(support_agent_name)
+                support_result: dict[str, Any] = {
+                    "agent": support_agent_name,
+                    "role": supporting.get("role"),
+                    "description": supporting.get("description"),
+                }
+
+                if support_agent is None:
+                    support_result["status"] = "failed"
+                    support_result["error"] = (
+                        f"Supporting agent '{support_agent_name}' is not registered"
+                    )
+                    overall_status = "failed"
+                    support_failed = True
+                else:
+                    support_input = deepcopy(plan_matter)
+                    support_input.update(propagated)
+                    support_input.update(
+                        {
+                            "primary_agent": agent_name,
+                            "primary_output": step_result.get("output"),
+                            "phase": step.get("phase"),
+                            "support_role": supporting.get("role"),
+                        }
+                    )
+                    try:
+                        support_output = await support_agent.run(support_input)
+                    except Exception as exc:  # pragma: no cover - defensive
+                        support_result["status"] = "failed"
+                        support_result["error"] = str(exc)
+                        overall_status = "failed"
+                        support_failed = True
+                    else:
+                        support_result["status"] = "complete"
+                        support_result["output"] = support_output
+                        propagated[support_agent_name] = support_output
+                        produced_support_artifacts = _collect_expected_artifacts(
+                            support_output, supporting.get("expected_artifacts", [])
+                        )
+                        if produced_support_artifacts:
+                            propagated.update(produced_support_artifacts)
+                            plan_matter.update(produced_support_artifacts)
+                            support_result["artifacts"] = produced_support_artifacts
+                supporting_outputs.append(support_result)
+
+            if supporting_outputs:
+                step_result["supporting_outputs"] = supporting_outputs
+                step.setdefault("supporting_outputs", deepcopy(supporting_outputs))
+
+            if support_failed:
+                step_result["status"] = "failed"
+                step["status"] = "failed"
+                steps_results.append(step_result)
+                continue
+
+            if step_result.get("status") == "complete":
+                missing_signals = self.policy.evaluate_exit_conditions(
+                    step, {**plan_matter, **propagated}
+                )
+                if missing_signals:
+                    step_result["status"] = "attention_required"
+                    step_result["missing_signals"] = missing_signals
+                    step["status"] = "attention_required"
+                    step["missing_signals"] = missing_signals
+                    needs_attention = True
+
             steps_results.append(step_result)
 
         execution_record = {
@@ -241,6 +268,10 @@ class OrchestratorService:
             "steps": steps_results,
             "artifacts": artifacts,
         }
+
+        if overall_status != "failed":
+            overall_status = "attention_required" if needs_attention else "complete"
+            execution_record["status"] = overall_status
 
         plan["status"] = overall_status
         self.state.remember_plan(plan_id, deepcopy(plan))
