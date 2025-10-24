@@ -1,0 +1,174 @@
+{
+  "matter": {
+    "metadata": {
+      "id": "PI-2024-PREM-TX-001",
+      "title": "Garcia v. MegaMart Stores, Inc.",
+      "jurisdiction": "Texas",
+      "cause_of_action": "premises_liability"
+    },
+    "summary": "Maria Garcia, 67, slipped and fell on a wet floor in the produce section of MegaMart on September 8, 2024. She sustained a fractured hip requiring surgery. Store employees had been mopping but failed to post warning signs or barricade the area. Surveillance video captured the incident and prior customers nearly slipping in the same location.",
+    "parties": [
+      "Maria Garcia",
+      "MegaMart Stores, Inc."
+    ],
+    "counterparty": "Claims Department, MegaMart Stores, Inc.",
+    "documents": [
+      {
+        "title": "Incident Report",
+        "date": "2024-09-08",
+        "summary": "Store manager Carlos Ruiz completed incident report acknowledging floor was wet from recent mopping. No wet floor signs were in place. Manager admitted employee 'forgot' to place signage.",
+        "facts": [
+          "Floor had been mopped 10 minutes before fall",
+          "No warning signs or barriers placed",
+          "Employee acknowledged in report that signage should have been used"
+        ]
+      },
+      {
+        "title": "Surveillance Video",
+        "date": "2024-09-08",
+        "summary": "Security footage shows employee mopping area at 2:15 PM. At 2:22 PM, two customers are seen carefully navigating the wet area. At 2:25 PM, Ms. Garcia enters the area and immediately slips, falling hard on her right side.",
+        "facts": [
+          "Video clearly shows wet, reflective floor surface",
+          "No visible warning signs in footage",
+          "Two prior customers nearly slipped in same spot",
+          "Employee visible in background, did not warn customers"
+        ]
+      },
+      {
+        "title": "Emergency Room Records",
+        "date": "2024-09-08",
+        "summary": "Methodist Hospital ER diagnosed right hip fracture (femoral neck). Orthopedic surgeon consulted. Patient admitted for surgery next morning.",
+        "facts": [
+          "Right femoral neck fracture requiring ORIF (open reduction internal fixation)",
+          "Patient has diabetes which complicates healing",
+          "Patient lives alone and will require extended rehabilitation"
+        ]
+      },
+      {
+        "title": "Surgical Report",
+        "date": "2024-09-09",
+        "summary": "Dr. Kumar performed successful ORIF with screws and plate. Post-op prognosis: 6-8 months recovery with physical therapy. Patient will likely have permanent mobility limitations.",
+        "facts": [
+          "Hardware permanently implanted",
+          "Risk of arthritis and future hip replacement (60% probability)",
+          "Patient non-weight bearing for 8 weeks minimum"
+        ]
+      },
+      {
+        "title": "Physical Therapy Progress Notes",
+        "date": "2024-11-01",
+        "summary": "After 7 weeks of therapy, patient shows slow progress. Still requires walker. Therapist notes patient unlikely to return to pre-injury independence level.",
+        "facts": [
+          "Significant loss of range of motion",
+          "Chronic pain limiting function",
+          "Patient now requires home health aide services"
+        ]
+      },
+      {
+        "title": "Store Maintenance Logs",
+        "date": "2024-09-08",
+        "summary": "Logs obtained through discovery show no documentation of floor cleaning procedures being followed. Multiple gaps in sign-out of safety equipment.",
+        "facts": [
+          "Wet floor signs were available but not used",
+          "No supervisor signature approving floor cleaning",
+          "Prior incident reports show 3 other slip-and-falls in same area in past year"
+        ]
+      }
+    ],
+    "events": [
+      {
+        "date": "2024-09-08",
+        "description": "Slip and fall incident at MegaMart, 2:25 PM"
+      },
+      {
+        "date": "2024-09-08",
+        "description": "Emergency transport to Methodist Hospital"
+      },
+      {
+        "date": "2024-09-09",
+        "description": "Hip fracture surgery"
+      },
+      {
+        "date": "2024-09-17",
+        "description": "Discharged to skilled nursing facility"
+      },
+      {
+        "date": "2024-10-01",
+        "description": "Returned home with home health services"
+      },
+      {
+        "date": "2024-11-01",
+        "description": "Continuing physical therapy, limited progress"
+      }
+    ],
+    "issues": [
+      {
+        "issue": "Premises Liability - Negligent Maintenance",
+        "facts": [
+          "Defendant had actual knowledge of wet floor condition",
+          "Condition posed unreasonable risk of harm",
+          "Defendant failed to warn customers or barricade area",
+          "Prior similar incidents provided notice of recurring hazard"
+        ]
+      },
+      {
+        "issue": "Negligent Training and Supervision",
+        "facts": [
+          "Employee improperly trained on safety procedures",
+          "No supervision of cleaning activities",
+          "Failure to enforce safety protocols"
+        ]
+      }
+    ],
+    "authorities": [
+      {
+        "cite": "Tex. Civ. Prac. & Rem. Code § 75.001",
+        "summary": "Premises liability statute in Texas"
+      },
+      {
+        "cite": "PJC 120.1",
+        "summary": "Texas pattern jury instruction for premises liability"
+      },
+      {
+        "cite": "Wal-Mart Stores, Inc. v. Gonzalez, 968 S.W.2d 934 (Tex. 1998)",
+        "summary": "Store owner's duty to warn of or make safe known dangerous conditions"
+      },
+      {
+        "cite": "Corbin v. Safeway Stores, Inc., 648 S.W.2d 292 (Tex. 1983)",
+        "summary": "Premises owner must use reasonable care to protect invitees from dangerous conditions"
+      }
+    ],
+    "goals": {
+      "settlement": "$385,000",
+      "fallback": "$275,000"
+    },
+    "strengths": [
+      "Video evidence clearly shows hazard and fall",
+      "Store's own incident report admits failure to post signs",
+      "Prior similar incidents show notice of recurring problem",
+      "Elderly victim with severe permanent injury",
+      "Strong medical documentation"
+    ],
+    "weaknesses": [
+      "Defendant may argue plaintiff should have seen the wet floor",
+      "Plaintiff's diabetes complicates damages apportionment",
+      "Need to establish exact duration floor was wet"
+    ],
+    "concessions": [
+      "Willing to waive future medical costs if fair settlement on past damages",
+      "Open to structured settlement including Medicare Set-Aside",
+      "Flexible on timing of payment"
+    ],
+    "evidentiary_gaps": [
+      "Need life care plan for future care needs",
+      "Pending economic expert report on home health costs",
+      "Need deposition of mopping employee"
+    ],
+    "confidence_score": 82,
+    "damages": {
+      "specials": 145000,
+      "generals": 240000,
+      "punitive": null
+    }
+  }
+}

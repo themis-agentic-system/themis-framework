@@ -1,0 +1,203 @@
+{
+  "matter": {
+    "metadata": {
+      "id": "PI-2024-WORK-IL-001",
+      "title": "Anderson v. TechConstruct LLC (Third-Party Liability)",
+      "jurisdiction": "Illinois",
+      "cause_of_action": "negligence"
+    },
+    "summary": "James Anderson, 41, a construction worker, was severely injured on October 5, 2024 when a defective scaffolding system provided by third-party contractor TechConstruct LLC collapsed at a Chicago high-rise construction site. While workers' compensation covers medical expenses, this third-party negligence claim seeks full damages against the scaffolding provider whose negligent installation and maintenance caused the collapse.",
+    "parties": [
+      "James Anderson",
+      "TechConstruct LLC (Scaffolding Contractor)",
+      "SafetyFirst Equipment Rental, Inc."
+    ],
+    "counterparty": "Insurance Carrier for TechConstruct LLC",
+    "documents": [
+      {
+        "title": "OSHA Investigation Report",
+        "date": "2024-10-08",
+        "summary": "Occupational Safety and Health Administration investigated collapse. Found multiple serious violations by TechConstruct: scaffolding not properly secured to building, missing safety railings, overloaded platform, and failure to conduct required inspections.",
+        "facts": [
+          "TechConstruct cited for 7 serious safety violations",
+          "Scaffolding load capacity exceeded by 300%",
+          "Required daily inspections not performed",
+          "Three anchor points missing from installation",
+          "OSHA proposed $287,000 in penalties"
+        ]
+      },
+      {
+        "title": "Scaffold Collapse Video",
+        "date": "2024-10-05",
+        "summary": "Construction site surveillance captured the collapse. Shows scaffolding suddenly give way, with 4 workers falling approximately 20 feet to ground level.",
+        "facts": [
+          "Clear evidence of structural failure at connection point",
+          "Visible overloading with stacked materials",
+          "No safety netting present below platform",
+          "Three other workers also injured but less severely"
+        ]
+      },
+      {
+        "title": "Emergency Room and Surgical Records",
+        "date": "2024-10-05",
+        "summary": "Northwestern Memorial Hospital trauma team treated multiple injuries: compound fracture of left femur, fractured pelvis, compression fractures of L1-L3 vertebrae, ruptured spleen (removed), and internal bleeding.",
+        "facts": [
+          "Required 3 emergency surgeries over 48 hours",
+          "ICU stay of 11 days",
+          "Blood transfusions due to spleen rupture",
+          "Orthopedic hardware installed in leg and spine"
+        ]
+      },
+      {
+        "title": "Orthopedic Surgeon Follow-up - Dr. Michael Torres",
+        "date": "2024-11-15",
+        "summary": "Patient has made limited progress in healing. Spinal fractures causing chronic pain and limiting mobility. Concerns about long-term ability to perform physical labor.",
+        "facts": [
+          "Permanent restrictions: no lifting over 20 lbs, no climbing, no prolonged standing",
+          "Patient was earning $75,000/year as skilled ironworker",
+          "New restrictions eliminate ability to work in construction trade",
+          "Future surgeries likely needed for hardware removal and pain management"
+        ]
+      },
+      {
+        "title": "TechConstruct Safety Records (Discovery)",
+        "date": "2024 (various)",
+        "summary": "Internal safety logs reveal pattern of violations. Company repeatedly failed to conduct required inspections. Multiple employee complaints about unsafe practices were ignored by management.",
+        "facts": [
+          "Safety manager position vacant for 6 months before incident",
+          "23 inspection reports falsified in 2024",
+          "Prior OSHA citations at two other job sites in past year",
+          "Company president directed supervisors to 'move faster' despite safety concerns"
+        ]
+      },
+      {
+        "title": "Vocational Rehabilitation Evaluation",
+        "date": "2024-11-20",
+        "summary": "Expert opines plaintiff cannot return to construction work. Retraining for sedentary work will be challenging given education level (high school diploma) and 20-year career in physical labor.",
+        "facts": [
+          "Estimated wage loss: $45,000/year (difference between construction and available work)",
+          "Plaintiff age 41 with 24 years of potential work life remaining",
+          "Total economic loss exceeds $1.1 million",
+          "Retraining costs estimated at $25,000-40,000"
+        ]
+      }
+    ],
+    "events": [
+      {
+        "date": "2024-10-05",
+        "description": "Scaffolding collapse at Chicago construction site, 1:45 PM"
+      },
+      {
+        "date": "2024-10-05",
+        "description": "Emergency transport and first surgery"
+      },
+      {
+        "date": "2024-10-06",
+        "description": "Second emergency surgery for complications"
+      },
+      {
+        "date": "2024-10-08",
+        "description": "OSHA begins investigation"
+      },
+      {
+        "date": "2024-10-16",
+        "description": "Discharged to rehabilitation facility"
+      },
+      {
+        "date": "2024-11-01",
+        "description": "Returned home with home health services"
+      },
+      {
+        "date": "2024-11-15",
+        "description": "Medical determination that plaintiff cannot return to construction work"
+      }
+    ],
+    "issues": [
+      {
+        "issue": "Negligence - Unsafe Scaffolding Installation",
+        "facts": [
+          "TechConstruct owed duty to provide safe scaffolding system",
+          "Company breached duty by failing to properly install and maintain equipment",
+          "Breach directly caused collapse and injuries",
+          "Plaintiff suffered severe damages"
+        ]
+      },
+      {
+        "issue": "Negligent Supervision and Training",
+        "facts": [
+          "TechConstruct failed to properly supervise installation crew",
+          "Inadequate training of employees on safety protocols",
+          "Knowing failure to conduct required inspections"
+        ]
+      },
+      {
+        "issue": "Willful and Wanton Conduct (Punitive Damages)",
+        "facts": [
+          "Conscious disregard for safety despite multiple warnings",
+          "Falsification of inspection records",
+          "Pattern of violations showing deliberate indifference",
+          "Company prioritized speed and profit over worker safety"
+        ]
+      }
+    ],
+    "authorities": [
+      {
+        "cite": "735 ILCS 5/2-621",
+        "summary": "Third-party action in workers' compensation cases"
+      },
+      {
+        "cite": "IPI 10.01",
+        "summary": "Illinois pattern jury instruction for negligence"
+      },
+      {
+        "cite": "Kelsay v. Motorola, Inc., 74 Ill.2d 172 (1978)",
+        "summary": "Third-party tort liability in workplace injury cases"
+      },
+      {
+        "cite": "29 C.F.R. § 1926.451",
+        "summary": "OSHA scaffolding safety standards"
+      },
+      {
+        "cite": "735 ILCS 5/2-1115.05",
+        "summary": "Punitive damages standard - evil motive or reckless indifference"
+      }
+    ],
+    "goals": {
+      "settlement": "$2,750,000",
+      "fallback": "$1,900,000"
+    },
+    "strengths": [
+      "OSHA investigation confirms multiple violations",
+      "Video evidence of collapse",
+      "Clear liability - third party negligence outside workers' comp",
+      "Severe permanent injuries to working-age plaintiff",
+      "Strong punitive damages case based on willful violations",
+      "Falsified records show consciousness of wrongdoing",
+      "Large economic damages with clear documentation"
+    ],
+    "weaknesses": [
+      "Workers' compensation carrier has lien for medical expenses ($180,000)",
+      "Defendants may argue employer's partial responsibility",
+      "Complex apportionment issues with multiple potential defendants",
+      "Need to establish TechConstruct's percentage of fault"
+    ],
+    "concessions": [
+      "Willing to negotiate resolution of workers' comp lien",
+      "Open to structured settlement for future wage loss",
+      "May reduce punitive demand if defendants accept liability early",
+      "Flexible on payment terms to facilitate settlement"
+    ],
+    "evidentiary_gaps": [
+      "Need expert analysis of scaffolding failure mechanism",
+      "Pending complete economic analysis of lifetime losses",
+      "Need depositions of TechConstruct president and safety personnel",
+      "Awaiting final OSHA determination and penalty assessment"
+    ],
+    "confidence_score": 90,
+    "damages": {
+      "specials": 520000,
+      "generals": 1230000,
+      "punitive": 1500000
+    }
+  }
+}

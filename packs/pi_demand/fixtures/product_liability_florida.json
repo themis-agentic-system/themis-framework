@@ -1,0 +1,199 @@
+{
+  "matter": {
+    "metadata": {
+      "id": "PI-2024-PROD-FL-001",
+      "title": "Thompson v. SafeRide Bicycle Co.",
+      "jurisdiction": "Florida",
+      "cause_of_action": "product_liability"
+    },
+    "summary": "Kevin Thompson, 34, suffered traumatic brain injury when his SafeRide Pro-X bicycle helmet cracked and failed during a moderate-speed collision on June 20, 2024. Engineering analysis reveals the helmet was manufactured with substandard materials that did not meet industry safety standards. Plaintiff, a software engineer, now suffers from permanent cognitive deficits.",
+    "parties": [
+      "Kevin Thompson",
+      "SafeRide Bicycle Co.",
+      "Advanced Polymers Inc. (helmet manufacturer)"
+    ],
+    "counterparty": "General Counsel, SafeRide Bicycle Co.",
+    "documents": [
+      {
+        "title": "Accident Report",
+        "date": "2024-06-20",
+        "summary": "Police report of bicycle-vehicle collision. Driver of Honda sedan turned left in front of cyclist. Impact speed estimated at 15-20 mph. Helmet observed to have catastrophic crack running through entire shell.",
+        "facts": [
+          "Driver cited for failure to yield",
+          "Impact was moderate - not high-speed collision",
+          "Helmet failure visible at scene",
+          "Witnesses described helmet 'splitting apart' on impact"
+        ]
+      },
+      {
+        "title": "Emergency Department Records",
+        "date": "2024-06-20",
+        "summary": "Tampa General Hospital trauma team treated severe traumatic brain injury. CT scan showed subdural hematoma and skull fracture. Patient underwent emergency craniotomy.",
+        "facts": [
+          "Glasgow Coma Scale: 8 on arrival (severe TBI)",
+          "Significant brain swelling requiring surgical decompression",
+          "Patient in ICU for 12 days",
+          "Helmet fragments retained as evidence showed plastic brittleness"
+        ]
+      },
+      {
+        "title": "Engineering Expert Report - Dr. James Chen, P.E.",
+        "date": "2024-09-15",
+        "summary": "Materials engineer analyzed failed helmet. Found polycarbonate shell was manufactured with recycled materials that degraded protective properties. Helmet failed Consumer Product Safety Commission (CPSC) impact testing.",
+        "facts": [
+          "Helmet shell contained 65% recycled plastic (standard: 100% virgin polycarbonate)",
+          "Impact resistance 40% below CPSC requirements",
+          "Manufacturing date code indicates batch came from problematic production run",
+          "Similar helmets from same batch failed lab testing"
+        ]
+      },
+      {
+        "title": "SafeRide Internal Emails (Discovery)",
+        "date": "2023-11-15",
+        "summary": "Emails between SafeRide executives discuss cost-cutting measures by Advanced Polymers. Quality control manager warned about using recycled materials but was overruled.",
+        "facts": [
+          "Company aware of material quality concerns 7 months before incident",
+          "Decision made to prioritize cost over safety",
+          "No recall initiated despite internal concerns"
+        ]
+      },
+      {
+        "title": "Neuropsychological Evaluation",
+        "date": "2024-10-01",
+        "summary": "Dr. Patricia Rodriguez documents significant cognitive deficits. Plaintiff has impaired executive function, memory problems, and emotional dysregulation. Cannot return to software engineering work.",
+        "facts": [
+          "IQ dropped from estimated 128 (pre-injury) to 94 (post-injury)",
+          "Unable to perform complex problem-solving tasks required for career",
+          "Permanent disability - vocational rehabilitation expert opines client limited to simple, supervised work",
+          "Age 34 with 30+ years of lost earning capacity"
+        ]
+      },
+      {
+        "title": "CPSC Complaint Database",
+        "date": "Various 2023-2024",
+        "summary": "Research revealed 14 prior complaints to CPSC about SafeRide Pro-X helmet failures, including 3 reported head injuries.",
+        "facts": [
+          "Pattern of helmet failures across multiple states",
+          "CPSC opened investigation in March 2024",
+          "Company failed to voluntarily recall product"
+        ]
+      }
+    ],
+    "events": [
+      {
+        "date": "2024-06-20",
+        "description": "Bicycle collision and helmet failure"
+      },
+      {
+        "date": "2024-06-20",
+        "description": "Emergency brain surgery at Tampa General Hospital"
+      },
+      {
+        "date": "2024-07-02",
+        "description": "Discharged to rehabilitation facility"
+      },
+      {
+        "date": "2024-08-15",
+        "description": "Attempted return to work - unable to perform job duties"
+      },
+      {
+        "date": "2024-09-15",
+        "description": "Engineering expert confirms manufacturing defect"
+      },
+      {
+        "date": "2024-10-01",
+        "description": "Neuropsychological testing confirms permanent disability"
+      }
+    ],
+    "issues": [
+      {
+        "issue": "Products Liability - Design Defect",
+        "facts": [
+          "Helmet designed with substandard materials",
+          "Safer alternative design available (virgin polycarbonate)",
+          "Risk of using recycled materials outweighed any benefits"
+        ]
+      },
+      {
+        "issue": "Products Liability - Manufacturing Defect",
+        "facts": [
+          "Helmet deviated from intended design specifications",
+          "Failed to meet CPSC safety standards",
+          "Manufacturing process incorporated inferior materials"
+        ]
+      },
+      {
+        "issue": "Failure to Warn",
+        "facts": [
+          "No warning about use of recycled materials",
+          "No warning about reduced protective capacity",
+          "Marketing implied full safety compliance"
+        ]
+      },
+      {
+        "issue": "Punitive Damages",
+        "facts": [
+          "Company had actual knowledge of safety defects",
+          "Conscious decision to prioritize profits over safety",
+          "Failed to recall dangerous product despite known risks"
+        ]
+      }
+    ],
+    "authorities": [
+      {
+        "cite": "Fla. Stat. § 768.81",
+        "summary": "Florida comparative fault statute"
+      },
+      {
+        "cite": "FSI 401.12",
+        "summary": "Florida jury instruction on products liability"
+      },
+      {
+        "cite": "West v. Caterpillar Tractor Co., 336 So.2d 80 (Fla. 1976)",
+        "summary": "Strict liability for defective products in Florida"
+      },
+      {
+        "cite": "16 C.F.R. § 1203",
+        "summary": "CPSC bicycle helmet safety standard"
+      },
+      {
+        "cite": "Fla. Stat. § 768.72",
+        "summary": "Punitive damages standard - gross negligence or intentional misconduct"
+      }
+    ],
+    "goals": {
+      "settlement": "$4,500,000",
+      "fallback": "$3,200,000"
+    },
+    "strengths": [
+      "Clear product defect confirmed by engineering expert",
+      "Internal emails show company knowledge of problem",
+      "Devastating injury to young professional",
+      "Strong punitive damages case",
+      "CPSC investigation supports claims",
+      "Multiple similar complaints establish pattern"
+    ],
+    "weaknesses": [
+      "Defendant will argue driver's fault caused injuries, not helmet defect",
+      "Challenge to prove helmet would have prevented all injuries",
+      "Expert battle over causation likely"
+    ],
+    "concessions": [
+      "Willing to negotiate punitive damages multiplier",
+      "Open to structured settlement for lost earning capacity",
+      "May consider confidentiality if it significantly increases recovery"
+    ],
+    "evidentiary_gaps": [
+      "Need biomechanical expert on helmet performance",
+      "Pending life care plan and economist report",
+      "Need to depose Advanced Polymers executives",
+      "Awaiting CPSC investigation results"
+    ],
+    "confidence_score": 88,
+    "damages": {
+      "specials": 625000,
+      "generals": 2875000,
+      "punitive": 2000000
+    }
+  }
+}

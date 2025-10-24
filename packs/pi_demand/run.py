@@ -16,6 +16,9 @@ except ModuleNotFoundError:  # pragma: no cover - executed when PyYAML missing
     yaml = None  # type: ignore[assignment]
 
 from orchestrator.service import OrchestratorService
+from packs.pi_demand.complaint_generator import generate_complaint
+from packs.pi_demand.jurisdictions import get_jurisdiction
+from packs.pi_demand.schema import validate_matter_schema, format_validation_errors
 
 
 def load_matter(path: Path) -> dict[str, Any]:
@@ -40,6 +43,17 @@ def load_matter(path: Path) -> dict[str, Any]:
         raise ValueError("Matter file is empty")
     if not isinstance(data, dict):
         raise ValueError("Matter file must contain an object at the top level")
+
+    # Validate schema
+    is_valid, validation_errors = validate_matter_schema(data)
+    if validation_errors and any("REQUIRED" in e for e in validation_errors):
+        error_message = format_validation_errors(validation_errors)
+        raise ValueError(f"Matter file validation failed:\n{error_message}")
+
+    # Print warnings but continue
+    if validation_errors and not is_valid:
+        print(format_validation_errors(validation_errors))
+        print("")
 
     matter_payload = data.get("matter") if isinstance(data.get("matter"), dict) else data
     return _normalise_matter(matter_payload, source=path)
@@ -70,6 +84,7 @@ def persist_outputs(
         if isinstance(facts, dict):
             timeline_entries = facts.get("timeline")
 
+    # Timeline CSV
     if isinstance(timeline_entries, list) and timeline_entries:
         timeline_path = matter_output_dir / "timeline.csv"
         with timeline_path.open("w", encoding="utf-8", newline="") as handle:
@@ -87,11 +102,39 @@ def persist_outputs(
         saved_paths.append(timeline_path)
 
     lsa_output = artifacts.get("lsa") if isinstance(artifacts, dict) else None
+
+    # Demand Letter
     if isinstance(lsa_output, dict) and lsa_output:
         letter_path = matter_output_dir / "draft_demand_letter.txt"
         letter_content = _compose_draft_letter(matter, execution_result)
         letter_path.write_text(letter_content, encoding="utf-8")
         saved_paths.append(letter_path)
+
+    # Complaint
+    if isinstance(lsa_output, dict) and lsa_output:
+        complaint_path = matter_output_dir / "draft_complaint.txt"
+        complaint_content = generate_complaint(matter, execution_result)
+        complaint_path.write_text(complaint_content, encoding="utf-8")
+        saved_paths.append(complaint_path)
+
+    # Evidence Checklist
+    checklist_path = matter_output_dir / "evidence_checklist.txt"
+    checklist_content = _generate_evidence_checklist(matter, execution_result)
+    checklist_path.write_text(checklist_content, encoding="utf-8")
+    saved_paths.append(checklist_path)
+
+    # Medical Expense Summary
+    if lda_output:
+        medical_summary_path = matter_output_dir / "medical_expense_summary.csv"
+        medical_content = _generate_medical_summary(matter, execution_result)
+        medical_summary_path.write_text(medical_content, encoding="utf-8")
+        saved_paths.append(medical_summary_path)
+
+    # Statute of Limitations Tracker
+    statute_path = matter_output_dir / "statute_tracker.txt"
+    statute_content = _generate_statute_tracker(matter, execution_result)
+    statute_path.write_text(statute_content, encoding="utf-8")
+    saved_paths.append(statute_path)
 
     return saved_paths
 
@@ -407,22 +450,426 @@ def _compose_draft_letter(matter: dict[str, Any], execution_result: dict[str, An
     return "\n".join(lines).strip() + "\n"
 
 
+def _generate_evidence_checklist(matter: dict[str, Any], execution_result: dict[str, Any]) -> str:
+    """Generate an evidence checklist for case preparation."""
+    lines: list[str] = []
+    lines.append("EVIDENCE CHECKLIST")
+    lines.append("=" * 80)
+    lines.append("")
+
+    metadata = matter.get("metadata", {}) if isinstance(matter.get("metadata"), dict) else {}
+    matter_name = metadata.get("title") or matter.get("matter_name") or "Matter"
+    lines.append(f"Case: {matter_name}")
+    lines.append("")
+
+    # Documents
+    lines.append("DOCUMENTS REQUIRED:")
+    lines.append("")
+    documents = matter.get("documents", [])
+    if documents:
+        for idx, doc in enumerate(documents, start=1):
+            if isinstance(doc, dict):
+                title = doc.get("title", f"Document {idx}")
+                status = "[ ] "  # Checkbox
+                lines.append(f"{status}{idx}. {title}")
+    else:
+        lines.append("[ ] Medical records")
+        lines.append("[ ] Police/incident reports")
+        lines.append("[ ] Witness statements")
+        lines.append("[ ] Photographs of injuries/scene")
+        lines.append("[ ] Employment/wage records")
+    lines.append("")
+
+    # Evidentiary gaps from matter
+    gaps = matter.get("evidentiary_gaps", [])
+    if gaps:
+        lines.append("OUTSTANDING EVIDENCE (GAPS TO FILL):")
+        lines.append("")
+        for gap in gaps:
+            lines.append(f"[ ] {gap}")
+        lines.append("")
+
+    # Witnesses
+    lines.append("WITNESSES TO INTERVIEW:")
+    lines.append("")
+    parties = matter.get("parties", [])
+    for party in parties:
+        lines.append(f"[ ] {party}")
+    lines.append("[ ] Expert witnesses (medical, accident reconstruction, etc.)")
+    lines.append("")
+
+    # Legal authorities
+    artifacts = execution_result.get("artifacts", {})
+    dea = artifacts.get("dea") if isinstance(artifacts, dict) else {}
+    legal_analysis = dea.get("legal_analysis", {}) if isinstance(dea, dict) else {}
+    authorities = legal_analysis.get("authorities", []) if isinstance(legal_analysis, dict) else []
+
+    if authorities:
+        lines.append("LEGAL AUTHORITIES TO RESEARCH:")
+        lines.append("")
+        for auth in authorities[:10]:
+            if isinstance(auth, dict) and auth.get("cite"):
+                lines.append(f"[ ] {auth['cite']}")
+        lines.append("")
+
+    lines.append("TASKS:")
+    lines.append("")
+    lines.append("[ ] Verify statute of limitations")
+    lines.append("[ ] Confirm venue requirements")
+    lines.append("[ ] Calculate damages (review with client)")
+    lines.append("[ ] Obtain signed retainer agreement")
+    lines.append("[ ] Draft and file complaint (if proceeding to litigation)")
+    lines.append("[ ] Serve defendant")
+    lines.append("")
+
+    return "\n".join(lines)
+
+
+def _generate_medical_summary(matter: dict[str, Any], execution_result: dict[str, Any]) -> str:
+    """Generate a CSV summary of medical expenses."""
+    lines: list[str] = []
+    lines.append("Date,Provider,Service,Amount,Status")
+
+    artifacts = execution_result.get("artifacts", {})
+    lda = artifacts.get("lda") if isinstance(artifacts, dict) else {}
+    facts = lda.get("facts", {}) if isinstance(lda, dict) else {}
+    damages_calc = facts.get("damages_calculation", {}) if isinstance(facts, dict) else {}
+    medical_expenses = damages_calc.get("medical_expenses", []) if isinstance(damages_calc, dict) else []
+
+    if medical_expenses:
+        for expense in medical_expenses:
+            if isinstance(expense, dict):
+                date = expense.get("date", "")
+                provider = expense.get("provider", "Unknown Provider")
+                service = expense.get("service", "Medical Service")
+                amount = expense.get("amount", 0)
+                status = expense.get("status", "Pending")
+                lines.append(f"{date},{provider},{service},{amount},{status}")
+    else:
+        # Extract from documents if available
+        documents = matter.get("documents", [])
+        for doc in documents:
+            if isinstance(doc, dict):
+                title = doc.get("title", "")
+                if "medical" in title.lower() or "treatment" in title.lower():
+                    date = doc.get("date", "")
+                    provider = "Medical Provider"
+                    service = title
+                    amount = ""
+                    status = "To be documented"
+                    lines.append(f"{date},{provider},{service},{amount},{status}")
+
+    # If no medical records at all, add template rows
+    if len(lines) == 1:
+        lines.append(",,Medical treatment (to be documented),,")
+        lines.append(",,Future medical care estimate,,")
+
+    # Add totals if damages available
+    damages = matter.get("damages", {}) if isinstance(matter.get("damages"), dict) else {}
+    specials = damages.get("specials", 0)
+    if specials:
+        lines.append("")
+        lines.append(f",,,Total Medical Expenses:,${specials:,}")
+
+    return "\n".join(lines)
+
+
+def _generate_statute_tracker(matter: dict[str, Any], execution_result: dict[str, Any]) -> str:
+    """Generate statute of limitations tracker."""
+    lines: list[str] = []
+    lines.append("STATUTE OF LIMITATIONS TRACKER")
+    lines.append("=" * 80)
+    lines.append("")
+
+    metadata = matter.get("metadata", {}) if isinstance(matter.get("metadata"), dict) else {}
+    matter_name = metadata.get("title") or matter.get("matter_name") or "Matter"
+    lines.append(f"Case: {matter_name}")
+    lines.append("")
+
+    # Get jurisdiction
+    jurisdiction_name = metadata.get("jurisdiction") or "California"
+    jurisdiction = get_jurisdiction(jurisdiction_name)
+
+    lines.append(f"Jurisdiction: {jurisdiction_name}")
+    lines.append("")
+
+    # Get incident date from timeline or events
+    incident_date = None
+    events = matter.get("events", [])
+    if events and isinstance(events[0], dict):
+        incident_date = events[0].get("date")
+
+    if not incident_date:
+        artifacts = execution_result.get("artifacts", {})
+        lda = artifacts.get("lda") if isinstance(artifacts, dict) else {}
+        facts = lda.get("facts", {}) if isinstance(lda, dict) else {}
+        timeline = facts.get("timeline", []) if isinstance(facts, dict) else []
+        if timeline and isinstance(timeline[0], dict):
+            incident_date = timeline[0].get("date")
+
+    if incident_date:
+        lines.append(f"Incident Date: {incident_date}")
+        lines.append("")
+
+    # Show applicable statutes of limitation
+    if jurisdiction and jurisdiction.get("statutes_of_limitation"):
+        lines.append("APPLICABLE STATUTES OF LIMITATION:")
+        lines.append("")
+        sol_dict = jurisdiction["statutes_of_limitation"]
+        for cause_type, sol_info in sol_dict.items():
+            if isinstance(sol_info, dict):
+                period = sol_info.get("period", "Unknown")
+                statute = sol_info.get("statute", "")
+                lines.append(f"{cause_type.replace('_', ' ').title()}:")
+                lines.append(f"  Period: {period}")
+                lines.append(f"  Statute: {statute}")
+                if incident_date:
+                    lines.append(f"  Deadline: {incident_date} + {period} = [Calculate deadline]")
+                lines.append("")
+
+    lines.append("IMPORTANT DEADLINES:")
+    lines.append("")
+    lines.append("[ ] Complaint filing deadline (statute of limitations)")
+    lines.append("[ ] Discovery cutoff")
+    lines.append("[ ] Expert designation deadline")
+    lines.append("[ ] Motion filing deadlines")
+    lines.append("[ ] Trial date")
+    lines.append("")
+
+    lines.append("WARNING:")
+    lines.append("This is a general reference only. Consult with supervising attorney")
+    lines.append("to confirm all applicable deadlines and statutes of limitation.")
+    lines.append("Tolling provisions may apply based on specific facts.")
+    lines.append("")
+
+    return "\n".join(lines)
+
+
+def _list_fixtures() -> None:
+    """List available fixture files in the pi_demand pack."""
+    fixtures_dir = Path(__file__).parent / "fixtures"
+    if not fixtures_dir.exists():
+        print("No fixtures directory found.")
+        return
+
+    fixtures = sorted(fixtures_dir.glob("*.json"))
+    if not fixtures:
+        print("No fixture files found.")
+        return
+
+    print("Available fixtures:")
+    print("")
+    for fixture in fixtures:
+        # Try to load and extract basic info
+        try:
+            data = json.loads(fixture.read_text(encoding="utf-8"))
+            matter = data.get("matter", {})
+            metadata = matter.get("metadata", {})
+            title = metadata.get("title", "Untitled")
+            jurisdiction = metadata.get("jurisdiction", "N/A")
+            cause = metadata.get("cause_of_action", "N/A")
+            print(f"  {fixture.name}")
+            print(f"    Title: {title}")
+            print(f"    Jurisdiction: {jurisdiction}")
+            print(f"    Cause of Action: {cause}")
+            print("")
+        except Exception:
+            print(f"  {fixture.name} (unable to read details)")
+            print("")
+
+
+def _create_matter_interactive(output_path: Path) -> None:
+    """Interactively create a new matter file."""
+    print("=== Create New Personal Injury Matter ===")
+    print("")
+    print("This wizard will help you create a matter file.")
+    print("Press Enter to skip optional fields.")
+    print("")
+
+    # Metadata
+    print("--- Metadata ---")
+    matter_id = input("Matter ID (e.g., PI-2024-001): ").strip() or f"PI-{datetime.now().year}-TEMP"
+    title = input("Matter Title (e.g., Doe v. Smith): ").strip() or "Untitled Matter"
+
+    print("\nAvailable jurisdictions: California, New York, Texas, Florida, Illinois")
+    jurisdiction = input("Jurisdiction: ").strip() or "California"
+
+    print("\nAvailable causes of action: negligence, motor_vehicle, premises_liability,")
+    print("  medical_malpractice, product_liability, dog_bite")
+    cause_of_action = input("Cause of Action: ").strip() or "negligence"
+
+    # Summary
+    print("\n--- Case Information ---")
+    summary = input("Brief summary of the matter (required): ").strip()
+    while not summary or len(summary) < 10:
+        print("Summary must be at least 10 characters.")
+        summary = input("Brief summary: ").strip()
+
+    # Parties
+    print("\n--- Parties ---")
+    parties = []
+    party_num = 1
+    while True:
+        party = input(f"Party #{party_num} (press Enter when done): ").strip()
+        if not party:
+            break
+        parties.append(party)
+        party_num += 1
+
+    if not parties:
+        parties = ["Plaintiff (Name TBD)", "Defendant (Name TBD)"]
+        print("Using default parties:", parties)
+
+    counterparty = input("\nOpposing counsel name: ").strip()
+
+    # Documents
+    print("\n--- Documents ---")
+    print("Add at least one document.")
+    documents = []
+    doc_num = 1
+    while True:
+        print(f"\nDocument #{doc_num}:")
+        doc_title = input("  Document title (press Enter to finish): ").strip()
+        if not doc_title:
+            break
+        doc_date = input("  Date (YYYY-MM-DD, optional): ").strip()
+        doc_summary = input("  Summary: ").strip()
+
+        doc = {"title": doc_title}
+        if doc_date:
+            doc["date"] = doc_date
+        if doc_summary:
+            doc["summary"] = doc_summary
+
+        documents.append(doc)
+        doc_num += 1
+
+    if not documents:
+        documents = [{"title": "Document placeholder - update with actual documents"}]
+
+    # Damages
+    print("\n--- Damages (optional) ---")
+    specials_input = input("Economic damages (specials): $").strip()
+    generals_input = input("Non-economic damages (generals): $").strip()
+
+    damages = {}
+    if specials_input:
+        try:
+            damages["specials"] = float(specials_input.replace(",", ""))
+        except ValueError:
+            pass
+    if generals_input:
+        try:
+            damages["generals"] = float(generals_input.replace(",", ""))
+        except ValueError:
+            pass
+
+    # Build matter
+    matter_data = {
+        "matter": {
+            "metadata": {
+                "id": matter_id,
+                "title": title,
+                "jurisdiction": jurisdiction,
+                "cause_of_action": cause_of_action,
+            },
+            "summary": summary,
+            "parties": parties,
+            "documents": documents,
+            "events": [],
+            "issues": [],
+            "authorities": [],
+            "goals": {},
+            "strengths": [],
+            "weaknesses": [],
+            "concessions": [],
+            "evidentiary_gaps": [],
+        }
+    }
+
+    if counterparty:
+        matter_data["matter"]["counterparty"] = counterparty
+    if damages:
+        matter_data["matter"]["damages"] = damages
+
+    # Save
+    output_path.write_text(json.dumps(matter_data, indent=2), encoding="utf-8")
+    print(f"\n✓ Matter file created: {output_path}")
+    print(f"\nYou can now edit this file to add more details, then run:")
+    print(f"  python -m packs.pi_demand.run --matter {output_path}")
+
+
 async def main() -> None:
-    parser = argparse.ArgumentParser(description="Run the PI demand practice pack")
-    parser.add_argument("--matter", type=Path, required=True, help="Path to the matter YAML or JSON file")
+    parser = argparse.ArgumentParser(
+        description="Run the PI demand practice pack",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Run with existing matter file
+  python -m packs.pi_demand.run --matter path/to/matter.json
+
+  # Validate matter file without executing
+  python -m packs.pi_demand.run --matter path/to/matter.json --validate-only
+
+  # List available fixtures
+  python -m packs.pi_demand.run --list-fixtures
+
+  # Create a new matter file interactively
+  python -m packs.pi_demand.run --create-matter --output new_matter.json
+        """
+    )
+    parser.add_argument("--matter", type=Path, help="Path to the matter YAML or JSON file")
+    parser.add_argument("--validate-only", action="store_true", help="Only validate the matter file without executing")
+    parser.add_argument("--list-fixtures", action="store_true", help="List available fixture files")
+    parser.add_argument("--create-matter", action="store_true", help="Interactively create a new matter file")
+    parser.add_argument("--output", type=Path, help="Output path for created matter file (use with --create-matter)")
+    parser.add_argument("--output-dir", type=Path, default=Path("outputs"), help="Output directory for artifacts (default: outputs/)")
+
     args = parser.parse_args()
+
+    # List fixtures
+    if args.list_fixtures:
+        _list_fixtures()
+        return
+
+    # Create matter interactively
+    if args.create_matter:
+        output_path = args.output or Path("new_matter.json")
+        _create_matter_interactive(output_path)
+        return
+
+    # Require --matter for other operations
+    if not args.matter:
+        parser.error("--matter is required (or use --list-fixtures or --create-matter)")
 
     if not args.matter.exists():
         parser.error(f"Matter file '{args.matter}' was not found")
 
+    # Validate only
+    if args.validate_only:
+        try:
+            matter = load_matter(args.matter)
+            print(f"✓ Matter file '{args.matter}' is valid!")
+            print(f"  Jurisdiction: {matter.get('metadata', {}).get('jurisdiction', 'Not specified')}")
+            print(f"  Parties: {len(matter.get('parties', []))}")
+            print(f"  Documents: {len(matter.get('documents', []))}")
+        except (FileNotFoundError, ValueError) as exc:
+            print(f"✗ Validation failed: {exc}")
+            return
+        return
+
+    # Execute normally
     service = OrchestratorService()
     try:
         matter = load_matter(args.matter)
     except (FileNotFoundError, ValueError) as exc:
         parser.error(str(exc))
 
+    print(f"Executing workflow for: {matter.get('metadata', {}).get('title', 'Untitled Matter')}")
+    print("")
+
     result = await service.execute(matter)
-    saved_paths = persist_outputs(matter, result)
+    saved_paths = persist_outputs(matter, result, output_root=args.output_dir)
 
     print("Execution complete. Artifacts saved to:")
     for path in saved_paths:

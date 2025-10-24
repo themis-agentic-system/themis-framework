@@ -1,0 +1,142 @@
+{
+  "matter": {
+    "metadata": {
+      "id": "PI-2024-DOG-001",
+      "title": "Martinez v. Johnson",
+      "jurisdiction": "California",
+      "cause_of_action": "dog_bite"
+    },
+    "summary": "Carlos Martinez, age 8, was severely bitten on the face and arm by Defendant's pit bull while playing in a public park on July 4, 2024. The dog was off-leash despite posted leash laws. Carlos required emergency surgery and continues to suffer from PTSD and facial scarring.",
+    "parties": [
+      "Carlos Martinez (Minor, by and through Guardian Ad Litem Rosa Martinez)",
+      "David Johnson (Dog Owner)"
+    ],
+    "counterparty": "Counsel for David Johnson",
+    "documents": [
+      {
+        "title": "Animal Control Report",
+        "date": "2024-07-04",
+        "summary": "Officer Rodriguez documented the attack at Riverside Park. The pit bull, named 'Rex,' was off-leash in violation of city ordinances. Witnesses confirmed the dog charged unprovoked at Carlos who was playing on the swings.",
+        "facts": [
+          "Dog had prior complaint history with Animal Control (two previous incidents)",
+          "Owner admitted dog was not properly secured",
+          "Park has clearly posted leash-law signs"
+        ]
+      },
+      {
+        "title": "Emergency Room Records",
+        "date": "2024-07-04",
+        "summary": "St. Joseph's Hospital ER records show Carlos sustained deep lacerations to left cheek requiring 47 stitches, puncture wounds to left forearm, and severe emotional trauma.",
+        "facts": [
+          "Plastic surgeon consulted for facial reconstruction",
+          "Child exhibited signs of severe distress and fear of dogs",
+          "Rabies prophylaxis administered as dog's vaccination status was uncertain"
+        ]
+      },
+      {
+        "title": "Plastic Surgery Follow-up",
+        "date": "2024-08-15",
+        "summary": "Dr. Chen's notes indicate permanent facial scarring despite best efforts. Recommends additional scar revision surgery when child is 16 years old.",
+        "facts": [
+          "Child will require multiple revision surgeries over lifetime",
+          "Estimated future medical costs: $85,000-$120,000",
+          "Psychological counseling recommended for trauma"
+        ]
+      },
+      {
+        "title": "Child Psychologist Evaluation",
+        "date": "2024-09-01",
+        "summary": "Dr. Linda Park diagnosed Carlos with PTSD related to the attack. Child experiences nightmares, refuses to go outdoors, and has developed severe cynophobia (fear of dogs).",
+        "facts": [
+          "Ongoing therapy required for 2-3 years minimum",
+          "Child's quality of life significantly impaired",
+          "School attendance affected due to anxiety"
+        ]
+      }
+    ],
+    "events": [
+      {
+        "date": "2024-07-04",
+        "description": "Dog attack at Riverside Park, 3:15 PM"
+      },
+      {
+        "date": "2024-07-04",
+        "description": "Emergency surgery at St. Joseph's Hospital"
+      },
+      {
+        "date": "2024-07-10",
+        "description": "Animal Control seized dog; owner cited for leash law violation"
+      },
+      {
+        "date": "2024-08-15",
+        "description": "First plastic surgery follow-up appointment"
+      },
+      {
+        "date": "2024-09-01",
+        "description": "Psychological trauma diagnosis"
+      }
+    ],
+    "issues": [
+      {
+        "issue": "Dog Bite Strict Liability under Cal. Civ. Code § 3342",
+        "facts": [
+          "Defendant owned the dog that bit Carlos",
+          "Attack occurred in public park where Carlos had legal right to be",
+          "No provocation by victim"
+        ]
+      },
+      {
+        "issue": "Negligence - Failure to Control Dangerous Animal",
+        "facts": [
+          "Dog had history of aggressive behavior",
+          "Owner violated leash laws",
+          "Owner knew or should have known of dog's dangerous propensities"
+        ]
+      }
+    ],
+    "authorities": [
+      {
+        "cite": "Cal. Civ. Code § 3342",
+        "summary": "Strict liability for dog bites when victim is in public place or lawfully on private property"
+      },
+      {
+        "cite": "CACI 462",
+        "summary": "Jury instruction for strict liability dog bite cases"
+      },
+      {
+        "cite": "Johnson v. McMahan, 68 Cal.App.4th 173 (1998)",
+        "summary": "Dog owner liable even for first bite under § 3342"
+      }
+    ],
+    "goals": {
+      "settlement": "$450,000",
+      "fallback": "$325,000"
+    },
+    "strengths": [
+      "Strict liability statute - no need to prove prior viciousness",
+      "Clear liability - dog off-leash in violation of law",
+      "Extensive medical documentation",
+      "Prior complaint history shows owner's knowledge",
+      "Sympathetic minor victim with permanent scarring"
+    ],
+    "weaknesses": [
+      "Defendant may have limited insurance coverage",
+      "Some witnesses left before giving statements"
+    ],
+    "concessions": [
+      "Willing to structure settlement with trust for future medical expenses",
+      "Open to confidentiality agreement if it increases settlement value"
+    ],
+    "evidentiary_gaps": [
+      "Need to obtain dog's complete veterinary and complaint history",
+      "Pending life care plan from medical economist",
+      "Need depositions of eyewitnesses"
+    ],
+    "confidence_score": 85,
+    "damages": {
+      "specials": 95000,
+      "generals": 355000,
+      "punitive": null
+    }
+  }
+}
