@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Any, Callable, Iterable
 
 from agents.base import BaseAgent
+from agents.tooling import ToolSpec
 from tools.llm_client import get_llm_client
 
 
@@ -13,17 +14,37 @@ class DEAAgent(BaseAgent):
 
     REQUIRED_TOOLS = ("issue_spotter", "citation_retriever")
 
-    def __init__(self, *, tools: dict[str, Callable[..., Any]] | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        tools: Iterable[ToolSpec] | dict[str, Callable[..., Any]] | None = None,
+    ) -> None:
         super().__init__(name="dea")
-        default_tools: dict[str, Callable[..., Any]] = {
-            "issue_spotter": _default_issue_spotter,
-            "citation_retriever": _default_citation_retriever,
-        }
-        self.tools = default_tools | (tools or {})
-        missing = [tool for tool in self.REQUIRED_TOOLS if tool not in self.tools]
-        if missing:
-            missing_csv = ", ".join(missing)
-            raise ValueError(f"Missing required tools for DEA agent: {missing_csv}")
+        default_tools = [
+            ToolSpec(
+                name="issue_spotter",
+                description="Identify potential legal issues from facts and objectives.",
+                fn=_default_issue_spotter,
+                input_schema={"type": "object"},
+                output_schema={"type": "array"},
+            ),
+            ToolSpec(
+                name="citation_retriever",
+                description="Locate supporting legal authorities for spotted issues.",
+                fn=_default_citation_retriever,
+                input_schema={"type": "object"},
+                output_schema={"type": "array"},
+            ),
+        ]
+        self.register_tools(default_tools)
+
+        if tools:
+            if isinstance(tools, dict):
+                self.register_tools(list(tools.items()))
+            else:
+                self.register_tools(tools)
+
+        self.require_tools(self.REQUIRED_TOOLS)
 
     async def _run(self, matter: dict[str, Any]) -> dict[str, Any]:
         """Derive legal issues and map them to supporting authorities."""

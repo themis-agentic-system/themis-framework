@@ -5,15 +5,18 @@ from __future__ import annotations
 import logging
 import time
 from copy import deepcopy
-from typing import Any
+from typing import Any, Callable
 from uuid import uuid4
 
 from agents.base import AgentProtocol
 from agents.dea import DEAAgent
 from agents.lda import LDAAgent
 from agents.lsa import LSAAgent
+from connectors import ConnectorRegistry
 from orchestrator.policy import RoutingPolicy
 from orchestrator.storage.sqlite_repository import SQLiteOrchestratorStateRepository
+from orchestrator.task_graph import TaskGraph
+from orchestrator.tracing import TraceRecorder
 
 logger = logging.getLogger("themis.orchestrator")
 
@@ -30,6 +33,8 @@ class OrchestratorService:
         repository: SQLiteOrchestratorStateRepository | None = None,
         cache_ttl_seconds: int = 60,
         policy: RoutingPolicy | None = None,
+        connectors: ConnectorRegistry | None = None,
+        tracer_factory: Callable[[], TraceRecorder] | None = None,
     ) -> None:
         self.repository = repository or SQLiteOrchestratorStateRepository()
         self.agents = agents or {
@@ -38,6 +43,8 @@ class OrchestratorService:
             "lsa": LSAAgent(),
         }
         self.policy = policy or RoutingPolicy()
+        self.connectors = connectors or ConnectorRegistry()
+        self._tracer_factory = tracer_factory or TraceRecorder
 
         # State caching with TTL
         self._state_cache = None
@@ -95,13 +102,15 @@ class OrchestratorService:
 
         self.state = self._load_state()
         plan_id = str(uuid4())
-        steps = self.policy.build_plan(matter)
+        graph = self.policy.build_graph(matter)
 
         plan: dict[str, Any] = {
             "plan_id": plan_id,
             "status": "planned",
             "matter": matter,
-            "steps": steps,
+            "graph": graph.as_dict(),
+            "steps": graph.to_linear_steps(),
+            "connectors": self.connectors.catalogue(),
         }
 
         self.state.remember_plan(plan_id, deepcopy(plan))
@@ -136,8 +145,21 @@ class OrchestratorService:
         propagated: dict[str, Any] = {}
         overall_status = "complete"
         needs_attention = False
+        tracer = self._tracer_factory()
 
-        for step in plan["steps"]:
+        graph_payload = plan.get("graph")
+        if graph_payload:
+            graph = TaskGraph.from_dict(graph_payload)
+        else:
+            graph = TaskGraph.from_linear_steps(plan.get("steps", []))
+
+        plan_steps_map = {step["id"]: step for step in plan.get("steps", [])}
+        if not plan_steps_map:
+            plan["steps"] = graph.to_linear_steps()
+            plan_steps_map = {step["id"]: step for step in plan["steps"]}
+
+        for node in graph.topological_order():
+            step = plan_steps_map.get(node.id, node.as_dict())
             agent_name = step["agent"]
             agent = self.agents.get(agent_name)
             step_result: dict[str, Any] = {
@@ -158,10 +180,23 @@ class OrchestratorService:
                 continue
 
             produced_artifacts: dict[str, Any] = {}
+            tracer.record(
+                "phase_start",
+                node_id=step_result["id"],
+                agent=agent_name,
+                phase=step.get("phase"),
+            )
+            if agent and hasattr(agent, "attach_tracer"):
+                agent.attach_tracer(tracer, step_result["id"])
 
             try:
                 agent_input = deepcopy(plan_matter)
                 agent_input.update(propagated)
+                resolved_connectors = self.connectors.resolve(
+                    step.get("required_connectors", [])
+                )
+                if resolved_connectors:
+                    agent_input.setdefault("connectors", {}).update(resolved_connectors)
                 output = await agent.run(agent_input)
             except Exception as exc:  # pragma: no cover - defensive programming
                 step_result["status"] = "failed"
@@ -184,6 +219,13 @@ class OrchestratorService:
                     step["artifacts"] = produced_artifacts
                 step["status"] = "complete"
                 step["output"] = output
+            finally:
+                tracer.record(
+                    "phase_complete",
+                    node_id=step_result["id"],
+                    agent=agent_name,
+                    status=step_result.get("status"),
+                )
 
             if step_result.get("status") == "failed":
                 steps_results.append(step_result)
@@ -209,6 +251,11 @@ class OrchestratorService:
                     overall_status = "failed"
                     support_failed = True
                 else:
+                    if hasattr(support_agent, "attach_tracer"):
+                        support_agent.attach_tracer(
+                            tracer,
+                            f"{step_result['id']}::support::{support_agent_name}",
+                        )
                     support_input = deepcopy(plan_matter)
                     support_input.update(propagated)
                     support_input.update(
@@ -267,6 +314,7 @@ class OrchestratorService:
             "status": overall_status,
             "steps": steps_results,
             "artifacts": artifacts,
+            "trace": tracer.flush(),
         }
 
         if overall_status != "failed":
