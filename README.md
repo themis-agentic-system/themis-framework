@@ -52,6 +52,13 @@ Modern legal work blends **facts + law + strategy**. Themis models this as a cre
   - Performs risk assessment and identifies weaknesses
   - Develops contingency plans and fallback positions
 
+- **DDA (Document Drafting Agent)** ✍️
+  - Generates formal legal documents using modern legal prose
+  - Supports complaints, motions, demand letters, and memoranda
+  - Formats citations according to Bluebook and jurisdiction standards
+  - Validates document completeness and analyzes tone quality
+  - Ensures plain language and accessibility standards
+
 - **Orchestrator** 🎼
   - Routes tasks to the right specialist agent
   - Maintains shared memory across the workflow
@@ -192,15 +199,15 @@ themis-framework/
           ┌────────────────┼────────────────┐
           │                │                │
           ▼                ▼                ▼
-    ┌─────────┐      ┌─────────┐      ┌─────────┐
-    │   LDA   │      │   DEA   │      │   LSA   │
-    │  Facts  │ ───> │   Law   │ ───> │Strategy │
-    │Timeline │      │Citations│      │  Risk   │
-    └─────────┘      └─────────┘      └─────────┘
-          │                │                │
-          └────────────────┼────────────────┘
-                           │
-                           ▼
+    ┌─────────┐      ┌─────────┐      ┌─────────┐      ┌─────────┐
+    │   LDA   │      │   DEA   │      │   LSA   │      │   DDA   │
+    │  Facts  │ ───> │   Law   │ ───> │Strategy │ ───> │Document │
+    │Timeline │      │Citations│      │  Risk   │      │Drafting │
+    └─────────┘      └─────────┘      └─────────┘      └─────────┘
+          │                │                │                │
+          └────────────────┴────────────────┴────────────────┘
+                                    │
+                                    ▼
 ┌─────────────────────────────────────────────────────────────┐
 │              Orchestrator (Reflection)                       │
 │  • Validates signal propagation                              │
@@ -215,6 +222,7 @@ themis-framework/
 │  • Draft demand letter                                       │
 │  • Legal analysis report                                     │
 │  • Strategy recommendations                                  │
+│  • Formal legal documents (complaints, motions, memos)       │
 └─────────────────────────────────────────────────────────────┘
 ```
 

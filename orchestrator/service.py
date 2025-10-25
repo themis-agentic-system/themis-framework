@@ -9,6 +9,7 @@ from typing import Any, Callable
 from uuid import uuid4
 
 from agents.base import AgentProtocol
+from agents.dda import DocumentDraftingAgent
 from agents.dea import DEAAgent
 from agents.lda import LDAAgent
 from agents.lsa import LSAAgent
@@ -41,6 +42,7 @@ class OrchestratorService:
             "lda": LDAAgent(),
             "dea": DEAAgent(),
             "lsa": LSAAgent(),
+            "dda": DocumentDraftingAgent(),
         }
         self.policy = policy or RoutingPolicy()
         self.connectors = connectors or ConnectorRegistry()

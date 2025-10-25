@@ -17,6 +17,7 @@ class Phase(str, Enum):
     RESEARCH_RETRIEVAL = "research_retrieval"
     APPLICATION_ANALYSIS = "application_analysis"
     DRAFT_REVIEW = "draft_review"
+    DOCUMENT_ASSEMBLY = "document_assembly"
 
 
 @dataclass(slots=True)
@@ -103,6 +104,7 @@ class RoutingPolicy:
             "application": ["analysis", "application"],
             "draft": ["strategy", "draft"],
             "client_safe_summary": ["client_safe", "client_summary"],
+            "document": ["full_text", "formal_document", "legal_document"],
         }
 
     @property
@@ -164,6 +166,8 @@ class RoutingPolicy:
             if "settlement" in intent or "demand" in intent or "negotiat" in intent:
                 return "lsa"
             return "lsa"
+        if phase is Phase.DOCUMENT_ASSEMBLY:
+            return "dda"
         return "dea"
 
     def evaluate_exit_conditions(
@@ -365,6 +369,36 @@ class RoutingPolicy:
                         agent="lda",
                         role="numerical_review",
                         description="Reconcile damages figures and timelines embedded in the draft.",
+                    ),
+                ],
+            ),
+            PhaseDefinition(
+                phase=Phase.DOCUMENT_ASSEMBLY,
+                description="Generate formal legal documents with proper structure, citations, and modern legal prose.",
+                default_primary_agent="dda",
+                expected_artifacts=[
+                    {
+                        "name": "document",
+                        "description": "Formal legal document (complaint, motion, demand letter, memorandum, etc.)",
+                    },
+                ],
+                exit_signals=["document"],
+                entry_signals=["draft"],
+                supporting_agents=[
+                    SupportingAgent(
+                        agent="dea",
+                        role="citation_validation",
+                        description="Validate citation accuracy and Bluebook compliance.",
+                    ),
+                    SupportingAgent(
+                        agent="lsa",
+                        role="strategic_review",
+                        description="Ensure document aligns with overall case strategy.",
+                    ),
+                    SupportingAgent(
+                        agent="lda",
+                        role="fact_verification",
+                        description="Verify factual accuracy and timeline consistency.",
                     ),
                 ],
             ),
