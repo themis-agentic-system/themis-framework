@@ -1,0 +1,131 @@
+{
+  "matter": {
+    "metadata": {
+      "case_number": "2024-CF-007890",
+      "jurisdiction": "Florida",
+      "court": "Circuit Court of the Eleventh Judicial Circuit, Miami-Dade County",
+      "case_type": "felony",
+      "id": "FRAUD-FL-2024-004"
+    },
+    "client": {
+      "name": "Patricia Morales",
+      "dob": "1980-02-14",
+      "prior_record": "none"
+    },
+    "charges": [
+      {
+        "statute": "Florida Statutes § 817.034",
+        "description": "Communications Fraud (scheming to defraud)",
+        "degree": "felony",
+        "potential_sentence": "Third degree felony: Up to 5 years imprisonment, $5,000 fine"
+      },
+      {
+        "statute": "Florida Statutes § 817.568",
+        "description": "Criminal Use of Personal Identification Information",
+        "degree": "felony",
+        "potential_sentence": "Third degree felony: Up to 5 years imprisonment"
+      },
+      {
+        "statute": "Florida Statutes § 831.01",
+        "description": "Forgery",
+        "degree": "felony",
+        "potential_sentence": "Third degree felony: Up to 5 years imprisonment"
+      }
+    ],
+    "arrest": {
+      "date": "2024-06-10T09:00:00",
+      "location": "Client's residence, 1234 Coral Way, Miami, FL",
+      "arresting_agency": "Miami-Dade Police Department Economic Crimes Unit",
+      "officers": ["Detective William Torres", "Detective Amanda Lee"],
+      "circumstances": "Arrest warrant executed at client's home following fraud investigation"
+    },
+    "search_and_seizure": {
+      "was_search_conducted": true,
+      "search_type": "warrant",
+      "warrant_number": "SW-2024-FL-4532",
+      "items_seized": [
+        "HP laptop computer",
+        "Samsung tablet",
+        "iPhone 13 Pro",
+        "External hard drive",
+        "Box of blank checks",
+        "Bank statements and financial documents",
+        "Two fraudulent driver's licenses (alleged)"
+      ],
+      "location_searched": "Client's home office and bedroom"
+    },
+    "interrogation": {
+      "was_interrogated": true,
+      "miranda_given": true,
+      "miranda_waived": true,
+      "statements_made": [
+        "I work as a bookkeeper for several small businesses",
+        "I've never stolen from anyone",
+        "Those checks are from my clients, I'm authorized to write them",
+        "I don't know anything about fake IDs"
+      ],
+      "interrogation_location": "Miami-Dade Police Department",
+      "duration": "2 hours",
+      "officers_present": ["Detective William Torres", "Detective Amanda Lee"]
+    },
+    "identification": {
+      "identification_procedure": "none"
+    },
+    "discovery_received": [
+      {
+        "document_type": "arrest_warrant",
+        "date_received": "2024-06-15",
+        "summary": "Warrant for arrest based on alleged fraud scheme"
+      },
+      {
+        "document_type": "probable_cause_affidavit",
+        "date_received": "2024-06-15",
+        "summary": "Detective Torres affidavit alleging $75,000 fraud scheme"
+      },
+      {
+        "document_type": "victim_statements",
+        "date_received": "2024-06-20",
+        "summary": "Statements from three alleged fraud victims"
+      }
+    ],
+    "discovery_outstanding": [
+      "Complete bank records for all accounts referenced",
+      "Computer forensic analysis reports",
+      "Chain of custody for seized electronics",
+      "Any recordings of client's interrogation",
+      "Handwriting analysis (if conducted)",
+      "Authorization agreements between client and alleged victims",
+      "Complete business records showing client's legitimate employment",
+      "Any exculpatory evidence (payments made, authorized transactions)",
+      "Communications between alleged victims and client",
+      "Any prior complaints or investigations that were closed"
+    ],
+    "constitutional_issues": [
+      {
+        "issue_type": "fifth_amendment",
+        "description": "Client was interrogated for 2 hours without lawyer despite multiple requests. Statements may have been coerced or obtained after invocation of rights.",
+        "evidence": [
+          "Client states she asked for lawyer multiple times but was told 'we just need to clear this up first'",
+          "2-hour interrogation is lengthy, suggesting possible coercion",
+          "No recording of interrogation provided in discovery"
+        ]
+      },
+      {
+        "issue_type": "fourth_amendment",
+        "description": "Search warrant may have been overbroad and insufficiently particular. Seizure of all electronics and financial documents may exceed scope.",
+        "evidence": [
+          "Warrant allowed seizure of 'all electronic devices' without limitation",
+          "Legitimate business records for client's bookkeeping work were seized",
+          "Some seized items not described in warrant (personal family photos, etc.)"
+        ]
+      }
+    ],
+    "defense_theory": "Client is a legitimate bookkeeper for small businesses. She had authorization from business owners to write checks and manage accounts. Alleged 'victims' are dissatisfied clients who authorized the transactions but later regretted them. No fraud occurred - this is a civil contract dispute being prosecuted as a crime. Client's statements should be suppressed as they were obtained after she invoked her right to counsel. Forensic analysis of computers will show legitimate business records, not fraud scheme.",
+    "goals": {
+      "primary": "Dismissal - no fraud occurred, civil matter only",
+      "secondary": "Suppression of statements and illegally seized evidence",
+      "fallback": "Reduction to misdemeanor, restitution, no jail time"
+    },
+    "client_narrative": "I run a bookkeeping and accounting service for small businesses. I have about 10 regular clients. They give me access to their accounts and authorize me to pay bills, make deposits, and manage their finances. The three people claiming I defrauded them were my clients. They signed agreements authorizing me to handle their money. We had disputes over fees and some accounting errors, but I never stole anything. When the detectives arrested me and took me to the station, I was terrified. I told them I wanted a lawyer but they said 'we just need to clear this up, it will be faster if you talk to us now.' They questioned me for what felt like forever. I kept trying to explain that I was authorized to write those checks but they wouldn't listen. Everything I did was authorized and documented. I have contracts and emails proving they gave me permission. This is a business dispute, not a crime."
+  }
+}

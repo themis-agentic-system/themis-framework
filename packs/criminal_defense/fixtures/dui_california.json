@@ -1,0 +1,102 @@
+{
+  "matter": {
+    "metadata": {
+      "case_number": "24CR12345",
+      "jurisdiction": "California",
+      "court": "Superior Court of San Diego County",
+      "case_type": "misdemeanor",
+      "id": "DUI-CA-2024-001"
+    },
+    "client": {
+      "name": "Maria Rodriguez",
+      "dob": "1988-06-20",
+      "prior_record": "none"
+    },
+    "charges": [
+      {
+        "statute": "Vehicle Code § 23152(a)",
+        "description": "Driving under the influence of alcohol",
+        "degree": "misdemeanor",
+        "potential_sentence": "Up to 6 months jail, 3-5 years probation, fines, DUI school"
+      },
+      {
+        "statute": "Vehicle Code § 23152(b)",
+        "description": "Driving with BAC 0.08% or higher",
+        "degree": "misdemeanor",
+        "potential_sentence": "Up to 6 months jail"
+      }
+    ],
+    "arrest": {
+      "date": "2024-09-15T23:45:00",
+      "location": "Pacific Coast Highway & La Jolla Blvd, San Diego",
+      "arresting_agency": "San Diego Police Department",
+      "officers": ["Officer T. Martinez #4521"],
+      "circumstances": "Traffic stop for alleged 'weaving within lane'"
+    },
+    "search_and_seizure": {
+      "was_search_conducted": false,
+      "search_type": "none",
+      "items_seized": []
+    },
+    "interrogation": {
+      "was_interrogated": true,
+      "miranda_given": true,
+      "miranda_waived": true,
+      "statements_made": [
+        "I had two glasses of wine with dinner",
+        "I finished drinking around 9 PM"
+      ],
+      "interrogation_location": "Roadside",
+      "duration": "10 minutes",
+      "officers_present": ["Officer T. Martinez #4521"]
+    },
+    "identification": {
+      "identification_procedure": "none"
+    },
+    "discovery_received": [
+      {
+        "document_type": "police_report",
+        "date_received": "2024-09-25",
+        "summary": "Officer narrative of stop, field sobriety tests, and arrest"
+      },
+      {
+        "document_type": "breathalyzer_result",
+        "date_received": "2024-09-25",
+        "summary": "Printout showing 0.09% BAC"
+      }
+    ],
+    "discovery_outstanding": [
+      "Dash cam footage",
+      "Breathalyzer calibration records (past 6 months)",
+      "Breathalyzer maintenance logs",
+      "Officer Martinez training and certification records",
+      "Radio dispatch logs",
+      "Body cam footage (if exists)",
+      "Title 17 CCR compliance documentation"
+    ],
+    "constitutional_issues": [
+      {
+        "issue_type": "fourth_amendment",
+        "description": "Questionable basis for traffic stop - 'weaving within lane' is not necessarily a violation. Officer may lack reasonable suspicion.",
+        "evidence": [
+          "Police report states 'weaving within lane' but no actual traffic violation cited",
+          "Stop initiated at 11:45 PM - possible pretext stop"
+        ]
+      },
+      {
+        "issue_type": "other",
+        "description": "Title 17 compliance - need to verify 15-minute observation period and device calibration",
+        "evidence": [
+          "Test administered 45 minutes after stop - verify observation was continuous"
+        ]
+      }
+    ],
+    "defense_theory": "Client had two glasses of wine over 3-hour dinner, finishing at 9 PM. Stop occurred at 11:45 PM, over 2.5 hours later. No erratic driving. 'Weaving within lane' insufficient for reasonable suspicion under People v. Perez. BAC test may violate Title 17 regulations if observation period was interrupted.",
+    "goals": {
+      "primary": "Dismissal via suppression of stop and/or BAC test",
+      "secondary": "Reduction to dry reckless (VC 23103)",
+      "fallback": "Standard first-time DUI with minimal penalties"
+    },
+    "client_narrative": "I had dinner with friends at a restaurant in La Jolla. I had two glasses of wine between 6 PM and 9 PM with food. I left around 11:30 PM to drive home. I was not driving erratically. The officer said I was 'weaving' but I was just changing lanes normally to get into the left turn lane. I was nervous during the field sobriety tests because I have a bad knee from an old soccer injury. I don't think I was impaired when I was driving."
+  }
+}
