@@ -75,10 +75,11 @@ def validate_and_extract_matter(matter_data: dict[str, Any]) -> dict[str, Any]:
         # Try to validate as wrapped matter first ({"matter": {...}})
         if "matter" in matter_data:
             wrapper = MatterWrapper.model_validate(matter_data)
-            # If the inner matter is a Pydantic model, convert to dict
-            if isinstance(wrapper.matter, Matter):
-                return wrapper.matter.model_dump(exclude_none=True)
-            return wrapper.matter
+            inner = wrapper.matter
+            if isinstance(inner, Matter):
+                return inner.model_dump(exclude_none=True)
+            validated_inner = Matter.model_validate(inner)
+            return validated_inner.model_dump(exclude_none=True)
 
         # Try to validate as direct matter
         validated = Matter.model_validate(matter_data)

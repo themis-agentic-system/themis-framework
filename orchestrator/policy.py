@@ -372,34 +372,4 @@ class RoutingPolicy:
                     ),
                 ],
             ),
-            PhaseDefinition(
-                phase=Phase.DOCUMENT_ASSEMBLY,
-                description="Generate formal legal documents with proper structure, citations, and modern legal prose.",
-                default_primary_agent="dda",
-                expected_artifacts=[
-                    {
-                        "name": "document",
-                        "description": "Formal legal document (complaint, motion, demand letter, memorandum, etc.)",
-                    },
-                ],
-                exit_signals=["document"],
-                entry_signals=["draft"],
-                supporting_agents=[
-                    SupportingAgent(
-                        agent="dea",
-                        role="citation_validation",
-                        description="Validate citation accuracy and Bluebook compliance.",
-                    ),
-                    SupportingAgent(
-                        agent="lsa",
-                        role="strategic_review",
-                        description="Ensure document aligns with overall case strategy.",
-                    ),
-                    SupportingAgent(
-                        agent="lda",
-                        role="fact_verification",
-                        description="Verify factual accuracy and timeline consistency.",
-                    ),
-                ],
-            ),
         ]
