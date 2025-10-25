@@ -9,6 +9,76 @@ from agents.tooling import ToolSpec
 from tools.llm_client import get_llm_client
 
 
+def _normalise_party_roles(parties: Any) -> dict[str, str]:
+    """Map arbitrary party payloads to plaintiff/defendant placeholders."""
+
+    defaults = {"plaintiff": "PLAINTIFF NAME", "defendant": "DEFENDANT NAME"}
+    if parties is None:
+        return defaults.copy()
+
+    # Direct mapping support
+    if isinstance(parties, dict):
+        normalised = defaults.copy()
+        for role in defaults:
+            value = parties.get(role)
+            if isinstance(value, str) and value.strip():
+                normalised[role] = value.strip()
+        if normalised != defaults:
+            return normalised
+
+        # Fall back to the first non-empty string values
+        names = [str(value).strip() for value in parties.values() if str(value).strip()]
+        if names:
+            normalised["plaintiff"] = names[0]
+            if len(names) >= 2:
+                normalised["defendant"] = names[1]
+        return normalised
+
+    # List of parties (strings or dicts)
+    if isinstance(parties, list):
+        normalised = defaults.copy()
+        unnamed: list[str] = []
+        for entry in parties:
+            if isinstance(entry, str):
+                name = entry.strip()
+                if name:
+                    unnamed.append(name)
+                continue
+            if isinstance(entry, dict):
+                name_field = entry.get("name") or entry.get("party") or entry.get("full_name")
+                role_field = entry.get("role") or entry.get("type") or entry.get("side")
+                if isinstance(role_field, str) and isinstance(name_field, str):
+                    role_lower = role_field.lower()
+                    name = name_field.strip()
+                    if not name:
+                        continue
+                    if any(tag in role_lower for tag in ("plaintiff", "claimant", "petitioner")):
+                        normalised["plaintiff"] = name
+                        continue
+                    if any(tag in role_lower for tag in ("defendant", "respondent", "accused")):
+                        normalised["defendant"] = name
+                        continue
+                    unnamed.append(name)
+                    continue
+                if isinstance(name_field, str) and name_field.strip():
+                    unnamed.append(name_field.strip())
+                continue
+            if entry is not None:
+                entry_str = str(entry).strip()
+                if entry_str:
+                    unnamed.append(entry_str)
+        if normalised["plaintiff"] == defaults["plaintiff"] and unnamed:
+            normalised["plaintiff"] = unnamed[0]
+        if normalised["defendant"] == defaults["defendant"] and len(unnamed) >= 2:
+            normalised["defendant"] = unnamed[1]
+        return normalised
+
+    if isinstance(parties, str) and parties.strip():
+        return {"plaintiff": parties.strip(), "defendant": defaults["defendant"]}
+
+    return defaults.copy()
+
+
 class DocumentDraftingAgent(BaseAgent):
     """Draft formal legal documents using modern legal prose.
 
@@ -432,11 +502,36 @@ async def _default_document_composer(
     """Assemble complete legal document from sections."""
 
     # Document header
-    parties = matter.get("parties", {})
+    facts_block = matter.get("facts") or {}
+    metadata = matter.get("metadata") or {}
+
+    party_source = (
+        facts_block.get("parties")
+        if isinstance(facts_block, dict)
+        else None
+    )
+    if not party_source:
+        party_source = metadata.get("parties") if isinstance(metadata, dict) else None
+    if not party_source:
+        party_source = matter.get("parties")
+
+    parties = _normalise_party_roles(party_source)
     plaintiff = parties.get("plaintiff", "PLAINTIFF NAME")
     defendant = parties.get("defendant", "DEFENDANT NAME")
-    case_number = matter.get("case_number", "No. XX-XXXX")
-    court = matter.get("court", "COURT NAME")
+
+    case_number = None
+    if isinstance(metadata, dict):
+        case_number = metadata.get("case_number") or metadata.get("docket_number")
+    if not case_number:
+        case_number = matter.get("case_number")
+    case_number = case_number or "No. XX-XXXX"
+
+    court = None
+    if isinstance(metadata, dict):
+        court = metadata.get("court") or metadata.get("jurisdiction")
+    if not court:
+        court = matter.get("court") or matter.get("jurisdiction")
+    court = court or "COURT NAME"
 
     # Build document parts
     parts = []
