@@ -8,7 +8,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi import HTTPException
-from fastapi.testclient import TestClient
 
 from api.security import verify_api_key
 from orchestrator.models import Matter, MatterWrapper
