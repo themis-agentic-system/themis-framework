@@ -18,6 +18,29 @@ class Document(BaseModel):
     facts: list[str] = Field(default_factory=list, description="Key facts from document")
     type: str | None = Field(None, description="Document type")
 
+    def __getitem__(self, item: str) -> Any:
+        """Provide dict-style access for backwards compatibility."""
+
+        try:
+            return getattr(self, item)
+        except AttributeError as exc:
+            raise KeyError(item) from exc
+
+    def get(self, item: str, default: Any = None) -> Any:
+        """Return a value using dict-style semantics."""
+
+        return getattr(self, item, default)
+
+    def keys(self) -> list[str]:
+        """Expose field names similar to a mapping."""
+
+        return list(self.model_fields)
+
+    def items(self) -> list[tuple[str, Any]]:
+        """Iterate over key/value pairs."""
+
+        return [(key, getattr(self, key)) for key in self.model_fields]
+
     @field_validator("date")
     @classmethod
     def validate_date_format(cls, v: str | None) -> str | None:
@@ -157,6 +180,119 @@ class Matter(BaseModel):
         if not v:
             raise ValueError("At least one document must be provided")
         return v
+
+    @field_validator("documents", mode="before")
+    @classmethod
+    def coerce_documents(cls, value: Any) -> Any:
+        """Coerce raw mappings into Document models before validation."""
+
+        if value is None:
+            return value
+        if not isinstance(value, list):
+            raise TypeError("Documents must be provided as a list")
+        coerced: list[Document] = []
+        for entry in value:
+            if isinstance(entry, Document):
+                coerced.append(entry)
+            elif isinstance(entry, dict):
+                coerced.append(Document.model_validate(entry))
+            else:
+                raise TypeError("Documents must be dictionaries or Document instances")
+        return coerced
+
+    @field_validator("events", mode="before")
+    @classmethod
+    def coerce_events(cls, value: Any) -> Any:
+        """Ensure events are validated Event models."""
+
+        if value is None:
+            return []
+        if not isinstance(value, list):
+            raise TypeError("Events must be provided as a list")
+        coerced: list[Event] = []
+        for entry in value:
+            if isinstance(entry, Event):
+                coerced.append(entry)
+            elif isinstance(entry, dict):
+                coerced.append(Event.model_validate(entry))
+            else:
+                raise TypeError("Events must be dictionaries or Event instances")
+        return coerced
+
+    @field_validator("issues", mode="before")
+    @classmethod
+    def coerce_issues(cls, value: Any) -> Any:
+        """Normalise issues into Issue models."""
+
+        if value is None:
+            return []
+        if not isinstance(value, list):
+            raise TypeError("Issues must be provided as a list")
+        coerced: list[Issue] = []
+        for entry in value:
+            if isinstance(entry, Issue):
+                coerced.append(entry)
+            elif isinstance(entry, dict):
+                coerced.append(Issue.model_validate(entry))
+            elif isinstance(entry, str):
+                coerced.append(Issue.model_validate({"issue": entry}))
+            else:
+                raise TypeError("Issues must be strings, dictionaries, or Issue instances")
+        return coerced
+
+    @field_validator("authorities", mode="before")
+    @classmethod
+    def coerce_authorities(cls, value: Any) -> Any:
+        """Normalise authorities into Authority models."""
+
+        if value is None:
+            return []
+        if not isinstance(value, list):
+            raise TypeError("Authorities must be provided as a list")
+        coerced: list[Authority] = []
+        for entry in value:
+            if isinstance(entry, Authority):
+                coerced.append(entry)
+            elif isinstance(entry, dict):
+                coerced.append(Authority.model_validate(entry))
+            elif isinstance(entry, str):
+                coerced.append(Authority.model_validate({"cite": entry}))
+            else:
+                raise TypeError("Authorities must be strings, dictionaries, or Authority instances")
+        return coerced
+
+    @field_validator("damages", mode="before")
+    @classmethod
+    def coerce_damages(cls, value: Any) -> Any:
+        """Coerce damages payloads into Damages models."""
+
+        if value is None or isinstance(value, Damages):
+            return value
+        if isinstance(value, dict):
+            return Damages.model_validate(value)
+        raise TypeError("Damages must be a mapping of numeric values")
+
+    @field_validator("metadata", mode="before")
+    @classmethod
+    def coerce_metadata(cls, value: Any) -> Any:
+        """Coerce metadata payloads into Metadata models."""
+
+        if value is None or isinstance(value, Metadata):
+            return value
+        if isinstance(value, dict):
+            return Metadata.model_validate(value)
+        raise TypeError("Metadata must be provided as a mapping")
+
+    @field_validator("goals", mode="before")
+    @classmethod
+    def coerce_goals(cls, value: Any) -> Any:
+        """Coerce goals payloads into Goals models."""
+
+        if value is None or isinstance(value, Goals):
+            return value
+        if isinstance(value, dict):
+            return Goals.model_validate(value)
+        raise TypeError("Goals must be provided as a mapping")
 
 
 class MatterWrapper(BaseModel):
