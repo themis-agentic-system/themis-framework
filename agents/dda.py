@@ -502,20 +502,7 @@ async def _default_document_composer(
     """Assemble complete legal document from sections."""
 
     # Document header
-    facts_block = matter.get("facts") or {}
-    metadata = matter.get("metadata") or {}
-
-    party_source = (
-        facts_block.get("parties")
-        if isinstance(facts_block, dict)
-        else None
-    )
-    if not party_source:
-        party_source = metadata.get("parties") if isinstance(metadata, dict) else None
-    if not party_source:
-        party_source = matter.get("parties")
-
-    parties = _normalise_party_roles(party_source)
+    parties = _normalise_party_roles(matter.get("parties"))
     plaintiff = parties.get("plaintiff", "PLAINTIFF NAME")
     defendant = parties.get("defendant", "DEFENDANT NAME")
 
