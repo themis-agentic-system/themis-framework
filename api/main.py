@@ -12,7 +12,12 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 from api.logging_config import configure_logging
-from api.middleware import AuditLoggingMiddleware, CostTrackingMiddleware, RequestLoggingMiddleware
+from api.middleware import (
+    AuditLoggingMiddleware,
+    CostTrackingMiddleware,
+    PayloadSizeLimitMiddleware,
+    RequestLoggingMiddleware,
+)
 from orchestrator.router import configure_service, router as orchestrator_router
 from orchestrator.service import OrchestratorService
 from tools.metrics import metrics_registry
@@ -61,6 +66,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(AuditLoggingMiddleware)
 app.add_middleware(CostTrackingMiddleware)
 app.add_middleware(RequestLoggingMiddleware)
+app.add_middleware(PayloadSizeLimitMiddleware)  # Check payload size first
 
 app.include_router(orchestrator_router, prefix="/orchestrator", tags=["orchestrator"])
 

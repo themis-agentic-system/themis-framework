@@ -2,15 +2,19 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, ValidationError
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
 from api.security import verify_api_key
+from orchestrator.models import Matter, MatterWrapper
 from orchestrator.service import OrchestratorService
+
+logger = logging.getLogger("themis.orchestrator.router")
 
 router = APIRouter()
 _service: OrchestratorService | None = None
@@ -52,6 +56,56 @@ def get_service() -> OrchestratorService:
     return _service
 
 
+def validate_and_extract_matter(matter_data: dict[str, Any]) -> dict[str, Any]:
+    """Validate matter payload and extract data.
+
+    Attempts to validate the matter payload using Pydantic models for type safety.
+    Falls back to raw dict if validation fails (for backward compatibility).
+
+    Args:
+        matter_data: Raw matter data (may be {"matter": {...}} or direct matter dict)
+
+    Returns:
+        Validated matter dict (always extracts inner "matter" key if present)
+
+    Raises:
+        HTTPException: If validation fails with helpful error messages
+    """
+    try:
+        # Try to validate as wrapped matter first ({"matter": {...}})
+        if "matter" in matter_data:
+            wrapper = MatterWrapper.model_validate(matter_data)
+            # If the inner matter is a Pydantic model, convert to dict
+            if isinstance(wrapper.matter, Matter):
+                return wrapper.matter.model_dump(exclude_none=True)
+            return wrapper.matter
+
+        # Try to validate as direct matter
+        validated = Matter.model_validate(matter_data)
+        return validated.model_dump(exclude_none=True)
+
+    except ValidationError as exc:
+        # Log validation errors for debugging
+        logger.warning(f"Matter validation failed: {exc.error_count()} errors")
+        for error in exc.errors():
+            logger.debug(f"  - {error['loc']}: {error['msg']}")
+
+        # Return helpful error message
+        error_details = []
+        for error in exc.errors():
+            location = " -> ".join(str(loc) for loc in error["loc"])
+            error_details.append(f"{location}: {error['msg']}")
+
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "message": "Matter validation failed",
+                "errors": error_details[:10],  # Limit to first 10 errors
+                "total_errors": exc.error_count(),
+            },
+        ) from exc
+
+
 @router.post("/plan", summary="Create an execution plan for a legal matter")
 @limiter.limit("20/minute")  # 20 requests per minute per IP
 async def plan(
@@ -61,11 +115,14 @@ async def plan(
 ) -> dict[str, Any]:
     """Generate a draft plan given a matter payload.
 
+    Validates the matter payload for required fields and data types.
     Requires authentication via Bearer token if THEMIS_API_KEY is set.
     Rate limited to 20 requests per minute per IP address.
     """
     service = get_service()
-    return await service.plan(request_body.matter)
+    # Validate matter payload
+    validated_matter = validate_and_extract_matter(request_body.matter)
+    return await service.plan(validated_matter)
 
 
 @router.post("/execute", summary="Run a plan through registered agents")
@@ -77,6 +134,7 @@ async def execute(
 ) -> dict[str, Any]:
     """Run a matter through the orchestrated workflow.
 
+    Validates the matter payload if provided.
     Requires authentication via Bearer token if THEMIS_API_KEY is set.
     Rate limited to 10 requests per minute per IP address.
     """
@@ -88,7 +146,12 @@ async def execute(
 
     service = get_service()
     try:
-        return await service.execute(plan_id=request_body.plan_id, matter=request_body.matter)
+        # Validate matter if provided
+        validated_matter = None
+        if request_body.matter is not None:
+            validated_matter = validate_and_extract_matter(request_body.matter)
+
+        return await service.execute(plan_id=request_body.plan_id, matter=validated_matter)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
