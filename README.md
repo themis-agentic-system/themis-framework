@@ -196,9 +196,9 @@ themis-framework/
 │  • Determines agent routing based on intent                  │
 └──────────────────────────┬──────────────────────────────────┘
                            │
-          ┌────────────────┼────────────────┐
-          │                │                │
-          ▼                ▼                ▼
+          ┌────────────────┼────────────────┬────────────────┐
+          │                │                │                │
+          ▼                ▼                ▼                ▼
     ┌─────────┐      ┌─────────┐      ┌─────────┐      ┌─────────┐
     │   LDA   │      │   DEA   │      │   LSA   │      │   DDA   │
     │  Facts  │ ───> │   Law   │ ───> │Strategy │ ───> │Document │
@@ -208,22 +208,34 @@ themis-framework/
           └────────────────┴────────────────┴────────────────┘
                                     │
                                     ▼
-┌─────────────────────────────────────────────────────────────┐
-│              Orchestrator (Reflection)                       │
-│  • Validates signal propagation                              │
-│  • Checks consistency across agents                          │
-│  • Verifies exit conditions met                              │
-└──────────────────────────┬──────────────────────────────────┘
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────────────┐
-│              Human Review-Ready Artifacts                    │
-│  • Timeline spreadsheet                                      │
-│  • Draft demand letter                                       │
-│  • Legal analysis report                                     │
-│  • Strategy recommendations                                  │
-│  • Formal legal documents (complaints, motions, memos)       │
-└─────────────────────────────────────────────────────────────┘
+           ┌────────────────────────────────────────────────────┐
+           │         Orchestrator (Reflection)                   │
+           │  • Validates signal propagation                     │
+           │  • Checks consistency across agents                 │
+           │  • Verifies exit conditions met                     │
+           │  • Ensures all legal issues have been addressed     │
+           │  • Validates legal writing is crisp and uses modern │
+           │    legal prose                                      │
+           └─────┬──────────────────────────────────────────┬────┘
+                 │                                          │
+                 │  Quality checks passed                   │ Quality checks failed
+                 ▼                                          │ (loop back to re-plan)
+┌─────────────────────────────────────────┐                │
+│     Human Review-Ready Artifacts        │                │
+│  • Timeline spreadsheet                 │                │
+│  • Draft demand letter                  │                │
+│  • Legal analysis report                │                │
+│  • Strategy recommendations             │                │
+│  • Formal legal documents (complaints,  │                │
+│    motions, memos)                      │                │
+└─────────────────────────────────────────┘                │
+                                                            │
+                    ┌───────────────────────────────────────┘
+                    │
+                    └──────────────────────────────┐
+                                                   │
+                                                   ▼
+                            (Re-evaluate plan and re-execute)
 ```
 
 ---
