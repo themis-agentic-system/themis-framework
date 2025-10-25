@@ -218,24 +218,17 @@ themis-framework/
            │    legal prose                                      │
            └─────┬──────────────────────────────────────────┬────┘
                  │                                          │
-                 │  Quality checks passed                   │ Quality checks failed
-                 ▼                                          │ (loop back to re-plan)
-┌─────────────────────────────────────────┐                │
-│     Human Review-Ready Artifacts        │                │
-│  • Timeline spreadsheet                 │                │
-│  • Draft demand letter                  │                │
-│  • Legal analysis report                │                │
-│  • Strategy recommendations             │                │
-│  • Formal legal documents (complaints,  │                │
-│    motions, memos)                      │                │
-└─────────────────────────────────────────┘                │
-                                                            │
-                    ┌───────────────────────────────────────┘
-                    │
-                    └──────────────────────────────┐
-                                                   │
-                                                   ▼
-                            (Re-evaluate plan and re-execute)
+                 │  Quality checks passed                   └─ Quality checks failed → Re-plan and re-execute
+                 ▼
+┌─────────────────────────────────────────┐
+│     Human Review-Ready Artifacts        │
+│  • Timeline spreadsheet                 │
+│  • Draft demand letter                  │
+│  • Legal analysis report                │
+│  • Strategy recommendations             │
+│  • Formal legal documents (complaints,  │
+│    motions, memos)                      │
+└─────────────────────────────────────────┘
 ```
 
 ---
