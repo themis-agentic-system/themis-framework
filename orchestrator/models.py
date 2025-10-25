@@ -126,9 +126,11 @@ class Matter(BaseModel):
     """
 
     summary: str = Field(..., min_length=10, description="Brief summary of the matter")
-    parties: list[str] = Field(..., min_items=1, description="List of parties involved")
+    parties: list[str] = Field(
+        ..., min_length=1, description="List of parties involved"
+    )
     documents: list[Document | dict[str, Any]] = Field(
-        ..., min_items=1, description="Documents related to the matter"
+        ..., min_length=1, description="Documents related to the matter"
     )
 
     # Optional fields

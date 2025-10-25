@@ -505,8 +505,20 @@ async def _default_document_composer(
     parties = _normalise_party_roles(matter.get("parties"))
     plaintiff = parties.get("plaintiff", "PLAINTIFF NAME")
     defendant = parties.get("defendant", "DEFENDANT NAME")
-    case_number = matter.get("case_number", "No. XX-XXXX")
-    court = matter.get("court", "COURT NAME")
+
+    case_number = None
+    if isinstance(metadata, dict):
+        case_number = metadata.get("case_number") or metadata.get("docket_number")
+    if not case_number:
+        case_number = matter.get("case_number")
+    case_number = case_number or "No. XX-XXXX"
+
+    court = None
+    if isinstance(metadata, dict):
+        court = metadata.get("court") or metadata.get("jurisdiction")
+    if not court:
+        court = matter.get("court") or matter.get("jurisdiction")
+    court = court or "COURT NAME"
 
     # Build document parts
     parts = []

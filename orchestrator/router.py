@@ -60,7 +60,7 @@ def validate_and_extract_matter(matter_data: dict[str, Any]) -> dict[str, Any]:
     """Validate matter payload and extract data.
 
     Attempts to validate the matter payload using Pydantic models for type safety.
-    Falls back to raw dict if validation fails (for backward compatibility).
+    Raises a 422 HTTP error if validation fails so the caller can correct payloads.
 
     Args:
         matter_data: Raw matter data (may be {"matter": {...}} or direct matter dict)
