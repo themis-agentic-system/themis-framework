@@ -54,10 +54,18 @@ Modern legal work blends **facts + law + strategy**. Themis models this as a cre
 
 - **DDA (Document Drafting Agent)** ✍️
   - Generates formal legal documents using modern legal prose
-  - Supports complaints, motions, demand letters, and memoranda
-  - Formats citations according to Bluebook and jurisdiction standards
-  - Validates document completeness and analyzes tone quality
-  - Ensures plain language and accessibility standards
+  - **Supported Document Types:**
+    - Complaints (civil litigation)
+    - Motions and briefs
+    - Demand letters (settlement negotiations)
+    - Legal memoranda (research memos)
+  - **Core Capabilities:**
+    - Citation formatting (Bluebook and jurisdiction-specific)
+    - Multi-section document assembly (caption, facts, argument, conclusion)
+    - Document validation and completeness checks
+    - Tone analysis for appropriate formality
+    - Plain language compliance (avoiding unnecessary legalese)
+  - **5 Specialized Tools:** section_generator, citation_formatter, document_composer, document_validator, tone_analyzer
 
 - **Orchestrator** 🎼
   - Routes tasks to the right specialist agent
@@ -83,9 +91,10 @@ Themis draws inspiration from multi-agent healthcare systems and adapts the appr
 - ✅ **Comprehensive Testing** – 35 tests with 85.7% pass rate across all components
 
 ### Intelligent Agent System
-- 🤖 **LLM-Powered Agents** – Claude 3.5 Sonnet integration with structured outputs
+- 🤖 **4 Specialist Agents** – LDA (facts), DEA (law), LSA (strategy), DDA (documents)
+- 🧠 **LLM-Powered** – Claude 3.5 Sonnet integration with structured outputs
 - 🔄 **Automatic Retry Logic** – Exponential backoff for transient failures (3 attempts)
-- 🎯 **Smart Routing** – Phase-based orchestration with signal propagation
+- 🎯 **Smart Routing** – 6-phase orchestration with signal propagation
 - 📝 **Stub Mode** – Run without API keys for testing and development
 
 ### Observability & Monitoring
@@ -108,11 +117,12 @@ Themis draws inspiration from multi-agent healthcare systems and adapts the appr
 
 ```
 themis-framework/
-├── agents/                 # 🤖 Specialist agents (LDA, DEA, LSA)
+├── agents/                 # 🤖 Specialist agents (LDA, DEA, LSA, DDA)
 │   ├── base.py            # Base agent with metrics, logging, tool invocation
 │   ├── lda.py             # Legal Data Analyst (facts, timelines, damages)
 │   ├── dea.py             # Doctrinal Expert (legal analysis, citations)
-│   └── lsa.py             # Legal Strategist (strategy, risk assessment)
+│   ├── lsa.py             # Legal Strategist (strategy, risk assessment)
+│   └── dda.py             # Document Drafter (formal legal documents, citations)
 │
 ├── orchestrator/          # 🎼 Agent coordination and workflow management
 │   ├── main.py            # Simple sequential orchestrator
@@ -225,6 +235,49 @@ themis-framework/
 │  • Formal legal documents (complaints, motions, memos)       │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+### 6-Phase Orchestration Workflow
+
+The orchestrator executes agents through **6 sequential phases** with signal propagation:
+
+1. **INTAKE_FACTS** (LDA primary)
+   - Parses documents and extracts structured facts
+   - Builds chronological timelines
+   - Identifies parties and key events
+   - Exit signal: `facts`
+
+2. **ISSUE_FRAMING** (DEA primary)
+   - Identifies legal issues from facts
+   - Classifies area of law
+   - Assesses claim strength
+   - Exit signal: `issues`
+
+3. **RESEARCH_RETRIEVAL** (DEA primary)
+   - Retrieves controlling authorities
+   - Finds contrary authorities
+   - Formats Bluebook citations
+   - Exit signals: `controlling_authority`, `contrary_authority`
+
+4. **APPLICATION_ANALYSIS** (DEA primary)
+   - Applies law to facts
+   - Analyzes claim merits
+   - Quantifies damages/exposure
+   - Exit signal: `analysis`
+
+5. **DRAFT_REVIEW** (LSA primary)
+   - Develops strategic recommendations
+   - Performs risk assessment
+   - Creates client-safe summaries
+   - Exit signals: `draft`, `client_safe_summary`
+
+6. **DOCUMENT_ASSEMBLY** (DDA primary) ✨ *New!*
+   - Generates formal legal documents
+   - Formats citations and structure
+   - Validates completeness
+   - Analyzes tone and quality
+   - Exit signal: `document`
+
+Each phase can include **supporting agents** that provide validation, reflection, or synthesis from their domain perspective.
 
 ---
 
@@ -738,12 +791,18 @@ See [CODE_REVIEW_REPORT.md](CODE_REVIEW_REPORT.md) for the complete analysis.
 
 ## Roadmap
 
+### Recently Completed ✅
+- [x] **Document Drafting Agent (DDA)** – Formal legal document generation with modern legal prose
+- [x] 6-phase orchestration workflow with DOCUMENT_ASSEMBLY phase
+- [x] Citation formatting and validation tools
+
 ### Near-Term (Q1 2025)
 - [ ] Fix async test configuration for 100% test pass rate
 - [ ] Add comprehensive API endpoint tests
 - [ ] Implement input sanitization and validation
 - [ ] Add API key rotation mechanism
 - [ ] Create RAG integration for legal research
+- [ ] Integrate DDA with existing practice packs (PI Demand, Criminal Defense)
 
 ### Mid-Term (Q2-Q3 2025)
 - [ ] Expand practice packs (employment law, M&A diligence, regulatory compliance)
