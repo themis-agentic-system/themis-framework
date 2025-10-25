@@ -1,0 +1,111 @@
+{
+  "matter": {
+    "metadata": {
+      "case_number": "2024-NY-56789",
+      "jurisdiction": "New York",
+      "court": "Supreme Court, New York County",
+      "case_type": "felony",
+      "id": "DRUG-NY-2024-002"
+    },
+    "client": {
+      "name": "James Thompson",
+      "dob": "1992-03-10",
+      "prior_record": "misdemeanor"
+    },
+    "charges": [
+      {
+        "statute": "NY Penal Law § 220.16",
+        "description": "Criminal Possession of a Controlled Substance in the Third Degree",
+        "degree": "felony",
+        "potential_sentence": "Class B felony: Up to 25 years imprisonment"
+      },
+      {
+        "statute": "NY Penal Law § 220.06",
+        "description": "Criminal Possession of a Controlled Substance in the Fifth Degree",
+        "degree": "felony",
+        "potential_sentence": "Class D felony: Up to 7 years imprisonment"
+      }
+    ],
+    "arrest": {
+      "date": "2024-08-22T06:30:00",
+      "location": "456 Amsterdam Avenue, Apartment 3B, New York, NY",
+      "arresting_agency": "NYPD Narcotics Division",
+      "officers": ["Detective Sarah Chen", "Officer Michael Rodriguez"],
+      "circumstances": "Search warrant execution at client's residence"
+    },
+    "search_and_seizure": {
+      "was_search_conducted": true,
+      "search_type": "warrant",
+      "warrant_number": "SW-2024-8765",
+      "items_seized": [
+        "42 grams of cocaine",
+        "Digital scale",
+        "Cell phone (iPhone 12)",
+        "$2,800 cash",
+        "Small plastic baggies"
+      ],
+      "location_searched": "Client's apartment (456 Amsterdam Ave, Apt 3B)"
+    },
+    "interrogation": {
+      "was_interrogated": true,
+      "miranda_given": true,
+      "miranda_waived": false,
+      "statements_made": [],
+      "interrogation_location": "NYPD 24th Precinct",
+      "duration": "Attempted interrogation, client invoked right to counsel immediately",
+      "officers_present": ["Detective Sarah Chen"]
+    },
+    "identification": {
+      "identification_procedure": "none"
+    },
+    "discovery_received": [
+      {
+        "document_type": "arrest_report",
+        "date_received": "2024-08-30",
+        "summary": "NYPD arrest report and booking information"
+      },
+      {
+        "document_type": "search_warrant",
+        "date_received": "2024-08-30",
+        "summary": "Copy of search warrant (but NOT the supporting affidavit)"
+      }
+    ],
+    "discovery_outstanding": [
+      "Search warrant affidavit (sealed)",
+      "Confidential informant (CI) identity and reliability records",
+      "Any controlled buy recordings or documentation",
+      "Surveillance logs (if any)",
+      "Lab analysis of seized substances",
+      "Chain of custody documentation",
+      "Cell phone extraction report",
+      "Any recordings of warrant execution"
+    ],
+    "constitutional_issues": [
+      {
+        "issue_type": "fourth_amendment",
+        "description": "Search warrant may be based on unreliable confidential informant. Need to review sealed affidavit for Franks violations (material misrepresentations or omissions).",
+        "evidence": [
+          "Client states he does not know any confidential informants",
+          "No prior police contact at this address",
+          "Warrant affidavit is sealed - suggests possible CI involvement",
+          "Client denies selling drugs or having visitors who might be CI"
+        ]
+      },
+      {
+        "issue_type": "fourth_amendment",
+        "description": "Warrant may lack probable cause or particularity. Need to challenge scope and basis of warrant.",
+        "evidence": [
+          "Affidavit has not been disclosed despite discovery demands",
+          "Client maintains drugs were not his (shared apartment)"
+        ]
+      }
+    ],
+    "defense_theory": "Client shares apartment with roommate who has history of drug involvement. Drugs found in common area, not client's bedroom. Search warrant may be based on stale or unreliable CI information. Client invoked right to counsel immediately, made no incriminating statements. Warrant affidavit should be unsealed and challenged under Franks v. Delaware for material misrepresentations.",
+    "goals": {
+      "primary": "Dismissal via suppression of evidence (invalid warrant)",
+      "secondary": "Reduction to possession charge (eliminate intent to sell)",
+      "fallback": "Plea to Class E felony with probation"
+    },
+    "client_narrative": "I share that apartment with my roommate Marcus. I was asleep when the police broke down the door at 6:30 AM. They had a warrant but wouldn't tell me what it said. I don't know anything about cocaine. Marcus has had drug problems in the past and has lots of people coming and going. The drugs were found in the living room, not my bedroom. I never sold drugs or had any dealings with drug dealers. I told the detective I wanted a lawyer and didn't answer any questions. I don't know who could have told police I had drugs because I don't have drugs. This is Marcus's problem, not mine."
+  }
+}

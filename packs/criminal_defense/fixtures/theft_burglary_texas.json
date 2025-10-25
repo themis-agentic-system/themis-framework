@@ -1,0 +1,125 @@
+{
+  "matter": {
+    "metadata": {
+      "case_number": "CR-2024-45678-A",
+      "jurisdiction": "Texas",
+      "court": "Criminal District Court No. 3, Harris County",
+      "case_type": "felony",
+      "id": "THEFT-TX-2024-003"
+    },
+    "client": {
+      "name": "Robert Johnson",
+      "dob": "1995-11-05",
+      "prior_record": "none"
+    },
+    "charges": [
+      {
+        "statute": "Texas Penal Code § 30.02",
+        "description": "Burglary of a Building",
+        "degree": "felony",
+        "potential_sentence": "State jail felony: 180 days to 2 years state jail, up to $10,000 fine"
+      },
+      {
+        "statute": "Texas Penal Code § 31.03",
+        "description": "Theft of Property ($2,500-$30,000)",
+        "degree": "felony",
+        "potential_sentence": "State jail felony: 180 days to 2 years state jail"
+      }
+    ],
+    "arrest": {
+      "date": "2024-07-18T22:15:00",
+      "location": "Electronics Plus, 789 Westheimer Road, Houston, TX",
+      "arresting_agency": "Houston Police Department",
+      "officers": ["Officer David Kim #7821", "Officer Lisa Hernandez #8234"],
+      "circumstances": "Detained by store security, arrested by HPD responding to alarm"
+    },
+    "search_and_seizure": {
+      "was_search_conducted": true,
+      "search_type": "incident_to_arrest",
+      "items_seized": [
+        "Backpack containing two laptop computers (retail value $2,800)",
+        "Wire cutters",
+        "Client's cell phone"
+      ],
+      "location_searched": "Person and backpack"
+    },
+    "interrogation": {
+      "was_interrogated": true,
+      "miranda_given": true,
+      "miranda_waived": true,
+      "statements_made": [
+        "I just walked in to use the bathroom",
+        "I found the backpack on the ground outside",
+        "I didn't break in, the door was open"
+      ],
+      "interrogation_location": "Houston Police Department, patrol car and station",
+      "duration": "Approximately 30 minutes total",
+      "officers_present": ["Officer David Kim #7821"]
+    },
+    "identification": {
+      "identification_procedure": "showup",
+      "was_counsel_present": false,
+      "witness_confidence": "certain"
+    },
+    "discovery_received": [
+      {
+        "document_type": "police_report",
+        "date_received": "2024-07-25",
+        "summary": "HPD offense report describing arrest and evidence seized"
+      },
+      {
+        "document_type": "witness_statement",
+        "date_received": "2024-07-25",
+        "summary": "Store security guard statement claiming he saw suspect inside store after closing"
+      }
+    ],
+    "discovery_outstanding": [
+      "Store surveillance video",
+      "Alarm system records (time of activation)",
+      "Security guard's complete statement and background",
+      "Any prior incidents at this location",
+      "Building entry/exit logs",
+      "Fingerprint analysis (if conducted)",
+      "Cell phone location data",
+      "Security guard's incident report",
+      "Any 911 call recordings"
+    ],
+    "constitutional_issues": [
+      {
+        "issue_type": "fifth_amendment",
+        "description": "Client's statements may have been obtained in violation of Miranda. Client was in custody but may not have knowingly and intelligently waived rights.",
+        "evidence": [
+          "Client was handcuffed and in patrol car when questioned",
+          "No recording of Miranda warnings being given",
+          "Client has limited education (10th grade) and may not have understood rights"
+        ]
+      },
+      {
+        "issue_type": "sixth_amendment",
+        "description": "Showup identification procedure was unnecessarily suggestive. Client was shown to witness in handcuffs immediately after arrest.",
+        "evidence": [
+          "Police report indicates 'showup identification' conducted at scene",
+          "Client was only person in handcuffs shown to security guard",
+          "No lineup or photo array used",
+          "Identification occurred at night with poor lighting"
+        ]
+      },
+      {
+        "issue_type": "fourth_amendment",
+        "description": "Need to verify lawfulness of initial detention and search. Was there probable cause for arrest before search of backpack?",
+        "evidence": [
+          "Client claims he had not yet exited the store when detained",
+          "Backpack search preceded formal arrest",
+          "No evidence client 'broke in' - door may have been unlocked"
+        ]
+      }
+    ],
+    "defense_theory": "Client entered through unlocked door to use restroom (had been a customer during day). Found backpack outside with laptops and picked it up, intending to turn it in. Security guard made suggestive identification while client was in handcuffs. Client's statements should be suppressed due to Miranda violation and lack of intelligent waiver. Surveillance video will show client did not 'break in' or act furtively. No burglary because no 'breaking' and no intent to commit theft at time of entry.",
+    "goals": {
+      "primary": "Dismissal or acquittal - no burglary occurred, at most trespassing",
+      "secondary": "Suppression of statements and identification",
+      "fallback": "Reduction to misdemeanor trespassing with time served"
+    },
+    "client_narrative": "I had been to that Electronics Plus store earlier in the day around 3 PM to look at laptops. I left and went to dinner with my girlfriend. Around 10 PM I was walking back through that area and needed to use the bathroom badly. I tried the door at Electronics Plus and it was unlocked, so I went in to use their restroom. On my way in I saw a backpack on the ground outside the door. When I came out of the bathroom, I grabbed the backpack thinking I would turn it in to the store or police. That's when the security guard grabbed me and called the cops. I told the officer I just needed the bathroom and found the backpack outside. I didn't break in - the door was unlocked. I didn't steal anything. The officer read me my rights but I was confused and scared. I didn't really understand what was happening. I never said I broke in or stole anything."
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "matter": {
+    "metadata": {
+      "case_number": "2024-CR-98765",
+      "jurisdiction": "Illinois",
+      "court": "Circuit Court of Cook County",
+      "case_type": "misdemeanor",
+      "id": "ASSAULT-IL-2024-005"
+    },
+    "client": {
+      "name": "Michael Stevens",
+      "dob": "1987-09-22",
+      "prior_record": "none"
+    },
+    "charges": [
+      {
+        "statute": "720 ILCS 5/12-3(a)(2)",
+        "description": "Domestic Battery (bodily harm)",
+        "degree": "misdemeanor",
+        "potential_sentence": "Class A misdemeanor: Up to 1 year county jail, up to $2,500 fine"
+      },
+      {
+        "statute": "720 ILCS 5/12-3.2",
+        "description": "Domestic Battery (physical contact of insulting or provoking nature)",
+        "degree": "misdemeanor",
+        "potential_sentence": "Class A misdemeanor: Up to 1 year county jail"
+      }
+    ],
+    "arrest": {
+      "date": "2024-05-03T23:30:00",
+      "location": "Client's residence, 567 N. Michigan Avenue, Chicago, IL",
+      "arresting_agency": "Chicago Police Department",
+      "officers": ["Officer Jennifer Walsh #12456", "Officer Marcus Brown #13789"],
+      "circumstances": "Responding to 911 domestic disturbance call from neighbor"
+    },
+    "search_and_seizure": {
+      "was_search_conducted": true,
+      "search_type": "exigent",
+      "items_seized": [],
+      "location_searched": "Client's apartment (walked through to check for injured parties)"
+    },
+    "interrogation": {
+      "was_interrogated": true,
+      "miranda_given": false,
+      "miranda_waived": false,
+      "statements_made": [
+        "We were just arguing, I never touched her",
+        "She's lying, she pushed me first",
+        "Check my phone, I have recordings of her threatening me"
+      ],
+      "interrogation_location": "At residence, on scene",
+      "duration": "15-20 minutes",
+      "officers_present": ["Officer Jennifer Walsh #12456", "Officer Marcus Brown #13789"]
+    },
+    "identification": {
+      "identification_procedure": "none"
+    },
+    "discovery_received": [
+      {
+        "document_type": "police_report",
+        "date_received": "2024-05-10",
+        "summary": "CPD domestic battery report with officer narrative"
+      },
+      {
+        "document_type": "911_call",
+        "date_received": "2024-05-10",
+        "summary": "Recording of neighbor's 911 call reporting 'loud argument and screaming'"
+      },
+      {
+        "document_type": "victim_statement",
+        "date_received": "2024-05-10",
+        "summary": "Alleged victim statement claiming client pushed her and grabbed her arm"
+      }
+    ],
+    "discovery_outstanding": [
+      "Body camera footage from both officers",
+      "Medical records from alleged victim (if she sought treatment)",
+      "Photographs of alleged injuries",
+      "Photographs of apartment/scene",
+      "Any prior domestic calls to this address",
+      "Alleged victim's criminal history (if any)",
+      "Neighbor witness statement (person who called 911)",
+      "Any text messages or communications between client and alleged victim",
+      "Client's phone recordings referenced in statement"
+    ],
+    "constitutional_issues": [
+      {
+        "issue_type": "fifth_amendment",
+        "description": "Client was subjected to custodial interrogation without Miranda warnings. All statements should be suppressed.",
+        "evidence": [
+          "Police report shows client was in handcuffs during questioning",
+          "Client was not free to leave",
+          "No Miranda warnings documented or given",
+          "Officers asked accusatory questions ('Did you hit her? Did you push her?')"
+        ]
+      },
+      {
+        "issue_type": "fourth_amendment",
+        "description": "Entry into apartment may have been without valid exigent circumstances or consent. Need to challenge search.",
+        "evidence": [
+          "911 call was from neighbor, not from inside apartment",
+          "No evidence of ongoing emergency",
+          "Client denies giving consent to enter",
+          "Officers entered without warrant and without seeing/hearing any disturbance"
+        ]
+      }
+    ],
+    "defense_theory": "This is a false accusation by client's girlfriend following a verbal argument. No physical contact occurred. Alleged victim has history of making false accusations (need to investigate). Neighbor's 911 call only reported hearing 'loud argument' but no sounds of physical violence. Client's statements should be suppressed as they were obtained in violation of Miranda during custodial interrogation. Body cam footage will show no visible injuries on alleged victim and will corroborate that argument was only verbal. Client has recordings on his phone of alleged victim threatening him and admitting she would 'call the cops' to get him in trouble.",
+    "goals": {
+      "primary": "Dismissal - no evidence of physical contact",
+      "secondary": "Suppression of client's statements",
+      "fallback": "Supervision/deferred prosecution to preserve clean record"
+    },
+    "client_narrative": "My girlfriend Jennifer and I have been together for three years. We live together. On May 3rd we got into an argument about money and bills. It was heated and we were yelling at each other, but I never touched her. I would never hurt her. At some point a neighbor must have called the police because they showed up and knocked on the door. I opened it and they asked what was going on. I tried to explain we were just arguing but they pushed past me into the apartment. They separated us and talked to Jennifer first. Then they put me in handcuffs and started asking me if I hit her or pushed her. I kept saying no, I didn't touch her. They didn't read me my rights. After about 15-20 minutes they arrested me. Jennifer has threatened before to 'call the cops' on me when we fight. I actually have recordings on my phone of her saying she would do this. I never hurt her and there's no evidence I did because it didn't happen. This whole thing is a lie."
+  }
+}
