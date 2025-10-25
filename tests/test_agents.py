@@ -10,6 +10,7 @@ import sys
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
+from agents.dda import DocumentDraftingAgent
 from agents.dea import DEAAgent
 from agents.lda import LDAAgent
 from agents.lsa import LSAAgent
@@ -85,3 +86,61 @@ def test_agents_allow_tool_injection(sample_matter: dict[str, object]) -> None:
     asyncio.run(lsa_agent.run(sample_matter))
 
     assert captured == {"lda_called": True, "dea_called": True, "lsa_called": True}
+
+
+def test_document_drafting_agent_schema(sample_matter: dict[str, object]) -> None:
+    agent = DocumentDraftingAgent()
+    result = asyncio.run(agent.run(sample_matter))
+
+    assert result["agent"] == "dda"
+    assert "document" in result and isinstance(result["document"], dict)
+    assert result["document"]["full_text"], "Expected document text"
+    assert "metadata" in result and isinstance(result["metadata"], dict)
+    assert "provenance" in result and "tools_used" in result["provenance"]
+    assert "unresolved_issues" in result and isinstance(result["unresolved_issues"], list)
+
+
+def test_document_drafting_agent_tool_injection(sample_matter: dict[str, object]) -> None:
+    captured: dict[str, Any] = {}
+
+    async def custom_section_generator(
+        document_type: str,
+        facts: dict[str, Any],
+        legal_analysis: dict[str, Any],
+        strategy: dict[str, Any],
+        jurisdiction: str,
+    ) -> dict[str, Any]:
+        captured["section_generator_called"] = True
+        return {
+            "caption": "CUSTOM CAPTION",
+            "introduction": "Custom intro",
+            "facts_section": "Custom facts",
+            "argument_section": "Custom argument",
+            "conclusion": "Custom conclusion",
+        }
+
+    async def custom_document_composer(
+        document_type: str,
+        sections: dict[str, Any],
+        citations: dict[str, Any],
+        jurisdiction: str,
+        matter: dict[str, Any],
+    ) -> dict[str, Any]:
+        captured["composer_called"] = True
+        return {
+            "full_text": "Custom document text",
+            "word_count": 100,
+            "page_estimate": 1,
+            "sections": list(sections.keys()),
+            "citation_count": 0,
+        }
+
+    agent = DocumentDraftingAgent(
+        tools={
+            "section_generator": custom_section_generator,
+            "document_composer": custom_document_composer,
+        }
+    )
+    asyncio.run(agent.run(sample_matter))
+
+    assert captured == {"section_generator_called": True, "composer_called": True}
