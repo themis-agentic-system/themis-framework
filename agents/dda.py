@@ -506,6 +506,8 @@ async def _default_document_composer(
     plaintiff = parties.get("plaintiff", "PLAINTIFF NAME")
     defendant = parties.get("defendant", "DEFENDANT NAME")
 
+    metadata = matter.get("metadata", {})
+
     case_number = None
     if isinstance(metadata, dict):
         case_number = metadata.get("case_number") or metadata.get("docket_number")
