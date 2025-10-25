@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import csv
 import json
 import re
 from datetime import datetime
@@ -515,7 +514,7 @@ def _generate_preservation_letter(matter: dict[str, Any], result: dict[str, Any]
         "",
         f"Re: {matter.get('matter_name', 'Unknown Case')}",
         f"    Case No. {metadata.get('case_number', 'Unknown')}",
-        f"    EVIDENCE PRESERVATION DEMAND",
+        "    EVIDENCE PRESERVATION DEMAND",
         "",
         "Dear Sir or Madam:",
         "",
