@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 from typing import Callable
 
-from fastapi import Request, Response
+from fastapi import HTTPException, Request, Response, status
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
@@ -14,6 +14,9 @@ from api.logging_config import get_audit_logger, get_performance_logger, get_req
 request_logger = get_request_logger()
 audit_logger = get_audit_logger()
 performance_logger = get_performance_logger()
+
+# Maximum request body size (10MB by default)
+MAX_REQUEST_SIZE = 10 * 1024 * 1024  # 10MB in bytes
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
@@ -77,9 +80,10 @@ class AuditLoggingMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """Log security audit events."""
-        # Extract authentication info
+        # Extract authentication info - sanitize to prevent credential leakage
         auth_header = request.headers.get("authorization", "")
-        has_auth = bool(auth_header)
+        # Sanitize auth header for logging (only log type, not credentials)
+        auth_type = auth_header.split()[0] if auth_header else "none"
 
         client_ip = request.client.host if request.client else "unknown"
         method = request.method
@@ -95,7 +99,7 @@ class AuditLoggingMiddleware(BaseHTTPMiddleware):
             if status_code == 401:
                 audit_logger.warning(
                     f"Authentication failed: {method} {path} | "
-                    f"client={client_ip} | has_auth={has_auth}"
+                    f"client={client_ip} | auth_type={auth_type}"
                 )
             elif status_code == 429:
                 audit_logger.warning(
@@ -150,3 +154,40 @@ class CostTrackingMiddleware(BaseHTTPMiddleware):
             )
 
         return response
+
+
+class PayloadSizeLimitMiddleware(BaseHTTPMiddleware):
+    """Middleware to enforce maximum request payload size for DoS prevention."""
+
+    def __init__(self, app: ASGIApp, max_size: int = MAX_REQUEST_SIZE):
+        super().__init__(app)
+        self.max_size = max_size
+
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        """Enforce maximum payload size."""
+        # Check Content-Length header if present
+        content_length = request.headers.get("content-length")
+
+        if content_length:
+            try:
+                content_length_int = int(content_length)
+                if content_length_int > self.max_size:
+                    audit_logger.warning(
+                        f"Request payload too large: {content_length_int} bytes "
+                        f"(max: {self.max_size} bytes) | "
+                        f"client={request.client.host if request.client else 'unknown'} | "
+                        f"path={request.url.path}"
+                    )
+                    raise HTTPException(
+                        status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                        detail=f"Request payload too large. Maximum size: {self.max_size} bytes ({self.max_size // (1024 * 1024)}MB)",
+                    )
+            except ValueError:
+                # Invalid Content-Length header
+                audit_logger.warning(
+                    f"Invalid Content-Length header: {content_length} | "
+                    f"client={request.client.host if request.client else 'unknown'}"
+                )
+
+        # Process request
+        return await call_next(request)
