@@ -108,11 +108,12 @@ Themis draws inspiration from multi-agent healthcare systems and adapts the appr
 
 ```
 themis-framework/
-├── agents/                 # 🤖 Specialist agents (LDA, DEA, LSA)
+├── agents/                 # 🤖 Specialist agents (LDA, DEA, LSA, DDA)
 │   ├── base.py            # Base agent with metrics, logging, tool invocation
 │   ├── lda.py             # Legal Data Analyst (facts, timelines, damages)
 │   ├── dea.py             # Doctrinal Expert (legal analysis, citations)
-│   └── lsa.py             # Legal Strategist (strategy, risk assessment)
+│   ├── lsa.py             # Legal Strategist (strategy, risk assessment)
+│   └── dda.py             # Document Drafting Agent (formal legal documents)
 │
 ├── orchestrator/          # 🎼 Agent coordination and workflow management
 │   ├── main.py            # Simple sequential orchestrator
@@ -216,26 +217,20 @@ themis-framework/
            │  • Ensures all legal issues have been addressed     │
            │  • Validates legal writing is crisp and uses modern │
            │    legal prose                                      │
-           └─────┬──────────────────────────────────────────┬────┘
-                 │                                          │
-                 │  Quality checks passed                   │ Quality checks failed
-                 ▼                                          │ (loop back to re-plan)
-┌─────────────────────────────────────────┐                │
-│     Human Review-Ready Artifacts        │                │
-│  • Timeline spreadsheet                 │                │
-│  • Draft demand letter                  │                │
-│  • Legal analysis report                │                │
-│  • Strategy recommendations             │                │
-│  • Formal legal documents (complaints,  │                │
-│    motions, memos)                      │                │
-└─────────────────────────────────────────┘                │
-                                                            │
-                    ┌───────────────────────────────────────┘
-                    │
-                    └──────────────────────────────┐
-                                                   │
-                                                   ▼
-                            (Re-evaluate plan and re-execute)
+           │  • If quality checks fail, loops back to re-plan    │
+           └─────────────────────┬──────────────────────────────┘
+                                 │
+                                 │ Quality checks passed
+                                 ▼
+           ┌─────────────────────────────────────────┐
+           │     Human Review-Ready Artifacts        │
+           │  • Timeline spreadsheet                 │
+           │  • Draft demand letter                  │
+           │  • Legal analysis report                │
+           │  • Strategy recommendations             │
+           │  • Formal legal documents (complaints,  │
+           │    motions, memos)                      │
+           └─────────────────────────────────────────┘
 ```
 
 ---
