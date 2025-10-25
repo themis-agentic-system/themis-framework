@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Any, Callable, Iterable
 
 from agents.base import BaseAgent
+from agents.tooling import ToolSpec
 from tools.document_parser import parse_document_with_llm
 
 
@@ -14,17 +15,40 @@ class LDAAgent(BaseAgent):
 
     REQUIRED_TOOLS = ("document_parser", "timeline_builder")
 
-    def __init__(self, *, tools: dict[str, Callable[..., Any]] | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        tools: Iterable[ToolSpec] | dict[str, Callable[..., Any]] | None = None,
+    ) -> None:
         super().__init__(name="lda")
-        default_tools: dict[str, Callable[..., Any]] = {
-            "document_parser": _default_document_parser,
-            "timeline_builder": _default_timeline_builder,
-        }
-        self.tools = default_tools | (tools or {})
-        missing = [tool for tool in self.REQUIRED_TOOLS if tool not in self.tools]
-        if missing:
-            missing_csv = ", ".join(missing)
-            raise ValueError(f"Missing required tools for LDA agent: {missing_csv}")
+        default_tools = [
+            ToolSpec(
+                name="document_parser",
+                description="Parse source documents and extract salient facts.",
+                fn=_default_document_parser,
+                input_schema={
+                    "type": "object",
+                    "properties": {"documents": {"type": "array"}},
+                },
+                output_schema={"type": "array"},
+            ),
+            ToolSpec(
+                name="timeline_builder",
+                description="Construct a chronological sequence of key events.",
+                fn=_default_timeline_builder,
+                input_schema={"type": "object"},
+                output_schema={"type": "array"},
+            ),
+        ]
+        self.register_tools(default_tools)
+
+        if tools:
+            if isinstance(tools, dict):
+                self.register_tools(list(tools.items()))
+            else:
+                self.register_tools(tools)
+
+        self.require_tools(self.REQUIRED_TOOLS)
 
     async def _run(self, matter: dict[str, Any]) -> dict[str, Any]:
         """Derive a structured fact summary from the provided matter."""

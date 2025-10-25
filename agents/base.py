@@ -5,9 +5,14 @@ from __future__ import annotations
 import logging
 from abc import ABC, abstractmethod
 from time import perf_counter
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Iterable, Protocol
 
 from tools.metrics import metrics_registry
+
+from .tooling import ToolSpec
+
+if TYPE_CHECKING:  # pragma: no cover - typing only
+    from orchestrator.tracing import TraceRecorder
 
 
 logger = logging.getLogger("themis.agents")
@@ -43,8 +48,51 @@ class BaseAgent(ABC):
 
     def __init__(self, name: str) -> None:
         self.name = name
-        self.tools: dict[str, Any] = {}
+        self._tools: dict[str, ToolSpec] = {}
         self._tool_invocations = 0
+        self._trace: TraceRecorder | None = None
+        self._active_node_id: str | None = None
+
+    # ---------------------------------------------------------------------
+    # Tool registration
+    # ---------------------------------------------------------------------
+    def register_tool(self, spec: ToolSpec | tuple[str, Any]) -> None:
+        """Register a tool specification or backwards-compatible tuple."""
+
+        if isinstance(spec, tuple):
+            name, callable_ = spec
+            tool_spec = ToolSpec.ensure(name, callable_)
+        else:
+            tool_spec = spec
+        self._tools[tool_spec.name] = tool_spec
+
+    def register_tools(self, specs: Iterable[ToolSpec | tuple[str, Any]]) -> None:
+        for spec in specs:
+            self.register_tool(spec)
+
+    def require_tools(self, required: Iterable[str]) -> None:
+        missing = [tool for tool in required if tool not in self._tools]
+        if missing:
+            missing_csv = ", ".join(missing)
+            raise ValueError(f"Missing required tools for {self.name} agent: {missing_csv}")
+
+    @property
+    def tools(self) -> dict[str, ToolSpec]:
+        return dict(self._tools)
+
+    @tools.setter
+    def tools(self, mapping: dict[str, Any]) -> None:
+        self._tools = {}
+        if mapping:
+            for name, candidate in mapping.items():
+                self._tools[name] = ToolSpec.ensure(name, candidate)
+
+    # ------------------------------------------------------------------
+    # Tracing support
+    # ------------------------------------------------------------------
+    def attach_tracer(self, tracer: TraceRecorder | None, node_id: str | None = None) -> None:
+        self._trace = tracer
+        self._active_node_id = node_id
 
     async def run(self, matter: dict[str, Any]) -> dict[str, Any]:
         """Execute the agent logic with structured logging and metrics."""
@@ -56,6 +104,12 @@ class BaseAgent(ABC):
 
         start = perf_counter()
         self._tool_invocations = 0
+        if self._trace:
+            self._trace.record(
+                "agent_run_start",
+                agent=self.name,
+                node_id=self._active_node_id,
+            )
         try:
             result = await self._run(matter)
         except Exception:
@@ -64,8 +118,20 @@ class BaseAgent(ABC):
                 "agent_run_error",
                 extra={"event": "agent_run_error", "agent": self.name},
             )
+            if self._trace:
+                self._trace.record(
+                    "agent_run_error",
+                    agent=self.name,
+                    node_id=self._active_node_id,
+                )
             raise
         else:
+            if self._trace:
+                self._trace.record(
+                    "agent_run_complete",
+                    agent=self.name,
+                    node_id=self._active_node_id,
+                )
             return result
         finally:
             duration = perf_counter() - start
@@ -93,16 +159,23 @@ class BaseAgent(ABC):
         """
         import asyncio
 
-        if name not in getattr(self, "tools", {}):
+        if name not in self._tools:
             raise KeyError(f"Tool '{name}' is not registered for agent {self.name}.")
 
         logger.info(
             "agent_tool_invocation",
             extra={"event": "agent_tool_invocation", "agent": self.name, "tool": name},
         )
+        if self._trace:
+            self._trace.record(
+                "agent_tool_invocation",
+                agent=self.name,
+                node_id=self._active_node_id,
+                tool=name,
+            )
         self._tool_invocations += 1
-        tool = self.tools[name]
-        result = tool(*args, **kwargs)
+        tool = self._tools[name]
+        result = tool.invoke(*args, **kwargs)
 
         # Support both sync and async tools
         if asyncio.iscoroutine(result):

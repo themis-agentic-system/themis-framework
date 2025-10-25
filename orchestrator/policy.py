@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Iterable
 
+from orchestrator.task_graph import TaskGraph, TaskNode
+
 
 class Phase(str, Enum):
     """Enumerates the high-level orchestration phases."""
@@ -50,6 +52,7 @@ class PhaseDefinition:
     exit_signals: list[str] = field(default_factory=list)
     entry_signals: list[str] = field(default_factory=list)
     supporting_agents: list[SupportingAgent] = field(default_factory=list)
+    required_connectors: list[str] = field(default_factory=list)
 
     def as_plan_step(
         self,
@@ -82,6 +85,8 @@ class PhaseDefinition:
             step["exit_signals"] = self.exit_signals
         if self.entry_signals:
             step["entry_signals"] = self.entry_signals
+        if self.required_connectors:
+            step["required_connectors"] = self.required_connectors
         return step
 
 
@@ -106,17 +111,38 @@ class RoutingPolicy:
 
         return list(self._phase_definitions)
 
+    def build_graph(self, matter: dict[str, Any]) -> TaskGraph:
+        """Construct a DAG representation of the orchestration plan."""
+
+        graph = TaskGraph()
+        previous_id: str | None = None
+        for index, definition in enumerate(self._phase_definitions, start=1):
+            primary_agent = self.determine_primary_agent(definition.phase, matter)
+            dependencies: list[str] = [previous_id] if previous_id else []
+            step_payload = definition.as_plan_step(index, primary_agent, matter, dependencies)
+            node = TaskNode(
+                id=step_payload["id"],
+                agent=step_payload["agent"],
+                phase=step_payload.get("phase"),
+                description=step_payload.get("description"),
+                dependencies=list(step_payload.get("dependencies", [])),
+                expected_artifacts=list(step_payload.get("expected_artifacts", [])),
+                supporting_agents=list(step_payload.get("supporting_agents", [])),
+                exit_signals=list(step_payload.get("exit_signals", [])),
+                entry_signals=list(step_payload.get("entry_signals", [])),
+                required_connectors=list(step_payload.get("required_connectors", [])),
+                metadata={"phase_index": index},
+            )
+            graph.add_node(node)
+            if previous_id:
+                graph.add_edge(previous_id, node.id)
+            previous_id = node.id
+        return graph
+
     def build_plan(self, matter: dict[str, Any]) -> list[dict[str, Any]]:
         """Construct the ordered plan steps for a matter."""
 
-        steps: list[dict[str, Any]] = []
-        dependencies: list[str] = []
-        for index, definition in enumerate(self._phase_definitions, start=1):
-            primary_agent = self.determine_primary_agent(definition.phase, matter)
-            step = definition.as_plan_step(index, primary_agent, matter, dependencies)
-            steps.append(step)
-            dependencies = [step["id"]]
-        return steps
+        return self.build_graph(matter).to_linear_steps()
 
     def determine_primary_agent(self, phase: Phase, matter: dict[str, Any]) -> str:
         """Pick the primary agent for the given phase and matter."""

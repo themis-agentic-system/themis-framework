@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Any, Callable, Iterable
 
 from agents.base import BaseAgent
+from agents.tooling import ToolSpec
 from tools.llm_client import get_llm_client
 
 
@@ -13,17 +14,37 @@ class LSAAgent(BaseAgent):
 
     REQUIRED_TOOLS = ("strategy_template", "risk_assessor")
 
-    def __init__(self, *, tools: dict[str, Callable[..., Any]] | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        tools: Iterable[ToolSpec] | dict[str, Callable[..., Any]] | None = None,
+    ) -> None:
         super().__init__(name="lsa")
-        default_tools: dict[str, Callable[..., Any]] = {
-            "strategy_template": _default_strategy_template,
-            "risk_assessor": _default_risk_assessor,
-        }
-        self.tools = default_tools | (tools or {})
-        missing = [tool for tool in self.REQUIRED_TOOLS if tool not in self.tools]
-        if missing:
-            missing_csv = ", ".join(missing)
-            raise ValueError(f"Missing required tools for LSA agent: {missing_csv}")
+        default_tools = [
+            ToolSpec(
+                name="strategy_template",
+                description="Generate strategic recommendations for the matter.",
+                fn=_default_strategy_template,
+                input_schema={"type": "object"},
+                output_schema={"type": "object"},
+            ),
+            ToolSpec(
+                name="risk_assessor",
+                description="Score risk exposure and escalate unknowns.",
+                fn=_default_risk_assessor,
+                input_schema={"type": "object"},
+                output_schema={"type": "object"},
+            ),
+        ]
+        self.register_tools(default_tools)
+
+        if tools:
+            if isinstance(tools, dict):
+                self.register_tools(list(tools.items()))
+            else:
+                self.register_tools(tools)
+
+        self.require_tools(self.REQUIRED_TOOLS)
 
     async def _run(self, matter: dict[str, Any]) -> dict[str, Any]:
         """Combine facts and legal theories into a strategy recommendation."""
