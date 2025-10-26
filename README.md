@@ -892,7 +892,3 @@ Support
 ⚖️ Built with care for legal professionals | 🤖 Powered by Claude AI | 🛡️ Production-ready
 
 [⬆ Back to Top](#themis-framework)
-
-About
------
-An open framework for building multi-agent legal reasoning systems —
