@@ -6,6 +6,9 @@ Tests cover:
 - Code execution tool
 - Files API
 - MCP configuration
+
+Note: Some features are in beta/upcoming. Tests mock API calls to avoid
+dependency on API availability.
 """
 
 from __future__ import annotations
@@ -13,7 +16,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -35,13 +38,13 @@ class TestExtendedThinking:
         assert client.use_extended_thinking is False
 
     @pytest.mark.asyncio
-    @patch("anthropic.Anthropic")
+    @patch("tools.llm_client.Anthropic")
     async def test_extended_thinking_adds_headers(self, mock_anthropic):
         """Verify extended thinking adds correct API headers."""
-        mock_client = Mock()
-        mock_response = Mock()
-        mock_response.content = [Mock(type="text", text="response")]
-        mock_client.messages.create = Mock(return_value=mock_response)
+        mock_client = MagicMock()
+        mock_response = MagicMock()
+        mock_response.content = [MagicMock(type="text", text="response")]
+        mock_client.messages.create.return_value = mock_response
         mock_anthropic.return_value = mock_client
 
         client = LLMClient(api_key="test-key", use_extended_thinking=True)
@@ -52,16 +55,16 @@ class TestExtendedThinking:
         assert "anthropic-beta" in call_args.kwargs.get("extra_headers", {})
 
     @pytest.mark.asyncio
-    @patch("anthropic.Anthropic")
+    @patch("tools.llm_client.Anthropic")
     async def test_thinking_blocks_logged(self, mock_anthropic):
         """Verify thinking blocks are logged but not returned."""
-        mock_client = Mock()
-        mock_response = Mock()
+        mock_client = MagicMock()
+        mock_response = MagicMock()
         mock_response.content = [
-            Mock(type="thinking", thinking="internal reasoning here"),
-            Mock(type="text", text="final response"),
+            MagicMock(type="thinking", thinking="internal reasoning here"),
+            MagicMock(type="text", text="final response"),
         ]
-        mock_client.messages.create = Mock(return_value=mock_response)
+        mock_client.messages.create.return_value = mock_response
         mock_anthropic.return_value = mock_client
 
         client = LLMClient(api_key="test-key", use_extended_thinking=True)
@@ -85,13 +88,13 @@ class TestPromptCaching:
         assert client.use_prompt_caching is False
 
     @pytest.mark.asyncio
-    @patch("anthropic.Anthropic")
+    @patch("tools.llm_client.Anthropic")
     async def test_cache_control_headers_added(self, mock_anthropic):
         """Verify cache control headers are added when caching enabled."""
-        mock_client = Mock()
-        mock_response = Mock()
-        mock_response.content = [Mock(type="text", text="response")]
-        mock_client.messages.create = Mock(return_value=mock_response)
+        mock_client = MagicMock()
+        mock_response = MagicMock()
+        mock_response.content = [MagicMock(type="text", text="response")]
+        mock_client.messages.create.return_value = mock_response
         mock_anthropic.return_value = mock_client
 
         client = LLMClient(api_key="test-key", use_prompt_caching=True)
@@ -103,13 +106,13 @@ class TestPromptCaching:
         assert call_args.kwargs["extra_headers"]["anthropic-cache-control"] == "ephemeral+extended"
 
     @pytest.mark.asyncio
-    @patch("anthropic.Anthropic")
+    @patch("tools.llm_client.Anthropic")
     async def test_system_prompt_has_cache_control(self, mock_anthropic):
         """Verify system prompt includes cache_control when caching enabled."""
-        mock_client = Mock()
-        mock_response = Mock()
-        mock_response.content = [Mock(type="text", text="response")]
-        mock_client.messages.create = Mock(return_value=mock_response)
+        mock_client = MagicMock()
+        mock_response = MagicMock()
+        mock_response.content = [MagicMock(type="text", text="response")]
+        mock_client.messages.create.return_value = mock_response
         mock_anthropic.return_value = mock_client
 
         client = LLMClient(api_key="test-key", use_prompt_caching=True)
@@ -138,13 +141,13 @@ class TestCodeExecution:
         assert client.enable_code_execution is True
 
     @pytest.mark.asyncio
-    @patch("anthropic.Anthropic")
+    @patch("tools.llm_client.Anthropic")
     async def test_code_execution_tool_registered(self, mock_anthropic):
         """Verify code execution tool is registered when enabled."""
-        mock_client = Mock()
-        mock_response = Mock()
-        mock_response.content = [Mock(type="text", text="response")]
-        mock_client.messages.create = Mock(return_value=mock_response)
+        mock_client = MagicMock()
+        mock_response = MagicMock()
+        mock_response.content = [MagicMock(type="text", text="response")]
+        mock_client.messages.create.return_value = mock_response
         mock_anthropic.return_value = mock_client
 
         client = LLMClient(api_key="test-key", enable_code_execution=True)
@@ -160,13 +163,13 @@ class TestCodeExecution:
 class TestFilesAPI:
     """Test Files API functionality."""
 
-    @patch("anthropic.Anthropic")
+    @patch("tools.llm_client.Anthropic")
     def test_upload_file_success(self, mock_anthropic):
         """Test successful file upload."""
-        mock_client = Mock()
-        mock_file = Mock()
+        mock_client = MagicMock()
+        mock_file = MagicMock()
         mock_file.id = "file_abc123"
-        mock_client.files.create = Mock(return_value=mock_file)
+        mock_client.files.create.return_value = mock_file
         mock_anthropic.return_value = mock_client
 
         client = LLMClient(api_key="test-key")
@@ -189,14 +192,14 @@ class TestFilesAPI:
         with pytest.raises(ValueError, match="File upload requires ANTHROPIC_API_KEY"):
             client.upload_file("/tmp/test.txt")
 
-    @patch("anthropic.Anthropic")
+    @patch("tools.llm_client.Anthropic")
     def test_list_files(self, mock_anthropic):
         """Test listing uploaded files."""
-        mock_client = Mock()
-        mock_file1 = Mock(id="file_1", filename="doc1.pdf", created_at="2025-01-01")
-        mock_file2 = Mock(id="file_2", filename="doc2.pdf", created_at="2025-01-02")
-        mock_response = Mock(data=[mock_file1, mock_file2])
-        mock_client.files.list = Mock(return_value=mock_response)
+        mock_client = MagicMock()
+        mock_file1 = MagicMock(id="file_1", filename="doc1.pdf", created_at="2025-01-01")
+        mock_file2 = MagicMock(id="file_2", filename="doc2.pdf", created_at="2025-01-02")
+        mock_response = MagicMock(data=[mock_file1, mock_file2])
+        mock_client.files.list.return_value = mock_response
         mock_anthropic.return_value = mock_client
 
         client = LLMClient(api_key="test-key")
@@ -207,11 +210,11 @@ class TestFilesAPI:
         assert files[0]["filename"] == "doc1.pdf"
         assert files[1]["id"] == "file_2"
 
-    @patch("anthropic.Anthropic")
+    @patch("tools.llm_client.Anthropic")
     def test_delete_file(self, mock_anthropic):
         """Test deleting a file."""
-        mock_client = Mock()
-        mock_client.files.delete = Mock()
+        mock_client = MagicMock()
+        mock_client.files.delete = MagicMock()
         mock_anthropic.return_value = mock_client
 
         client = LLMClient(api_key="test-key")
@@ -220,13 +223,13 @@ class TestFilesAPI:
         mock_client.files.delete.assert_called_once_with("file_abc123")
 
     @pytest.mark.asyncio
-    @patch("anthropic.Anthropic")
+    @patch("tools.llm_client.Anthropic")
     async def test_generate_with_file_ids(self, mock_anthropic):
         """Test generating text with file references."""
-        mock_client = Mock()
-        mock_response = Mock()
-        mock_response.content = [Mock(type="text", text="analysis complete")]
-        mock_client.messages.create = Mock(return_value=mock_response)
+        mock_client = MagicMock()
+        mock_response = MagicMock()
+        mock_response.content = [MagicMock(type="text", text="analysis complete")]
+        mock_client.messages.create.return_value = mock_response
         mock_anthropic.return_value = mock_client
 
         client = LLMClient(api_key="test-key")
@@ -341,9 +344,23 @@ class TestLDAEnhancedTools:
     """Test LDA agent enhancements with code execution."""
 
     @pytest.mark.asyncio
-    async def test_damages_calculator(self):
+    @patch("tools.llm_client.get_llm_client")
+    async def test_damages_calculator(self, mock_get_client):
         """Test damages calculator tool."""
         from agents.lda import _damages_calculator
+
+        # Mock LLM client response
+        mock_client = MagicMock()
+        mock_client.generate_structured.return_value = {
+            "economic_total": 165000.0,
+            "non_economic_estimate": 50000.0,
+            "punitive_total": 0.0,
+            "grand_total": 215000.0,
+            "confidence_level": "high",
+            "settlement_range": {"min": 129000.0, "max": 172000.0},
+            "breakdown": {"medical": 45000, "lost_wages": 120000},
+        }
+        mock_get_client.return_value = mock_client
 
         damages_data = {
             "economic_losses": {"medical": 45000, "lost_wages": 120000},
@@ -358,9 +375,23 @@ class TestLDAEnhancedTools:
         assert result["economic_total"] >= 0
 
     @pytest.mark.asyncio
-    async def test_timeline_analyzer(self):
+    @patch("tools.llm_client.get_llm_client")
+    async def test_timeline_analyzer(self, mock_get_client):
         """Test timeline analyzer tool."""
         from agents.lda import _timeline_analyzer
+
+        # Mock LLM client response
+        mock_client = MagicMock()
+        mock_client.generate_structured.return_value = {
+            "duration_days": 31,
+            "total_events": 3,
+            "gaps": [{"start_date": "2024-01-15", "end_date": "2024-02-01", "days": 17}],
+            "clusters": [],
+            "critical_periods": ["2024-01-01 - Incident date"],
+            "average_gap_days": 15.5,
+            "recommendations": ["Obtain additional medical records for treatment gaps"],
+        }
+        mock_get_client.return_value = mock_client
 
         timeline_data = {
             "timeline": [
