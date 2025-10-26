@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Annotated, Any
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict, ValidationError
@@ -124,7 +124,7 @@ def validate_and_extract_matter(matter_data: dict[str, Any]) -> dict[str, Any]:
             error_details.append(f"{location}: {error['msg']}")
 
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail={
                 "message": "Matter validation failed",
                 "errors": error_details[:10],  # Limit to first 10 errors
