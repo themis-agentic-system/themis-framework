@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Themis Legal AI - Multi-Agent Legal Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .agents {
+            display: flex;
+            justify-content: space-around;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            margin-top: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .agent {
+            text-align: center;
+            padding: 10px;
+        }
+
+        .agent-icon {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .agent-name {
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .required {
+            color: #e74c3c;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .file-upload {
+            border: 2px dashed #667eea;
+            border-radius: 6px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .file-upload:hover {
+            background-color: #f8f9fa;
+        }
+
+        .file-upload-icon {
+            font-size: 3em;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .file-list {
+            margin-top: 15px;
+        }
+
+        .file-item {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .remove-file {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .links {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .links a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .links a:hover {
+            text-decoration: underline;
+        }
+
+        .party-list {
+            margin-top: 10px;
+        }
+
+        .party-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .add-party {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚖️ Themis Legal AI</h1>
+            <p>Multi-Agent Legal Analysis & Workflow Orchestration</p>
+            <div class="agents">
+                <div class="agent">
+                    <div class="agent-icon">📊</div>
+                    <div class="agent-name">LDA</div>
+                    <div style="font-size: 0.8em; opacity: 0.8;">Data Analyst</div>
+                </div>
+                <div class="agent">
+                    <div class="agent-icon">⚖️</div>
+                    <div class="agent-name">DEA</div>
+                    <div style="font-size: 0.8em; opacity: 0.8;">Legal Expert</div>
+                </div>
+                <div class="agent">
+                    <div class="agent-icon">🎯</div>
+                    <div class="agent-name">LSA</div>
+                    <div style="font-size: 0.8em; opacity: 0.8;">Strategist</div>
+                </div>
+                <div class="agent">
+                    <div class="agent-icon">📝</div>
+                    <div class="agent-name">DDA</div>
+                    <div style="font-size: 0.8em; opacity: 0.8;">Document Drafter</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="info-box">
+                <strong>How Themis Works:</strong> Upload your legal documents and provide case details. Our AI agents will collaborate to analyze facts, apply legal doctrines, develop strategy, and draft documents - all ready for attorney review.
+            </div>
+
+            <form id="matterForm">
+                <div class="section">
+                    <h2>📋 Case Information</h2>
+
+                    <div class="form-group">
+                        <label>Case Summary <span class="required">*</span></label>
+                        <textarea id="summary" name="summary" required placeholder="Brief description of the case (minimum 10 characters)"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Jurisdiction</label>
+                        <select id="jurisdiction" name="jurisdiction">
+                            <option value="California">California</option>
+                            <option value="New York">New York</option>
+                            <option value="Texas">Texas</option>
+                            <option value="Florida">Florida</option>
+                            <option value="Illinois">Illinois</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Cause of Action</label>
+                        <input type="text" id="cause_of_action" name="cause_of_action" placeholder="e.g., Personal Injury - Motor Vehicle Accident">
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>👥 Parties</h2>
+                    <div id="partiesList" class="party-list">
+                        <div class="party-item">
+                            <input type="text" name="party[]" placeholder="Party name (required)" required style="flex: 1;">
+                        </div>
+                    </div>
+                    <button type="button" class="add-party" onclick="addParty()">+ Add Party</button>
+                </div>
+
+                <div class="section">
+                    <h2>📄 Documents</h2>
+                    <div class="file-upload" onclick="document.getElementById('fileInput').click()">
+                        <div class="file-upload-icon">📁</div>
+                        <div><strong>Click to upload documents</strong></div>
+                        <div style="color: #666; margin-top: 5px;">PDF, DOCX, TXT files supported</div>
+                    </div>
+                    <input type="file" id="fileInput" multiple accept=".pdf,.docx,.txt,.doc" style="display: none;" onchange="handleFiles(this.files)">
+                    <div id="fileList" class="file-list"></div>
+
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label>Or describe documents manually:</label>
+                        <textarea id="document_description" name="document_description" placeholder="Describe available documents and key facts they contain"></textarea>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>💰 Damages (Optional)</h2>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label>Special Damages ($)</label>
+                            <input type="number" id="specials" name="specials" min="0" step="0.01" placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label>General Damages ($)</label>
+                            <input type="number" id="generals" name="generals" min="0" step="0.01" placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label>Punitive Damages ($)</label>
+                            <input type="number" id="punitive" name="punitive" min="0" step="0.01" placeholder="0.00">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Themis agents are analyzing your matter...</p>
+                </div>
+
+                <div id="result" class="result"></div>
+
+                <button type="submit" class="btn" id="submitBtn">🚀 Submit to Themis</button>
+            </form>
+
+            <div class="links">
+                <a href="/docs" target="_blank">📖 API Documentation</a>
+                <a href="/redoc" target="_blank">📘 API Reference</a>
+                <a href="/health" target="_blank">💚 System Health</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let uploadedFiles = [];
+
+        function addParty() {
+            const partiesList = document.getElementById('partiesList');
+            const partyItem = document.createElement('div');
+            partyItem.className = 'party-item';
+            partyItem.innerHTML = `
+                <input type="text" name="party[]" placeholder="Party name" style="flex: 1;">
+                <button type="button" class="remove-file" onclick="this.parentElement.remove()">Remove</button>
+            `;
+            partiesList.appendChild(partyItem);
+        }
+
+        function handleFiles(files) {
+            const fileList = document.getElementById('fileList');
+
+            for (let file of files) {
+                uploadedFiles.push(file);
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <span>📎 ${file.name} (${formatFileSize(file.size)})</span>
+                    <button type="button" class="remove-file" onclick="removeFile('${file.name}')">Remove</button>
+                `;
+                fileList.appendChild(fileItem);
+            }
+        }
+
+        function removeFile(fileName) {
+            uploadedFiles = uploadedFiles.filter(f => f.name !== fileName);
+            updateFileList();
+        }
+
+        function updateFileList() {
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+            uploadedFiles.forEach(file => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <span>📎 ${file.name} (${formatFileSize(file.size)})</span>
+                    <button type="button" class="remove-file" onclick="removeFile('${file.name}')">Remove</button>
+                `;
+                fileList.appendChild(fileItem);
+            });
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        document.getElementById('matterForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+
+            submitBtn.disabled = true;
+            loading.style.display = 'block';
+            result.style.display = 'none';
+
+            try {
+                // Gather form data
+                const formData = new FormData(e.target);
+                const parties = Array.from(formData.getAll('party[]')).filter(p => p.trim());
+
+                if (parties.length === 0) {
+                    throw new Error('At least one party is required');
+                }
+
+                // Build documents array
+                const documents = [];
+
+                if (uploadedFiles.length > 0) {
+                    for (let file of uploadedFiles) {
+                        documents.push({
+                            title: file.name,
+                            type: file.type || 'application/pdf',
+                            summary: `Uploaded file: ${file.name}`
+                        });
+                    }
+                } else if (formData.get('document_description')) {
+                    documents.push({
+                        title: 'Case Documents',
+                        summary: formData.get('document_description')
+                    });
+                } else {
+                    documents.push({
+                        title: 'Case Information',
+                        summary: formData.get('summary')
+                    });
+                }
+
+                // Build matter payload
+                const matter = {
+                    summary: formData.get('summary'),
+                    parties: parties,
+                    documents: documents,
+                    metadata: {
+                        jurisdiction: formData.get('jurisdiction'),
+                        cause_of_action: formData.get('cause_of_action') || undefined
+                    }
+                };
+
+                // Add damages if provided
+                const specials = parseFloat(formData.get('specials'));
+                const generals = parseFloat(formData.get('generals'));
+                const punitive = parseFloat(formData.get('punitive'));
+
+                if (specials || generals || punitive) {
+                    matter.damages = {
+                        specials: specials || 0,
+                        generals: generals || 0,
+                        punitive: punitive || 0
+                    };
+                }
+
+                // Submit to orchestrator
+                const response = await fetch('/orchestrator/execute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ matter: matter })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    result.className = 'result success';
+                    result.innerHTML = `
+                        <h3>✅ Analysis Complete!</h3>
+                        <p>Themis has successfully analyzed your matter.</p>
+                        <pre style="background: white; padding: 15px; border-radius: 6px; overflow-x: auto; margin-top: 15px;">${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    throw new Error(data.detail || 'Failed to process matter');
+                }
+            } catch (error) {
+                result.className = 'result error';
+                result.innerHTML = `
+                    <h3>❌ Error</h3>
+                    <p>${error.message}</p>
+                `;
+            } finally {
+                loading.style.display = 'none';
+                result.style.display = 'block';
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
