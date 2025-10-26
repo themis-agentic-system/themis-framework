@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+import re
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict, ValidationError
@@ -22,6 +23,10 @@ _service: OrchestratorService | None = None
 # Initialize rate limiter
 limiter = Limiter(key_func=get_remote_address)
 
+_CONTROL_CHARACTERS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+_SCRIPT_BLOCK = re.compile(r"<\s*script[^>]*>.*?<\s*/\s*script\s*>", re.IGNORECASE | re.DOTALL)
+_MAX_STRING_LENGTH = 10000
+
 
 class PlanRequest(BaseModel):
     """Request payload for planning operations."""
@@ -38,6 +43,27 @@ class ExecuteRequest(BaseModel):
 
     plan_id: str | None = None
     matter: dict[str, Any] | None = None
+
+
+def _sanitize_string(value: str) -> str:
+    sanitized = _CONTROL_CHARACTERS.sub("", value)
+    sanitized = _SCRIPT_BLOCK.sub("", sanitized)
+    sanitized = sanitized.replace("\r", " ").replace("\n", " ").strip()
+    if len(sanitized) > _MAX_STRING_LENGTH:
+        sanitized = sanitized[:_MAX_STRING_LENGTH]
+    return sanitized
+
+
+def sanitize_matter_payload(payload: Any) -> Any:
+    """Recursively sanitize user-provided matter payloads."""
+
+    if isinstance(payload, str):
+        return _sanitize_string(payload)
+    if isinstance(payload, list):
+        return [sanitize_matter_payload(item) for item in payload]
+    if isinstance(payload, dict):
+        return {key: sanitize_matter_payload(value) for key, value in payload.items()}
+    return payload
 
 
 def configure_service(service: OrchestratorService) -> None:
@@ -60,7 +86,7 @@ def validate_and_extract_matter(matter_data: dict[str, Any]) -> dict[str, Any]:
     """Validate matter payload and extract data.
 
     Attempts to validate the matter payload using Pydantic models for type safety.
-    Falls back to raw dict if validation fails (for backward compatibility).
+    Raises a 422 HTTP error if validation fails so the caller can correct payloads.
 
     Args:
         matter_data: Raw matter data (may be {"matter": {...}} or direct matter dict)
@@ -75,14 +101,15 @@ def validate_and_extract_matter(matter_data: dict[str, Any]) -> dict[str, Any]:
         # Try to validate as wrapped matter first ({"matter": {...}})
         if "matter" in matter_data:
             wrapper = MatterWrapper.model_validate(matter_data)
-            # If the inner matter is a Pydantic model, convert to dict
-            if isinstance(wrapper.matter, Matter):
-                return wrapper.matter.model_dump(exclude_none=True)
-            return wrapper.matter
+            inner = wrapper.matter
+            if isinstance(inner, Matter):
+                return sanitize_matter_payload(inner.model_dump(exclude_none=True))
+            validated_inner = Matter.model_validate(inner)
+            return sanitize_matter_payload(validated_inner.model_dump(exclude_none=True))
 
         # Try to validate as direct matter
         validated = Matter.model_validate(matter_data)
-        return validated.model_dump(exclude_none=True)
+        return sanitize_matter_payload(validated.model_dump(exclude_none=True))
 
     except ValidationError as exc:
         # Log validation errors for debugging
@@ -109,7 +136,6 @@ def validate_and_extract_matter(matter_data: dict[str, Any]) -> dict[str, Any]:
 @router.post("/plan", summary="Create an execution plan for a legal matter")
 @limiter.limit("20/minute")  # 20 requests per minute per IP
 async def plan(
-    request_body: PlanRequest,
     request: Request,
     api_key: str = Depends(verify_api_key),
 ) -> dict[str, Any]:
@@ -119,16 +145,22 @@ async def plan(
     Requires authentication via Bearer token if THEMIS_API_KEY is set.
     Rate limited to 20 requests per minute per IP address.
     """
+    try:
+        payload = await request.json()
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid JSON payload provided.",
+        ) from exc
+    plan_request = PlanRequest.model_validate(payload)
     service = get_service()
-    # Validate matter payload
-    validated_matter = validate_and_extract_matter(request_body.matter)
+    validated_matter = validate_and_extract_matter(plan_request.matter)
     return await service.plan(validated_matter)
 
 
 @router.post("/execute", summary="Run a plan through registered agents")
 @limiter.limit("10/minute")  # 10 requests per minute per IP (lower limit for expensive operations)
 async def execute(
-    request_body: ExecuteRequest,
     request: Request,
     api_key: str = Depends(verify_api_key),
 ) -> dict[str, Any]:
@@ -138,7 +170,16 @@ async def execute(
     Requires authentication via Bearer token if THEMIS_API_KEY is set.
     Rate limited to 10 requests per minute per IP address.
     """
-    if request_body.plan_id is None and request_body.matter is None:
+    try:
+        payload = await request.json()
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid JSON payload provided.",
+        ) from exc
+    execute_request = ExecuteRequest.model_validate(payload)
+
+    if execute_request.plan_id is None and execute_request.matter is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Provide either an existing plan_id or a matter payload to execute.",
@@ -148,10 +189,10 @@ async def execute(
     try:
         # Validate matter if provided
         validated_matter = None
-        if request_body.matter is not None:
-            validated_matter = validate_and_extract_matter(request_body.matter)
+        if execute_request.matter is not None:
+            validated_matter = validate_and_extract_matter(execute_request.matter)
 
-        return await service.execute(plan_id=request_body.plan_id, matter=validated_matter)
+        return await service.execute(plan_id=execute_request.plan_id, matter=validated_matter)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 

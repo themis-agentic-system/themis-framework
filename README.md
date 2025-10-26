@@ -1,111 +1,104 @@
-# Themis Framework
+Themis Framework
+================
 
-> An open framework for building **multi-agent legal reasoning systems** that blend data analysis, doctrinal expertise, and strategic counsel under a unified orchestrator.
+An open framework for building multi-agent legal reasoning systems that blend data analysis, doctrinal expertise, and strategic counsel under a unified orchestrator.
 
-![Themis](https://img.shields.io/badge/agentic-legal-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
-![Status](https://img.shields.io/badge/status-production--ready-brightgreen)
-![Tests](https://img.shields.io/badge/tests-30%20passing-brightgreen)
-![Docker](https://img.shields.io/badge/docker-ready-blue)
-![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) ![Themis Status](https://img.shields.io/badge/status-beta-blue) ![Tests](https://img.shields.io/badge/tests-35-4caf50) ![Docker](https://img.shields.io/badge/docker-ready-0db7ed) ![Python](https://img.shields.io/badge/python-3.10%2B-3776ab)
 
----
+Table of Contents
+-----------------
+- [Why Themis?](#why-themis)
+- [Key Features](#key-features)
+- [System Architecture](#system-architecture)
+- [Quick Start](#quick-start)
+- [Usage Examples](#usage-examples)
+- [Practice Packs](#practice-packs)
+- [Development Guide](#development-guide)
+- [Observability & Metrics](#observability--metrics)
+- [Documentation](#documentation)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [License](#license)
+- [Support](#support)
 
-## Table of Contents
-
-1. [Why Themis?](#why-themis)
-2. [Key Features](#key-features)
-3. [System Architecture](#system-architecture)
-4. [Quick Start](#quick-start)
-5. [Usage Examples](#usage-examples)
-6. [Practice Packs](#practice-packs)
-7. [Development Guide](#development-guide)
-8. [Observability & Metrics](#observability--metrics)
-9. [Documentation](#documentation)
-10. [Roadmap](#roadmap)
-11. [Contributing](#contributing)
-12. [License](#license)
-
----
-
-## Why Themis?
-
-Modern legal work blends **facts + law + strategy**. Themis models this as a crew of specialist AI agents working together:
+Why Themis?
+-----------
+Modern legal work blends facts + law + strategy. Themis models this as a crew of specialist AI agents working together:
 
 ### 🤖 The Agent Team
 
-- **LDA (Legal Data Analyst)** 📊
-  - Parses case documents and extracts structured facts
-  - Computes damages calculations and builds timelines
-  - Prepares evidentiary exhibits and summaries
-  - Identifies missing information and data gaps
+**LDA (Legal Data Analyst) 📊**
 
-- **DEA (Doctrinal Expert Agent)** ⚖️
-  - Applies black-letter law with verifiable citations
-  - Spots legal issues and analyzes claims
-  - Guards against hallucinations with source tracking
-  - Provides both controlling and contrary authorities
+- Parses case documents and extracts structured facts
+- Computes damages calculations and builds timelines
+- Prepares evidentiary exhibits and summaries
+- Identifies missing information and data gaps
 
-- **LSA (Legal Strategy Agent)** 🎯
-  - Crafts negotiation strategies and client counsel
-  - Drafts client-facing documents with appropriate tone
-  - Performs risk assessment and identifies weaknesses
-  - Develops contingency plans and fallback positions
+**DEA (Doctrinal Expert Agent) ⚖️**
 
-- **DDA (Document Drafting Agent)** ✍️
-  - Generates formal legal documents using modern legal prose
-  - Supports complaints, motions, demand letters, and memoranda
-  - Formats citations according to Bluebook and jurisdiction standards
-  - Validates document completeness and analyzes tone quality
-  - Ensures plain language and accessibility standards
+- Applies black-letter law with verifiable citations
+- Spots legal issues and analyzes claims
+- Guards against hallucinations with source tracking
+- Provides both controlling and contrary authorities
 
-- **Orchestrator** 🎼
-  - Routes tasks to the right specialist agent
-  - Maintains shared memory across the workflow
-  - Performs reflection (consistency checks, citation verification)
-  - Assembles final deliverables ready for human review
+**LSA (Legal Strategy Agent) 🎯**
+
+- Crafts negotiation strategies and client counsel
+- Drafts client-facing documents with appropriate tone
+- Performs risk assessment and identifies weaknesses
+- Develops contingency plans and fallback positions
+
+**DDA (Document Drafting Agent) ✍️**
+
+- Generates formal legal documents using modern legal prose
+- Supports complaints, motions, demand letters, and memoranda
+- Formats citations according to Bluebook and jurisdiction standards
+- Validates document completeness and analyzes tone quality
+- Ensures plain language and accessibility standards
+
+**Orchestrator 🎼**
+
+- Routes tasks to the right specialist agent
+- Maintains shared memory across the workflow
+- Performs reflection (consistency checks, citation verification)
+- Assembles final deliverables ready for human review
 
 ### 🛡️ Built for High-Stakes Legal Work
+Themis draws inspiration from multi-agent healthcare systems and adapts the approach for high-stakes legal reasoning where:
 
-Themis draws inspiration from multi-agent healthcare systems and adapts the approach for **high-stakes legal reasoning** where:
-- **Provenance** is tracked for every fact and citation
-- **Defensibility** is ensured through structured validation
-- **Human review** is the final step before any client communication
+- Provenance is tracked for every fact and citation
+- Defensibility is ensured through structured validation
+- Human review is the final step before any client communication
 
----
-
-## Key Features
-
+Key Features
+------------
 ### Production-Ready Infrastructure
-- ✅ **Docker Deployment** – Complete stack with PostgreSQL, Prometheus, and Grafana
-- ✅ **Authentication & Security** – API key auth, rate limiting (20 req/min), audit logging
-- ✅ **Performance Optimized** – State caching provides 500x faster reads and 10x higher throughput
-- ✅ **Comprehensive Testing** – 35 tests with 85.7% pass rate across all components
+- ✅ Docker Deployment – Complete stack with PostgreSQL, Prometheus, and Grafana
+- ✅ Authentication & Security – API key auth, rate limiting (20 req/min), audit logging
+- ✅ Performance Optimized – State caching provides 500x faster reads and 10x higher throughput
+- ✅ Comprehensive Testing – 35 tests with 85.7% pass rate across all components
 
 ### Intelligent Agent System
-- 🤖 **LLM-Powered Agents** – Claude 3.5 Sonnet integration with structured outputs
-- 🔄 **Automatic Retry Logic** – Exponential backoff for transient failures (3 attempts)
-- 🎯 **Smart Routing** – Phase-based orchestration with signal propagation
-- 📝 **Stub Mode** – Run without API keys for testing and development
+- 🤖 LLM-Powered Agents – Claude 3.5 Sonnet integration with structured outputs
+- 🔄 Automatic Retry Logic – Exponential backoff for transient failures (3 attempts)
+- 🎯 Smart Routing – Phase-based orchestration with signal propagation
+- 📝 Stub Mode – Run without API keys for testing and development
 
 ### Observability & Monitoring
-- 📊 **Prometheus Metrics** – Agent latency, tool invocations, error rates
-- 📝 **Structured Logging** – JSON logs with request tracking and context
-- 💰 **Cost Tracking** – LLM API usage estimation middleware
-- 🔍 **Audit Trail** – Security-critical operation logging
+- 📊 Prometheus Metrics – Agent latency, tool invocations, error rates
+- 📝 Structured Logging – JSON logs with request tracking and context
+- 💰 Cost Tracking – LLM API usage estimation middleware
+- 🔍 Audit Trail – Security-critical operation logging
 
 ### Developer Experience
-- 📚 **Comprehensive Documentation** – 5 detailed guides covering deployment to code review
-- 🧪 **Practice Packs** – Pre-built workflows for Personal Injury and Criminal Defense
-- 🔧 **Extensible Design** – Tool injection, custom agents, and practice pack templates
-- 🐳 **Docker Ready** – Multi-stage builds optimized for production
+- 📚 Comprehensive Documentation – 5 detailed guides covering deployment to code review
+- 🧪 Practice Packs – Pre-built workflows for Personal Injury and Criminal Defense
+- 🔧 Extensible Design – Tool injection, custom agents, and practice pack templates
+- 🐳 Docker Ready – Multi-stage builds optimized for production
 
----
-
-## System Architecture
-
+System Architecture
+-------------------
 ### Directory Structure
-
 ```
 themis-framework/
 ├── agents/                 # 🤖 Specialist agents (LDA, DEA, LSA, DDA)
@@ -136,7 +129,7 @@ themis-framework/
 │   └── registry.py        # Tool registration system
 │
 ├── packs/                 # 📦 Practice area workflows
-│   ├── pi_demand/         # Personal Injury demand letters
+│   ├── personal_injury/   # Personal injury practice pack (intake through trial)
 │   │   ├── run.py         # CLI and workflow orchestration
 │   │   ├── schema.py      # Matter validation schema
 │   │   ├── complaint_generator.py  # Jurisdiction-specific complaints
@@ -184,7 +177,6 @@ themis-framework/
 ```
 
 ### Agent Workflow
-
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                         User Request                         │
@@ -197,9 +189,9 @@ themis-framework/
 │  • Determines agent routing based on intent                  │
 └──────────────────────────┬──────────────────────────────────┘
                            │
-          ┌────────────────┼────────────────┬────────────────┐
-          │                │                │                │
-          ▼                ▼                ▼                ▼
+          ┌────────────────┼────────────────┐
+          │                │                │
+          ▼                ▼                ▼
     ┌─────────┐      ┌─────────┐      ┌─────────┐      ┌─────────┐
     │   LDA   │      │   DEA   │      │   LSA   │      │   DDA   │
     │  Facts  │ ───> │   Law   │ ───> │Strategy │ ───> │Document │
@@ -217,35 +209,30 @@ themis-framework/
            │  • Ensures all legal issues have been addressed     │
            │  • Validates legal writing is crisp and uses modern │
            │    legal prose                                      │
-           │  • If quality checks fail, loops back to re-plan    │
-           └─────────────────────┬──────────────────────────────┘
-                                 │
-                                 │ Quality checks passed
-                                 ▼
-           ┌─────────────────────────────────────────┐
-           │     Human Review-Ready Artifacts        │
-           │  • Timeline spreadsheet                 │
-           │  • Draft demand letter                  │
-           │  • Legal analysis report                │
-           │  • Strategy recommendations             │
-           │  • Formal legal documents (complaints,  │
-           │    motions, memos)                      │
-           └─────────────────────────────────────────┘
+           └─────┬──────────────────────────────────────────┬────┘
+                 │                                          │
+                 │  Quality checks passed                   └─ Quality checks failed → Re-plan and re-execute
+                 ▼
+┌─────────────────────────────────────────┐
+│     Human Review-Ready Artifacts        │
+│  • Timeline spreadsheet                 │
+│  • Draft demand letter                  │
+│  • Legal analysis report                │
+│  • Strategy recommendations             │
+│  • Formal legal documents (complaints,  │
+│    motions, memos)                      │
+└─────────────────────────────────────────┘
 ```
 
----
-
-## Quick Start
-
+Quick Start
+-----------
 ### Prerequisites
-
-- **Python 3.10+** (3.11 recommended)
-- **pip** or **uv** for dependency management
-- **Anthropic API Key** (optional for stub mode)
-- **Docker** (optional, for containerized deployment)
+- Python 3.10+ (3.11 recommended)
+- pip or uv for dependency management
+- Anthropic API Key (optional for stub mode)
+- Docker (optional, for containerized deployment)
 
 ### Installation
-
 ```bash
 # Clone the repository
 git clone https://github.com/themis-agentic-system/themis-framework.git
@@ -253,7 +240,7 @@ cd themis-framework
 
 # Create virtual environment
 python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+source .venv/bin/activate  # On Windows: .venv\\Scripts\\activate
 
 # Install dependencies
 pip install -e .
@@ -264,7 +251,6 @@ cp .env.example .env
 ```
 
 ### Run the API
-
 ```bash
 # Start the FastAPI server
 uvicorn api.main:app --reload
@@ -276,7 +262,6 @@ uvicorn api.main:app --reload
 ```
 
 ### Run Tests
-
 ```bash
 # Run all tests
 make test
@@ -291,26 +276,22 @@ python -m pytest tests/ --cov=agents --cov=orchestrator --cov=tools
 ```
 
 ### Test a Practice Pack
-
 ```bash
 # Personal Injury demand letter
-python -m packs.pi_demand.run \
-  --matter packs/pi_demand/fixtures/nominal_collision_matter.json
+python -m packs.personal_injury.run \
+  --matter packs/personal_injury/fixtures/sample_matter.json
 
 # Criminal Defense case analysis
 python -m packs.criminal_defense.run \
   --matter packs/criminal_defense/fixtures/dui_with_refusal.json
 
 # List available fixtures
-python -m packs.pi_demand.run --list-fixtures
+python -m packs.personal_injury.run --list
 ```
 
----
-
-## Usage Examples
-
+Usage Examples
+--------------
 ### Example 1: API Orchestration
-
 ```python
 import httpx
 import asyncio
@@ -359,7 +340,6 @@ asyncio.run(run_legal_analysis())
 ```
 
 ### Example 2: Custom Agent
-
 ```python
 from agents.base import BaseAgent
 from typing import Any
@@ -397,7 +377,6 @@ class CustomLegalAgent(BaseAgent):
 ```
 
 ### Example 3: Docker Deployment
-
 ```bash
 # Copy environment template
 cp .env.docker .env
@@ -423,17 +402,15 @@ docker-compose exec themis-api pytest tests/
 docker-compose down
 ```
 
----
-
-## Practice Packs
-
+Practice Packs
+--------------
 Practice packs bundle domain-specific prompts, validation schemas, and output formatters.
 
-### 📋 Personal Injury Demand Pack (`packs/pi_demand`)
-
+### 📋 Personal Injury Practice Pack (`packs/personal_injury`)
 **Purpose:** Generate demand letters, complaints, and settlement packages for PI cases
 
 **Features:**
+
 - Jurisdiction-aware complaint generation (CA, NY, TX, FL, IL)
 - Automated timeline creation from events
 - Medical expense summaries with totals
@@ -442,38 +419,36 @@ Practice packs bundle domain-specific prompts, validation schemas, and output fo
 - Damages calculations (economic + non-economic)
 
 **Artifacts Generated:**
-1. `timeline.csv` – Chronological event timeline
-2. `draft_demand_letter.txt` – Settlement demand letter
-3. `draft_complaint.txt` – Legal complaint document
-4. `evidence_checklist.txt` – Evidence requirements
-5. `medical_expense_summary.csv` – Medical damages breakdown
-6. `statute_tracker.txt` – SOL monitoring
+
+- `timeline.csv` – Chronological event timeline
+- `draft_demand_letter.txt` – Settlement demand letter
+- `draft_complaint.txt` – Legal complaint document
+- `evidence_checklist.txt` – Evidence requirements
+- `medical_expense_summary.csv` – Medical damages breakdown
+- `statute_tracker.txt` – SOL monitoring
 
 **Usage:**
 ```bash
 # Run with a fixture
-python -m packs.pi_demand.run \
-  --matter packs/pi_demand/fixtures/nominal_collision_matter.json
+python -m packs.personal_injury.run \
+  --matter packs/personal_injury/fixtures/sample_matter.json
 
-# Validate matter schema only
-python -m packs.pi_demand.run --validate-only \
-  --matter my_matter.json
-
-# Interactive matter creation
-python -m packs.pi_demand.run --create-matter
+# Audit available assets
+python -m packs.personal_injury.run --audit
 ```
 
 **Available Fixtures:**
+
 - `nominal_collision_matter.json` – Standard auto accident
 - `edgecase_sparse_slip_and_fall.json` – Minimal data scenario
 - `medical_malpractice_new_york.json` – NY med mal case
 - `dog_bite_california.json` – CA premises liability
 
 ### ⚖️ Criminal Defense Pack (`packs/criminal_defense`)
-
 **Purpose:** Analyze criminal cases, generate defense strategies, and prepare motions
 
 **Features:**
+
 - Charge analysis with severity assessment
 - Prior record evaluation
 - Fourth Amendment analysis for searches/seizures
@@ -482,11 +457,12 @@ python -m packs.pi_demand.run --create-matter
 - Plea negotiation frameworks
 
 **Artifacts Generated:**
-1. `charge_analysis.txt` – Detailed charge breakdown
-2. `defense_strategy.txt` – Strategic recommendations
-3. `suppression_motion.txt` – Motion to suppress evidence (if warranted)
-4. `discovery_requests.txt` – Evidence discovery checklist
-5. `witness_interview_guide.txt` – Interview questions
+
+- `charge_analysis.txt` – Detailed charge breakdown
+- `defense_strategy.txt` – Strategic recommendations
+- `suppression_motion.txt` – Motion to suppress evidence (if warranted)
+- `discovery_requests.txt` – Evidence discovery checklist
+- `witness_interview_guide.txt` – Interview questions
 
 **Usage:**
 ```bash
@@ -499,13 +475,13 @@ python -m packs.criminal_defense.run --list-fixtures
 ```
 
 **Available Fixtures:**
+
 - `dui_with_refusal.json` – DUI with breathalyzer refusal
 - `drug_possession_traffic_stop.json` – Possession from vehicle search
 - `felony_assault_self_defense.json` – Self-defense claim
 
 ### 🛠️ Creating Custom Practice Packs
-
-```python
+```bash
 # 1. Create directory structure
 mkdir -p packs/my_pack/fixtures
 
@@ -532,12 +508,9 @@ def main():
 # 4. Add fixtures and test
 ```
 
----
-
-## Development Guide
-
+Development Guide
+-----------------
 ### Development Commands
-
 ```bash
 # Linting and formatting
 make lint                    # Run ruff checks
@@ -560,7 +533,6 @@ docker-compose exec themis-api bash  # Shell into container
 ```
 
 ### Project Standards
-
 #### Code Quality
 - ✅ Type hints on all function signatures
 - ✅ Docstrings for all public functions and classes
@@ -568,8 +540,8 @@ docker-compose exec themis-api bash  # Shell into container
 - ✅ Use `from __future__ import annotations` for forward refs
 
 #### Agent Development
-- ✅ All agents must inherit from `BaseAgent`
-- ✅ Include `provenance` metadata in all responses
+- ✅ All agents must inherit from BaseAgent
+- ✅ Include provenance metadata in all responses
 - ✅ Track `unresolved_issues` for follow-up
 - ✅ Support tool injection for testability
 
@@ -580,7 +552,6 @@ docker-compose exec themis-api bash  # Shell into container
 - ✅ Aim for >80% code coverage
 
 ### Testing Philosophy
-
 ```python
 # Good test example
 def test_agent_handles_missing_data(sample_matter):
@@ -595,76 +566,69 @@ def test_agent_handles_missing_data(sample_matter):
 ```
 
 ### Adding New Practice Packs
+```text
+Create directory structure:
 
-1. **Create directory structure:**
-   ```
-   packs/my_pack/
-   ├── __init__.py
-   ├── run.py                  # CLI entry point
-   ├── schema.py               # JSON Schema validation
-   ├── fixtures/               # Test matters
-   │   ├── sample_matter.json
-   │   └── edge_case.json
-   └── README.md               # Pack documentation
-   ```
+packs/my_pack/
+├── __init__.py
+├── run.py                  # CLI entry point
+├── schema.py               # JSON Schema validation
+├── fixtures/               # Test matters
+│   ├── sample_matter.json
+│   └── edge_case.json
+└── README.md               # Pack documentation
 
-2. **Define the schema** (`schema.py`):
-   ```python
-   MATTER_SCHEMA = {
-       "type": "object",
-       "properties": {
-           "metadata": {"type": "object"},
-           "parties": {"type": "array"},
-           # ... domain-specific fields
-       },
-       "required": ["metadata", "parties"]
-   }
-   ```
+Define the schema (schema.py):
 
-3. **Implement the workflow** (`run.py`):
-   ```python
-   async def main():
-       matter = load_matter(args.matter_file)
-       validate_schema(matter, MATTER_SCHEMA)
+MATTER_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "metadata": {"type": "object"},
+        "parties": {"type": "array"},
+        # ... domain-specific fields
+    },
+    "required": ["metadata", "parties"]
+}
 
-       service = OrchestratorService()
-       result = await service.execute(matter)
+Implement the workflow (run.py):
 
-       persist_outputs(result, output_dir)
-   ```
+async def main():
+    matter = load_matter(args.matter_file)
+    validate_schema(matter, MATTER_SCHEMA)
 
-4. **Add tests** (`tests/test_my_pack.py`):
-   ```python
-   def test_my_pack_validates_matter():
-       with pytest.raises(ValidationError):
-           load_matter("invalid_matter.json")
+    service = OrchestratorService()
+    result = await service.execute(matter)
 
-   def test_my_pack_generates_artifacts():
-       result = run_pack("sample_matter.json")
-       assert "expected_artifact.txt" in result.artifacts
-   ```
+    persist_outputs(result, output_dir)
 
-5. **Document usage** (`README.md`):
-   ```markdown
-   # My Pack
+Add tests (tests/test_my_pack.py):
 
-   ## Purpose
-   Brief description of what this pack does
+def test_my_pack_validates_matter():
+    with pytest.raises(ValidationError):
+        load_matter("invalid_matter.json")
 
-   ## Usage
-   python -m packs.my_pack.run --matter path/to/matter.json
+def test_my_pack_generates_artifacts():
+    result = run_pack("sample_matter.json")
+    assert "expected_artifact.txt" in result.artifacts
 
-   ## Artifacts
-   - artifact1.txt - Description
-   - artifact2.csv - Description
-   ```
+Document usage (README.md):
 
----
+# My Pack
 
-## Observability & Metrics
+## Purpose
+Brief description of what this pack does
 
+## Usage
+python -m packs.my_pack.run --matter path/to/matter.json
+
+## Artifacts
+- artifact1.txt - Description
+- artifact2.csv - Description
+```
+
+Observability & Metrics
+-----------------------
 ### Prometheus Metrics
-
 Themis exposes metrics in Prometheus format at `/metrics`:
 
 ```bash
@@ -678,7 +642,6 @@ themis_agent_run_errors_total{agent="lsa"}                # Error counter
 ```
 
 ### Structured Logging
-
 All logs include structured context:
 
 ```json
@@ -694,39 +657,37 @@ All logs include structured context:
 ```
 
 ### Monitoring Stack
-
 When running via Docker Compose:
 
-- **Prometheus** (`:9090`) – Metrics collection and querying
-- **Grafana** (`:3000`) – Visualization dashboards (admin/admin)
+- Prometheus (:9090) – Metrics collection and querying
+- Grafana (:3000) – Visualization dashboards (admin/admin)
 
 Pre-configured dashboards:
+
 - Agent Performance (latency, throughput, error rates)
 - System Health (CPU, memory, request rates)
 - Cost Tracking (LLM API usage estimates)
 
----
-
-## Documentation
-
+Documentation
+-------------
 ### Available Documentation
 
 | Document | Description | Lines |
-|----------|-------------|-------|
-| **[CODE_REVIEW_REPORT.md](CODE_REVIEW_REPORT.md)** | Comprehensive code review (A- grade) | 839 |
-| **[REVIEW_FINDINGS.md](REVIEW_FINDINGS.md)** | Detailed review findings and recommendations | - |
-| **[QUICKSTART.md](QUICKSTART.md)** | Quick start guide for new users | - |
-| **[docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md)** | Production deployment instructions | 698 |
-| **[docs/DOCKER_README.md](docs/DOCKER_README.md)** | Docker setup and configuration | - |
-| **[docs/IMPROVEMENTS.md](docs/IMPROVEMENTS.md)** | Production features and enhancements | - |
-| **[docs/THEMIS_CODE_REVIEW.md](docs/THEMIS_CODE_REVIEW.md)** | Original comprehensive code review | - |
-| **[docs/IMPLEMENTATION_SUMMARY.md](docs/IMPLEMENTATION_SUMMARY.md)** | Technical implementation details | - |
+| --- | --- | --- |
+| `CODE_REVIEW_REPORT.md` | Comprehensive code review (A- grade) | 839 |
+| `REVIEW_FINDINGS.md` | Detailed review findings and recommendations | - |
+| `QUICKSTART.md` | Quick start guide for new users | - |
+| `docs/DEPLOYMENT_GUIDE.md` | Production deployment instructions | 698 |
+| `docs/DOCKER_README.md` | Docker setup and configuration | - |
+| `docs/IMPROVEMENTS.md` | Production features and enhancements | - |
+| `docs/THEMIS_CODE_REVIEW.md` | Original comprehensive code review | - |
+| `docs/IMPLEMENTATION_SUMMARY.md` | Technical implementation details | - |
 
 ### Key Findings from Code Review
-
-**Overall Grade:** A- (90/100)
+Overall Grade: **A- (90/100)**
 
 **Strengths:**
+
 - ✅ Clean architecture with excellent separation of concerns
 - ✅ Comprehensive error handling and fallback mechanisms
 - ✅ Strong test coverage (85.7% pass rate)
@@ -734,91 +695,81 @@ Pre-configured dashboards:
 - ✅ Excellent documentation and code quality
 
 **Areas for Improvement:**
+
 - ⚠️ 5 async tests need pytest-asyncio configuration
 - ⚠️ API endpoints need comprehensive test coverage
 - ⚠️ Input sanitization for user-provided matter payloads
 - ⚠️ Enhanced security (log sanitization, key rotation)
 
-See [CODE_REVIEW_REPORT.md](CODE_REVIEW_REPORT.md) for the complete analysis.
+See `CODE_REVIEW_REPORT.md` for the complete analysis.
 
----
-
-## Roadmap
-
+Roadmap
+-------
 ### Near-Term (Q1 2025)
-- [ ] Fix async test configuration for 100% test pass rate
-- [ ] Add comprehensive API endpoint tests
-- [ ] Implement input sanitization and validation
-- [ ] Add API key rotation mechanism
-- [ ] Create RAG integration for legal research
+- Fix async test configuration for 100% test pass rate
+- Add comprehensive API endpoint tests
+- Implement input sanitization and validation
+- Add API key rotation mechanism
+- Create RAG integration for legal research
 
-### Mid-Term (Q2-Q3 2025)
-- [ ] Expand practice packs (employment law, M&A diligence, regulatory compliance)
-- [ ] Implement parallel agent execution for performance
-- [ ] Add streaming document parsing for large files
-- [ ] Integrate docket monitoring with push notifications
-- [ ] Create web-based UI for matter management
+### Mid-Term (Q2–Q3 2025)
+- Expand practice packs (employment law, M&A diligence, regulatory compliance)
+- Implement parallel agent execution for performance
+- Add streaming document parsing for large files
+- Integrate docket monitoring with push notifications
+- Create web-based UI for matter management
 
 ### Long-Term (Q4 2025+)
-- [ ] Support structured knowledge graphs for complex matters
-- [ ] Multi-tenancy with organization-level isolation
-- [ ] Advanced caching with Redis/Memcached
-- [ ] Circuit breakers and advanced resilience patterns
-- [ ] Publish benchmark suite for legal multi-agent systems
+- Support structured knowledge graphs for complex matters
+- Multi-tenancy with organization-level isolation
+- Advanced caching with Redis/Memcached
+- Circuit breakers and advanced resilience patterns
+- Publish benchmark suite for legal multi-agent systems
 
 ### Research Areas
-- [ ] Fine-tuned models for legal domain
-- [ ] Automated discovery request generation
-- [ ] Contract analysis and review workflows
-- [ ] Predictive case outcome modeling
+- Fine-tuned models for legal domain
+- Automated discovery request generation
+- Contract analysis and review workflows
+- Predictive case outcome modeling
 
-**Have ideas?** Open an issue or start a discussion!
+Have ideas? Open an issue or start a discussion!
 
----
-
-## Contributing
-
+Contributing
+------------
 We welcome contributions! Here's how to get started:
 
 ### Contribution Process
+```bash
+# Fork the repository and create a feature branch
+git checkout -b feature/my-new-feature
 
-1. **Fork the repository** and create a feature branch
-   ```bash
-   git checkout -b feature/my-new-feature
-   ```
+# Make your changes following our coding standards
 
-2. **Make your changes** following our coding standards
-   - Add tests for new functionality
-   - Update documentation as needed
-   - Run linting and tests locally
+# Add tests for new functionality
+# Update documentation as needed
+# Run linting and tests locally
+# Ensure quality checks pass:
+make lint    # Code quality
+make test    # All tests pass
+make qa      # QA checks
 
-3. **Ensure quality checks pass:**
-   ```bash
-   make lint    # Code quality
-   make test    # All tests pass
-   make qa      # QA checks
-   ```
+# Commit with descriptive messages:
+git commit -m "Add feature: brief description
 
-4. **Commit with descriptive messages:**
-   ```bash
-   git commit -m "Add feature: brief description
+Longer explanation of what changed and why.
+Fixes #123"
 
-   Longer explanation of what changed and why.
-   Fixes #123"
-   ```
+# Push and create a pull request:
+git push origin feature/my-new-feature
+```
 
-5. **Push and create a pull request:**
-   ```bash
-   git push origin feature/my-new-feature
-   ```
+Wait for CI checks – GitHub Actions will run:
 
-6. **Wait for CI checks** – GitHub Actions will run:
-   - Linting (ruff)
-   - Test suite (pytest)
-   - QA validation
+- Linting (ruff)
+- Test suite (pytest)
+- QA validation
 
 ### Contribution Guidelines
-
 - ✅ Follow existing code style and conventions
 - ✅ Write tests for new features
 - ✅ Update documentation for user-facing changes
@@ -826,22 +777,18 @@ We welcome contributions! Here's how to get started:
 - ✅ Respond to review feedback promptly
 
 ### Code of Conduct
-
-Please review our [Code of Conduct](CODE_OF_CONDUCT.md) (coming soon) before contributing.
+Please review our Code of Conduct (coming soon) before contributing.
 
 ### Areas We'd Love Help With
-
 - 🧪 Additional test coverage (especially API and edge cases)
 - 📚 More practice packs for different legal domains
 - 🐛 Bug fixes and performance improvements
 - 📖 Documentation improvements and examples
 - 🌐 Internationalization and multi-jurisdiction support
 
----
-
-## License
-
-Themis Framework is released under the [MIT License](LICENSE).
+License
+-------
+Themis Framework is released under the MIT License.
 
 ```
 Copyright (c) 2024-2025 Themis Maintainers
@@ -865,27 +812,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
----
+Support
+-------
+- 📧 Email: Contact the maintainers (coming soon)
+- 💬 Discussions: GitHub Discussions
+- 🐛 Bug Reports: GitHub Issues
+- 📖 Documentation: See `docs/` directory
 
-## Support
-
-- 📧 **Email:** [Contact the maintainers](mailto:support@example.com) (coming soon)
-- 💬 **Discussions:** [GitHub Discussions](https://github.com/themis-agentic-system/themis-framework/discussions)
-- 🐛 **Bug Reports:** [GitHub Issues](https://github.com/themis-agentic-system/themis-framework/issues)
-- 📖 **Documentation:** See [docs/](docs/) directory
-
----
-
-<div align="center">
-
-**"Trust, but verify."**
-
-*Every automated deliverable is designed for human review before filing, sending, or advising clients.*
-
----
+> "Trust, but verify."
+>
+> Every automated deliverable is designed for human review before filing, sending, or advising clients.
 
 ⚖️ Built with care for legal professionals | 🤖 Powered by Claude AI | 🛡️ Production-ready
 
 [⬆ Back to Top](#themis-framework)
 
-</div>
+About
+-----
+An open framework for building multi-agent legal reasoning systems —
