@@ -49,12 +49,12 @@ uvicorn api.main:app --reload
 ## 5. Exercise the personal-injury practice pack
 
 ```bash
-python -m packs.pi_demand.run --matter packs/pi_demand/fixtures/nominal_collision_matter.json
+python -m packs.personal_injury.run --matter packs/personal_injury/fixtures/sample_matter.json
 ```
 
 The CLI validates the matter payload, executes the default task graph, and persists artifacts under
 `outputs/<matter-slug>/` (timeline CSV, demand letter, complaint draft, evidence checklist, etc.).
-Use `--list-fixtures` to discover other bundled matters.
+Use `--list` to discover other bundled generators.
 
 ## 6. Run the automated checks
 
