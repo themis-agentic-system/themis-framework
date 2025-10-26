@@ -1,0 +1,74 @@
+# CODEOWNERS file
+#
+# This file defines who is responsible for reviewing changes to different parts of the codebase.
+# GitHub will automatically request reviews from these users/teams when PRs modify these files.
+#
+# Syntax: path/to/file @username @org/team-name
+#
+# Documentation: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# ============================================================================
+# Global Owners (fallback for everything not specified below)
+# ============================================================================
+# Replace with actual GitHub usernames of core maintainers
+* @themis-agentic-system/themis-maintainers
+
+# ============================================================================
+# Security-Critical Files (require security team review)
+# ============================================================================
+.github/ @themis-agentic-system/themis-maintainers
+.github/workflows/ @themis-agentic-system/themis-maintainers
+Dockerfile @themis-agentic-system/themis-maintainers
+docker-compose.yml @themis-agentic-system/themis-maintainers
+.env.example @themis-agentic-system/themis-maintainers
+.env.docker @themis-agentic-system/themis-maintainers
+SECURITY.md @themis-agentic-system/themis-maintainers
+
+# API security and authentication
+/api/security.py @themis-agentic-system/themis-maintainers
+/api/middleware.py @themis-agentic-system/themis-maintainers
+
+# ============================================================================
+# Component Owners (require component expert review)
+# ============================================================================
+
+# API and web interface
+/api/ @themis-agentic-system/themis-maintainers
+
+# Agent system
+/agents/ @themis-agentic-system/themis-maintainers
+
+# Orchestrator and workflow management
+/orchestrator/ @themis-agentic-system/themis-maintainers
+
+# Tools and integrations
+/tools/ @themis-agentic-system/themis-maintainers
+
+# Practice packs
+/packs/ @themis-agentic-system/themis-maintainers
+
+# ============================================================================
+# Documentation (require doc team review)
+# ============================================================================
+*.md @themis-agentic-system/themis-maintainers
+/docs/ @themis-agentic-system/themis-maintainers
+
+# ============================================================================
+# Dependencies and Build Configuration (require careful review)
+# ============================================================================
+pyproject.toml @themis-agentic-system/themis-maintainers
+requirements*.txt @themis-agentic-system/themis-maintainers
+setup.py @themis-agentic-system/themis-maintainers
+setup.cfg @themis-agentic-system/themis-maintainers
+Makefile @themis-agentic-system/themis-maintainers
+
+# ============================================================================
+# Infrastructure and Deployment
+# ============================================================================
+/infra/ @themis-agentic-system/themis-maintainers
+
+# ============================================================================
+# Tests (require test coverage review)
+# ============================================================================
+/tests/ @themis-agentic-system/themis-maintainers
+/qa/ @themis-agentic-system/themis-maintainers
