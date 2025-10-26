@@ -4,11 +4,10 @@ from __future__ import annotations
 
 from typing import Any
 
-
 import pytest
 
 
-@pytest.fixture()
+@pytest.fixture
 def sample_matter() -> dict[str, Any]:
     """Representative payload shared across agent scenarios."""
 

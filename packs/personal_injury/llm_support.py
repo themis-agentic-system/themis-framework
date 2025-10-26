@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Dict
+from typing import Any
 
 from tools.llm_client import get_llm_client
 
@@ -12,8 +12,8 @@ def run_structured_prompt(
     *,
     system_prompt: str,
     user_prompt: str,
-    response_format: Dict[str, Any],
-) -> Dict[str, Any]:
+    response_format: dict[str, Any],
+) -> dict[str, Any]:
     """Execute a structured LLM prompt with graceful fallbacks.
 
     The helper hides asyncio plumbing so pack modules can remain synchronous.

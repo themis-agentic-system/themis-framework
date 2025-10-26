@@ -18,7 +18,8 @@ from api.middleware import (
     PayloadSizeLimitMiddleware,
     RequestLoggingMiddleware,
 )
-from orchestrator.router import configure_service, router as orchestrator_router
+from orchestrator.router import configure_service
+from orchestrator.router import router as orchestrator_router
 from orchestrator.service import OrchestratorService
 from tools.metrics import metrics_registry
 

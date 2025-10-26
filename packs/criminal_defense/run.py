@@ -16,7 +16,10 @@ except ModuleNotFoundError:  # pragma: no cover - executed when PyYAML missing
     yaml = None  # type: ignore[assignment]
 
 from orchestrator.service import OrchestratorService
-from packs.criminal_defense.schema import validate_matter_schema, format_validation_errors
+from packs.criminal_defense.schema import (
+    format_validation_errors,
+    validate_matter_schema,
+)
 
 
 def load_matter(path: Path) -> dict[str, Any]:
@@ -51,7 +54,7 @@ def load_matter(path: Path) -> dict[str, Any]:
     # Print warnings but continue
     if validation_errors and not is_valid:
         print(format_validation_errors(validation_errors))
-        print("")
+        print()
 
     matter_payload = data.get("matter") if isinstance(data.get("matter"), dict) else data
     return _normalise_matter(matter_payload, source=path)
@@ -732,7 +735,7 @@ Examples:
         parser.error(str(exc))
 
     print(f"Executing workflow for: {matter.get('matter_name', 'Untitled Matter')}")
-    print("")
+    print()
 
     result = await service.execute(matter)
     saved_paths = persist_outputs(matter, result, output_root=args.output_dir)

@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Iterable, List
 
 from packs.personal_injury.schema import PersonalInjuryMatter, matter_summary
 
@@ -15,7 +15,7 @@ class Section:
     body: str
 
     def render(self) -> str:
-        lines: List[str] = []
+        lines: list[str] = []
         if self.title:
             lines.append(self.title.upper())
             lines.append("".ljust(len(self.title), "="))
@@ -58,7 +58,7 @@ class BaseGenerator:
         return "Unknown"
 
     def format_timeline(self, max_events: int = 10) -> str:
-        lines: List[str] = []
+        lines: list[str] = []
         for event in self.matter.fact_pattern.timeline[:max_events]:
             date_text = event.get("date") or ""
             desc = event.get("description") or ""

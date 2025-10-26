@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, List
-
-NEGOTIATION_STEPS: Dict[str, List[str]] = {
+NEGOTIATION_STEPS: dict[str, list[str]] = {
     "intake": [
         "Confirm insurance coverage",
         "Collect medical authorizations",
@@ -22,7 +20,7 @@ NEGOTIATION_STEPS: Dict[str, List[str]] = {
     ],
 }
 
-TOPIC_CHECKLISTS: Dict[str, List[str]] = {
+TOPIC_CHECKLISTS: dict[str, list[str]] = {
     "deposition": [
         "Background and employment",
         "Incident chronology",
@@ -39,11 +37,11 @@ TOPIC_CHECKLISTS: Dict[str, List[str]] = {
 }
 
 
-def negotiation_steps(phase: str) -> List[str]:
+def negotiation_steps(phase: str) -> list[str]:
     return NEGOTIATION_STEPS.get(phase, [])
 
 
-def topic_checklist(topic: str) -> List[str]:
+def topic_checklist(topic: str) -> list[str]:
     return TOPIC_CHECKLISTS.get(topic, [])
 
 

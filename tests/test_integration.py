@@ -1,6 +1,7 @@
 """Integration test to verify full orchestration flow."""
 
 import asyncio
+
 from orchestrator.service import OrchestratorService
 from orchestrator.storage.sqlite_repository import SQLiteOrchestratorStateRepository
 

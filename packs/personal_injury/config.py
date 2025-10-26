@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Type
 
 from packs.personal_injury.generators import (
     AnswerGenerator,
@@ -28,12 +27,12 @@ PACK_ANALYTICS_TAG = "pack:personal_injury"
 class DocumentConfig:
     key: str
     title: str
-    generator: Type["BaseGenerator"]
+    generator: type[BaseGenerator]
     phase: str
-    tags: List[str]
+    tags: list[str]
 
 
-DOCUMENTS: Dict[str, DocumentConfig] = {
+DOCUMENTS: dict[str, DocumentConfig] = {
     "intake_memo": DocumentConfig(
         key="intake_memo",
         title="Case Intake Memorandum",
@@ -119,7 +118,7 @@ def build_generator(key: str, matter: PersonalInjuryMatter) -> BaseGenerator:
     return config.generator(matter)
 
 
-def available_documents(phase: str | None = None) -> List[DocumentConfig]:
+def available_documents(phase: str | None = None) -> list[DocumentConfig]:
     values = list(DOCUMENTS.values())
     if phase:
         values = [config for config in values if config.phase == phase]

@@ -21,8 +21,9 @@ def test_constant_time_api_key_comparison():
     that we use secrets.compare_digest instead of direct string comparison.
     """
     # Import the security module to check implementation
-    import api.security as security_module
     import inspect
+
+    import api.security as security_module
 
     # Get the source code of verify_api_key
     source = inspect.getsource(security_module.verify_api_key)
@@ -47,8 +48,9 @@ def test_constant_time_api_key_comparison():
 def test_auth_header_sanitization():
     """Verify authentication headers are sanitized in middleware."""
     # Import middleware to check implementation
-    import api.middleware as middleware_module
     import inspect
+
+    import api.middleware as middleware_module
 
     # Get source of AuditLoggingMiddleware
     source = inspect.getsource(middleware_module.AuditLoggingMiddleware)
@@ -61,7 +63,7 @@ def test_auth_header_sanitization():
     lines = [line.strip() for line in source.split("\n")]
     dangerous_patterns = [
         line for line in lines
-        if "auth_header=" in line and "f\"" in line
+        if "auth_header=" in line and 'f"' in line
     ]
 
     assert len(dangerous_patterns) == 0, "Should not log full auth_header value"
@@ -69,7 +71,7 @@ def test_auth_header_sanitization():
 
 def test_payload_size_limit_middleware_exists():
     """Verify PayloadSizeLimitMiddleware is implemented."""
-    from api.middleware import PayloadSizeLimitMiddleware, MAX_REQUEST_SIZE
+    from api.middleware import MAX_REQUEST_SIZE, PayloadSizeLimitMiddleware
 
     # Verify the middleware class exists
     assert PayloadSizeLimitMiddleware is not None

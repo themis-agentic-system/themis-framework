@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 import time
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import HTTPException, Request, Response, status
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
-from api.logging_config import get_audit_logger, get_performance_logger, get_request_logger
+from api.logging_config import (
+    get_audit_logger,
+    get_performance_logger,
+    get_request_logger,
+)
 
 request_logger = get_request_logger()
 audit_logger = get_audit_logger()

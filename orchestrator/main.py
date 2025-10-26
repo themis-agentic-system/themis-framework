@@ -1,15 +1,15 @@
-from typing import Any, Dict
 from copy import deepcopy
+from typing import Any
 
-from agents.lda import LDAAgent
 from agents.dea import DEAAgent
+from agents.lda import LDAAgent
 from agents.lsa import LSAAgent
 
 
 class Orchestrator:
     """Simple orchestrator that runs LDA -> DEA -> LSA in sequence."""
 
-    def __init__(self, agents: Dict[str, Any] | None = None) -> None:
+    def __init__(self, agents: dict[str, Any] | None = None) -> None:
         self.agents = agents or {
             "lda": LDAAgent(),
             "dea": DEAAgent(),
@@ -33,9 +33,9 @@ class Orchestrator:
             ),
         ]
 
-    async def run_matter(self, matter: Dict[str, Any]) -> Dict[str, Any]:
-        artifacts: Dict[str, Any] = {}
-        propagated: Dict[str, Any] = {}
+    async def run_matter(self, matter: dict[str, Any]) -> dict[str, Any]:
+        artifacts: dict[str, Any] = {}
+        propagated: dict[str, Any] = {}
 
         for agent_name, _, expected_artifacts in self._default_plan:
             agent = self.agents.get(agent_name)
@@ -65,7 +65,7 @@ class Orchestrator:
         return {"artifacts": artifacts}
 
 
-def _find_nested_artifact(payload: Dict[str, Any], artifact_name: str) -> Any:
+def _find_nested_artifact(payload: dict[str, Any], artifact_name: str) -> Any:
     """Locate an artifact nested within dictionaries of the payload."""
 
     for value in payload.values():
