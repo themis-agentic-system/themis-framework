@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import sys
 from typing import Any
 
@@ -95,18 +96,44 @@ def get_performance_logger() -> logging.Logger:
     return logging.getLogger("themis.api.performance")
 
 
-def log_structured(logger: logging.Logger, level: str, message: str, **kwargs: Any) -> None:
-    """Log a structured message with additional context.
+_CONTROL_CHARS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+_SCRIPT_TAG = re.compile(r"<\s*/?\s*script[^>]*>", re.IGNORECASE)
+_SENSITIVE_KEYWORDS = {"key", "token", "secret", "password", "authorization", "bearer"}
+_MAX_VALUE_LENGTH = 512
 
-    Args:
-        logger: Logger instance to use
-        level: Log level (debug, info, warning, error, critical)
-        message: Log message
-        **kwargs: Additional structured data to include
-    """
+
+def _sanitize_log_value(key: str, value: Any) -> str:
+    """Sanitize values included in log statements to avoid data leaks."""
+
+    lower_key = key.lower()
+    if any(keyword in lower_key for keyword in _SENSITIVE_KEYWORDS):
+        return "***redacted***"
+
+    text = str(value)
+    text = _CONTROL_CHARS.sub("", text)
+    text = text.replace("\n", "\\n").replace("\r", "\\r")
+    text = _SCRIPT_TAG.sub("", text)
+    text = text.strip()
+    if len(text) > _MAX_VALUE_LENGTH:
+        text = f"{text[:_MAX_VALUE_LENGTH]}…"
+    return text
+
+
+def _sanitize_message(message: str) -> str:
+    sanitized = _CONTROL_CHARS.sub("", message)
+    sanitized = sanitized.replace("\n", "\\n").replace("\r", "\\r")
+    sanitized = _SCRIPT_TAG.sub("", sanitized)
+    return sanitized.strip()
+
+
+def log_structured(logger: logging.Logger, level: str, message: str, **kwargs: Any) -> None:
+    """Log a structured message with sanitized context."""
+
     log_method = getattr(logger, level.lower())
+    base_message = _sanitize_message(message)
+
     if kwargs:
-        extra_info = " | ".join(f"{k}={v}" for k, v in kwargs.items())
-        log_method(f"{message} | {extra_info}")
+        extra_parts = [f"{key}={_sanitize_log_value(key, value)}" for key, value in kwargs.items()]
+        log_method(f"{base_message} | {' | '.join(extra_parts)}")
     else:
-        log_method(message)
+        log_method(base_message)
