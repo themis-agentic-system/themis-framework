@@ -141,8 +141,9 @@ class LLMClient:
                 content = messages[0]["content"]
                 if isinstance(content, str):
                     messages[0]["content"] = [{"type": "text", "text": content}]
-                for file_id in file_ids:
-                    messages[0]["content"].insert(0, {"type": "file", "file": {"file_id": file_id}})
+                # Insert file references at the beginning, preserving order
+                file_blocks = [{"type": "file", "file": {"file_id": fid}} for fid in file_ids]
+                messages[0]["content"] = file_blocks + messages[0]["content"]
 
         response = self.client.messages.create(**request_params)
 

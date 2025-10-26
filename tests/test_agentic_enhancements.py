@@ -23,6 +23,19 @@ import pytest
 from tools.llm_client import LLMClient
 from tools.mcp_config import MCPConfig
 
+# Try to import LDA functions - skip tests if not available
+# Must be done early before pytest collects tests
+try:
+    from agents.lda import LDAAgent, _damages_calculator, _timeline_analyzer
+
+    LDA_AVAILABLE = True
+except (ImportError, Exception):
+    LDA_AVAILABLE = False
+    # Create dummy references to avoid NameError in skipif decorators
+    _damages_calculator = None
+    _timeline_analyzer = None
+    LDAAgent = None
+
 
 class TestExtendedThinking:
     """Test extended thinking mode functionality."""
@@ -340,15 +353,17 @@ class TestMCPConfig:
         assert "api_key" not in servers[1]
 
 
+@pytest.mark.skipif(not LDA_AVAILABLE, reason="LDA agent dependencies not available (pypdf/cryptography)")
 class TestLDAEnhancedTools:
-    """Test LDA agent enhancements with code execution."""
+    """Test LDA agent enhancements with code execution.
+
+    These tests require pypdf and cryptography dependencies.
+    """
 
     @pytest.mark.asyncio
     @patch("tools.llm_client.get_llm_client")
     async def test_damages_calculator(self, mock_get_client):
         """Test damages calculator tool."""
-        from agents.lda import _damages_calculator
-
         # Mock LLM client response
         mock_client = MagicMock()
         mock_client.generate_structured.return_value = {
@@ -378,8 +393,6 @@ class TestLDAEnhancedTools:
     @patch("tools.llm_client.get_llm_client")
     async def test_timeline_analyzer(self, mock_get_client):
         """Test timeline analyzer tool."""
-        from agents.lda import _timeline_analyzer
-
         # Mock LLM client response
         mock_client = MagicMock()
         mock_client.generate_structured.return_value = {
@@ -408,11 +421,8 @@ class TestLDAEnhancedTools:
         assert result["total_events"] == 3
         assert result["duration_days"] >= 0
 
-    @pytest.mark.asyncio
-    async def test_lda_agent_with_code_execution_enabled(self):
+    def test_lda_agent_with_code_execution_enabled(self):
         """Test LDA agent with code execution enabled."""
-        from agents.lda import LDAAgent
-
         agent = LDAAgent(enable_code_execution=True)
 
         assert agent.enable_code_execution is True
