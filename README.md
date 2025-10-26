@@ -101,11 +101,12 @@ System Architecture
 ### Directory Structure
 ```
 themis-framework/
-├── agents/                 # 🤖 Specialist agents (LDA, DEA, LSA)
+├── agents/                 # 🤖 Specialist agents (LDA, DEA, LSA, DDA)
 │   ├── base.py            # Base agent with metrics, logging, tool invocation
 │   ├── lda.py             # Legal Data Analyst (facts, timelines, damages)
 │   ├── dea.py             # Doctrinal Expert (legal analysis, citations)
-│   └── lsa.py             # Legal Strategist (strategy, risk assessment)
+│   ├── lsa.py             # Legal Strategist (strategy, risk assessment)
+│   └── dda.py             # Document Drafting Agent (formal legal documents)
 │
 ├── orchestrator/          # 🎼 Agent coordination and workflow management
 │   ├── main.py            # Simple sequential orchestrator
