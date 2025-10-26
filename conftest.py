@@ -15,13 +15,11 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     """Register configuration options consumed by pytest-asyncio."""
 
     parser.addini("asyncio_mode", "Configure asyncio support", default="auto")
+
+
 try:  # pragma: no cover - exercised indirectly during test discovery
     import pytest_asyncio  # type: ignore
 except ModuleNotFoundError:  # pragma: no cover - used in constrained environments
-    pytest_asyncio = None
-
-
-if pytest_asyncio is None:  # pragma: no cover - discovery hook
     @pytest.hookimpl(tryfirst=True)
     def pytest_pyfunc_call(pyfuncitem: pytest.Function) -> bool | None:
         """Execute async tests using asyncio when pytest-asyncio is unavailable."""
