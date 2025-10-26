@@ -55,13 +55,20 @@ Modern legal work blends facts + law + strategy. Themis models this as a crew of
 - Formats citations according to Bluebook and jurisdiction standards
 - Validates document completeness and analyzes tone quality
 - Ensures plain language and accessibility standards
+- **Note:** Fully implemented but integration with default routing policy is in progress
 
 **Orchestrator 🎼**
 
-- Routes tasks to the right specialist agent
-- Maintains shared memory across the workflow
+- Routes tasks to the right specialist agent across 5 legal phases:
+  1. **INTAKE_FACTS** - Initial document parsing and fact extraction (LDA)
+  2. **ISSUE_FRAMING** - Legal issue identification (DEA)
+  3. **RESEARCH_RETRIEVAL** - Authority retrieval and citation (DEA)
+  4. **APPLICATION_ANALYSIS** - Legal analysis application (DEA/LDA)
+  5. **DRAFT_REVIEW** - Strategy and document review (LSA)
+- Maintains shared memory across the workflow with state persistence
 - Performs reflection (consistency checks, citation verification)
 - Assembles final deliverables ready for human review
+- Builds task graphs (DAGs) with topological ordering for execution
 
 ### 🛡️ Built for High-Stakes Legal Work
 Themis draws inspiration from multi-agent healthcare systems and adapts the approach for high-stakes legal reasoning where:
@@ -74,21 +81,23 @@ Key Features
 ------------
 ### Production-Ready Infrastructure
 - ✅ Docker Deployment – Complete stack with PostgreSQL, Prometheus, and Grafana
-- ✅ Authentication & Security – API key auth, rate limiting (20 req/min), audit logging
-- ✅ Performance Optimized – State caching provides 500x faster reads and 10x higher throughput
+- ✅ Authentication & Security – API key auth with rotation support, rate limiting (10-60 req/min), audit logging
+- ✅ Performance Optimized – SQLite + in-memory state caching (TTL-based) provides 500x faster reads and 10x higher throughput
 - ✅ Comprehensive Testing – 35 tests with 85.7% pass rate across all components
+- ✅ Type Safety – Pydantic models for Matter, Document, Event, Issue, Authority with validation
 
 ### Intelligent Agent System
 - 🤖 LLM-Powered Agents – Claude 3.5 Sonnet integration with structured outputs
-- 🔄 Automatic Retry Logic – Exponential backoff for transient failures (3 attempts)
-- 🎯 Smart Routing – Phase-based orchestration with signal propagation
-- 📝 Stub Mode – Run without API keys for testing and development
+- 🔄 Automatic Retry Logic – Exponential backoff for transient failures (3 attempts, 2-10s intervals)
+- 🎯 Smart Routing – Phase-based orchestration with signal propagation and task graphs
+- 📝 Stub Mode – Run without API keys using heuristic fallback generation for testing and development
 
 ### Observability & Monitoring
 - 📊 Prometheus Metrics – Agent latency, tool invocations, error rates
-- 📝 Structured Logging – JSON logs with request tracking and context
+- 📝 Structured Logging – JSON logs with request tracking, context, and request IDs
 - 💰 Cost Tracking – LLM API usage estimation middleware
-- 🔍 Audit Trail – Security-critical operation logging
+- 🔍 Audit Trail – Security-critical operation logging with client IP tracking
+- 🛡️ Request Middleware – Logging, audit, cost tracking, payload size limiting (10MB max)
 
 ### Developer Experience
 - 📚 Comprehensive Documentation – 5 detailed guides covering deployment to code review
@@ -114,7 +123,7 @@ themis-framework/
 │   ├── policy.py          # Routing policy and phase definitions
 │   ├── router.py          # FastAPI routes for orchestration
 │   ├── state.py           # State management abstractions
-│   └── storage/           # State persistence (SQLite)
+│   └── storage/           # State persistence (SQLite with TTL caching)
 │
 ├── api/                   # 🌐 FastAPI REST interface
 │   ├── main.py            # Application setup, middleware, routes
@@ -223,6 +232,56 @@ themis-framework/
 │    motions, memos)                      │
 └─────────────────────────────────────────┘
 ```
+
+### State Management & Persistence
+Themis implements a hybrid state management strategy for optimal performance:
+
+**In-Memory Caching (TTL-based):**
+- Configurable TTL (default: 60 seconds via `CACHE_TTL_SECONDS`)
+- Write-through caching strategy
+- 500x faster reads compared to direct database access
+- 10x higher request throughput under load
+- Automatic cache invalidation on expiry
+
+**SQLite Persistence:**
+- Plans stored in `orchestrator_state.db`
+- Execution records with complete artifact storage
+- Atomic writes with transaction support
+- Lightweight, zero-config deployment
+- Migrations support for schema evolution
+
+**State Repository Pattern:**
+- Abstract `StateRepository` interface
+- Pluggable storage backends (SQLite default, PostgreSQL ready)
+- Plan CRUD operations (save, retrieve, list)
+- Execution history tracking
+
+**What Gets Cached:**
+- Execution plans with task graphs
+- Agent execution results
+- Artifact outputs (timelines, demand letters, complaints)
+- Reflection results and quality checks
+
+### Type Safety & Data Models
+Themis uses Pydantic for runtime validation and type safety across all data structures:
+
+**Core Models:**
+- **Matter** – Complete legal matter with validation (min 10 char summary, required parties/documents)
+- **Document** – Case documents with title, content, date, and metadata
+- **Event** – Timeline events with date and description validation
+- **Issue** – Legal issues with area classification (tort, contract, property, etc.)
+- **Authority** – Legal citations with citation text and source tracking
+- **Goals** – Client objectives with settlement ranges and desired outcomes
+- **Damages** – Structured damage breakdown (economic, non-economic, punitive)
+- **Metadata** – Matter metadata (jurisdiction, case type, filing dates)
+
+**Validation Features:**
+- Date format validation (YYYY-MM-DD)
+- Non-negative damages validation
+- String length limits (10,000 char per field)
+- Script injection prevention
+- Control character sanitization
+- Required field enforcement with detailed 422 error messages
 
 Quick Start
 -----------
@@ -339,6 +398,28 @@ async def run_legal_analysis():
 asyncio.run(run_legal_analysis())
 ```
 
+### API Reference
+**Orchestration Endpoints:**
+
+| Endpoint | Method | Rate Limit | Description |
+|----------|--------|------------|-------------|
+| `/orchestrator/plan` | POST | 20 req/min | Create execution plan from matter payload |
+| `/orchestrator/execute` | POST | 10 req/min | Execute workflow (with plan_id or matter) |
+| `/orchestrator/plans/{plan_id}` | GET | 60 req/min | Retrieve stored execution plan |
+| `/orchestrator/artifacts/{plan_id}` | GET | 60 req/min | Retrieve execution results and artifacts |
+
+**System Endpoints:**
+
+| Endpoint | Method | Rate Limit | Description |
+|----------|--------|------------|-------------|
+| `/health` | GET | None | Health check and readiness probe |
+| `/metrics` | GET | None | Prometheus-format metrics |
+
+**Authentication:**
+- Header: `Authorization: Bearer {your-api-key}` or `X-API-Key: {your-api-key}`
+- Development mode: No auth required when `THEMIS_API_KEY` not set
+- Supports key rotation with primary and previous keys
+
 ### Example 2: Custom Agent
 ```python
 from agents.base import BaseAgent
@@ -417,12 +498,33 @@ Practice packs bundle domain-specific prompts, validation schemas, and output fo
 - Evidence checklists with sourcing requirements
 - Statute of limitations tracking
 - Damages calculations (economic + non-economic)
+- Jurisdiction-specific affirmative defenses and jury instructions
 
-**Artifacts Generated:**
+**11 Document Generators Across 5 Phases:**
 
+**Intake Phase:**
+- Case Intake Memorandum
+
+**Pre-Suit Phase:**
+- Settlement Demand Letter
+
+**Litigation Phase:**
+- Civil Complaint (jurisdiction-specific)
+- Answer/Responsive Pleading
+- Written Discovery (interrogatories, RFPs, RFAs)
+- Deposition Outline
+
+**ADR Phase:**
+- Mediation Statement
+- Settlement Agreement
+
+**Trial Phase:**
+- Trial Brief
+- Witness & Exhibit Lists
+- Proposed Jury Instructions
+
+**Additional Artifacts:**
 - `timeline.csv` – Chronological event timeline
-- `draft_demand_letter.txt` – Settlement demand letter
-- `draft_complaint.txt` – Legal complaint document
 - `evidence_checklist.txt` – Evidence requirements
 - `medical_expense_summary.csv` – Medical damages breakdown
 - `statute_tracker.txt` – SOL monitoring
@@ -447,7 +549,16 @@ python -m packs.personal_injury.run --audit
 ### ⚖️ Criminal Defense Pack (`packs/criminal_defense`)
 **Purpose:** Analyze criminal cases, generate defense strategies, and prepare motions
 
-**Features:**
+**Current Status:** Schema and workflow infrastructure in place, document generators in development
+
+**Implemented Features:**
+
+- Criminal matter schema (charges, arrests, evidence, motions)
+- Fixture-based test data (DUI, drug possession, felony assault)
+- Case processing workflow
+- Integration with orchestrator service
+
+**Planned Capabilities:**
 
 - Charge analysis with severity assessment
 - Prior record evaluation
@@ -455,14 +566,8 @@ python -m packs.personal_injury.run --audit
 - Miranda rights compliance checking
 - Suppression motion generation
 - Plea negotiation frameworks
-
-**Artifacts Generated:**
-
-- `charge_analysis.txt` – Detailed charge breakdown
-- `defense_strategy.txt` – Strategic recommendations
-- `suppression_motion.txt` – Motion to suppress evidence (if warranted)
-- `discovery_requests.txt` – Evidence discovery checklist
-- `witness_interview_guide.txt` – Interview questions
+- Discovery request generation
+- Witness interview guides
 
 **Usage:**
 ```bash
@@ -628,6 +733,31 @@ python -m packs.my_pack.run --matter path/to/matter.json
 
 Observability & Metrics
 -----------------------
+### Middleware Stack
+Themis uses a comprehensive middleware pipeline for production-grade observability:
+
+**Request Logging Middleware:**
+- HTTP request/response logging with status codes
+- Automatic request ID generation (`X-Request-ID`)
+- Client IP tracking and user agent capture
+- Response time measurement (`X-Response-Time-Ms` header)
+- Slow request detection (warnings for >1 second)
+- Severity-based logging (INFO for 2xx, WARNING for 4xx, ERROR for 5xx)
+
+**Audit Logging Middleware:**
+- Security event logging for authentication attempts
+- Failed authentication tracking (401/403 responses)
+- Client IP correlation for security analysis
+
+**Cost Tracking Middleware:**
+- LLM API usage estimation per request
+- Token consumption tracking (future enhancement)
+
+**Payload Size Limiting:**
+- Maximum 10MB request body size
+- 413 response for oversized payloads
+- Protection against memory exhaustion attacks
+
 ### Prometheus Metrics
 Themis exposes metrics in Prometheus format at `/metrics`:
 
@@ -642,7 +772,7 @@ themis_agent_run_errors_total{agent="lsa"}                # Error counter
 ```
 
 ### Structured Logging
-All logs include structured context:
+All logs include structured context with automatic sanitization:
 
 ```json
 {
@@ -652,9 +782,16 @@ All logs include structured context:
   "agent": "lda",
   "duration": 2.45,
   "tool_invocations": 3,
-  "request_id": "req_abc123"
+  "request_id": "req_abc123",
+  "client_ip": "192.168.1.100"
 }
 ```
+
+**Security Features:**
+- Sensitive data redaction (API keys, passwords)
+- Control character sanitization
+- Script tag removal (XSS prevention)
+- String truncation (512 char limit in logs)
 
 ### Monitoring Stack
 When running via Docker Compose:
@@ -706,10 +843,10 @@ See `CODE_REVIEW_REPORT.md` for the complete analysis.
 Roadmap
 -------
 ### Near-Term (Q1 2025)
+- Complete DDA agent integration into default routing policy
 - Fix async test configuration for 100% test pass rate
 - Add comprehensive API endpoint tests
-- Implement input sanitization and validation
-- Add API key rotation mechanism
+- Expand Criminal Defense pack with document generators
 - Create RAG integration for legal research
 
 ### Mid-Term (Q2–Q3 2025)
