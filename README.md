@@ -128,7 +128,7 @@ themis-framework/
 │   └── registry.py        # Tool registration system
 │
 ├── packs/                 # 📦 Practice area workflows
-│   ├── pi_demand/         # Personal Injury demand letters
+│   ├── personal_injury/   # Personal injury practice pack (intake through trial)
 │   │   ├── run.py         # CLI and workflow orchestration
 │   │   ├── schema.py      # Matter validation schema
 │   │   ├── complaint_generator.py  # Jurisdiction-specific complaints
@@ -277,15 +277,15 @@ python -m pytest tests/ --cov=agents --cov=orchestrator --cov=tools
 ### Test a Practice Pack
 ```bash
 # Personal Injury demand letter
-python -m packs.pi_demand.run \
-  --matter packs/pi_demand/fixtures/nominal_collision_matter.json
+python -m packs.personal_injury.run \
+  --matter packs/personal_injury/fixtures/sample_matter.json
 
 # Criminal Defense case analysis
 python -m packs.criminal_defense.run \
   --matter packs/criminal_defense/fixtures/dui_with_refusal.json
 
 # List available fixtures
-python -m packs.pi_demand.run --list-fixtures
+python -m packs.personal_injury.run --list
 ```
 
 Usage Examples
@@ -405,7 +405,7 @@ Practice Packs
 --------------
 Practice packs bundle domain-specific prompts, validation schemas, and output formatters.
 
-### 📋 Personal Injury Demand Pack (`packs/pi_demand`)
+### 📋 Personal Injury Practice Pack (`packs/personal_injury`)
 **Purpose:** Generate demand letters, complaints, and settlement packages for PI cases
 
 **Features:**
@@ -429,15 +429,11 @@ Practice packs bundle domain-specific prompts, validation schemas, and output fo
 **Usage:**
 ```bash
 # Run with a fixture
-python -m packs.pi_demand.run \
-  --matter packs/pi_demand/fixtures/nominal_collision_matter.json
+python -m packs.personal_injury.run \
+  --matter packs/personal_injury/fixtures/sample_matter.json
 
-# Validate matter schema only
-python -m packs.pi_demand.run --validate-only \
-  --matter my_matter.json
-
-# Interactive matter creation
-python -m packs.pi_demand.run --create-matter
+# Audit available assets
+python -m packs.personal_injury.run --audit
 ```
 
 **Available Fixtures:**
