@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -70,6 +71,28 @@ app.add_middleware(RequestLoggingMiddleware)
 app.add_middleware(PayloadSizeLimitMiddleware)  # Check payload size first
 
 app.include_router(orchestrator_router, prefix="/orchestrator", tags=["orchestrator"])
+
+
+@app.get("/", response_class=HTMLResponse, tags=["system"])
+async def root() -> HTMLResponse:
+    """Serve the landing page with document upload form."""
+    static_dir = Path(__file__).parent / "static"
+    index_path = static_dir / "index.html"
+
+    if index_path.exists():
+        return HTMLResponse(content=index_path.read_text())
+    else:
+        return HTMLResponse(
+            content="""
+            <html>
+                <body>
+                    <h1>Themis Orchestration API</h1>
+                    <p>Multi-agent legal analysis workflow orchestration.</p>
+                    <p><a href="/docs">API Documentation</a></p>
+                </body>
+            </html>
+            """
+        )
 
 
 @app.get("/health", tags=["system"])
