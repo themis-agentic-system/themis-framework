@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from collections import deque
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, Iterator
+from typing import Any
 
 
 @dataclass(slots=True)
@@ -44,7 +45,7 @@ class TaskNode:
         return payload
 
     @classmethod
-    def from_dict(cls, payload: dict[str, Any]) -> "TaskNode":
+    def from_dict(cls, payload: dict[str, Any]) -> TaskNode:
         """Instantiate a :class:`TaskNode` from a serialised payload."""
 
         return cls(
@@ -105,7 +106,7 @@ class TaskGraph:
         return {node_id: node.as_dict() for node_id, node in self._nodes.items()}
 
     @classmethod
-    def from_dict(cls, payload: dict[str, Any]) -> "TaskGraph":
+    def from_dict(cls, payload: dict[str, Any]) -> TaskGraph:
         """Rehydrate a :class:`TaskGraph` from persisted metadata."""
 
         nodes = [TaskNode.from_dict(node_data) for node_data in payload.values()]
@@ -121,7 +122,7 @@ class TaskGraph:
         return graph
 
     @classmethod
-    def from_linear_steps(cls, steps: Iterable[dict[str, Any]]) -> "TaskGraph":
+    def from_linear_steps(cls, steps: Iterable[dict[str, Any]]) -> TaskGraph:
         """Create a graph from a simple sequential plan."""
 
         nodes: list[TaskNode] = []
@@ -150,7 +151,7 @@ class TaskGraph:
     def topological_order(self) -> list[TaskNode]:
         """Return nodes ordered via Kahn's algorithm."""
 
-        indegree: Dict[str, int] = {
+        indegree: dict[str, int] = {
             node_id: len(node.dependencies) for node_id, node in self._nodes.items()
         }
         queue: deque[str] = deque(

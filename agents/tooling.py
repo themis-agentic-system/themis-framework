@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 
 @dataclass(slots=True)
@@ -23,7 +24,7 @@ class ToolSpec:
         return self.fn(*args, **kwargs)
 
     @classmethod
-    def ensure(cls, name: str, candidate: "ToolSpec | Callable[..., Any]", *, description: str | None = None) -> "ToolSpec":
+    def ensure(cls, name: str, candidate: ToolSpec | Callable[..., Any], *, description: str | None = None) -> ToolSpec:
         if isinstance(candidate, cls):
             return candidate
         return cls(name=name, description=description or f"Callable tool '{name}'", fn=candidate)

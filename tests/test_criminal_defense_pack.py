@@ -6,7 +6,6 @@ import pytest
 
 from packs.criminal_defense.run import load_matter, persist_outputs
 
-
 FIXTURE_DIR = Path(__file__).resolve().parents[1] / "packs" / "criminal_defense" / "fixtures"
 DUI_FIXTURE = FIXTURE_DIR / "dui_california.json"
 DRUG_FIXTURE = FIXTURE_DIR / "drug_possession_warrant_new_york.json"
@@ -24,10 +23,10 @@ def test_load_matter_normalises_dui_fixture() -> None:
 
 
 def test_load_matter_requires_client() -> None:
-    import tempfile
     import json
+    import tempfile
 
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         json.dump({"matter": {"charges": [{"statute": "PC 123", "description": "Test"}], "arrest": {"date": "2024-01-01"}}}, f)
         temp_path = Path(f.name)
 
@@ -39,10 +38,10 @@ def test_load_matter_requires_client() -> None:
 
 
 def test_load_matter_requires_charges() -> None:
-    import tempfile
     import json
+    import tempfile
 
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         json.dump({"matter": {"client": {"name": "Test"}, "arrest": {"date": "2024-01-01"}}}, f)
         temp_path = Path(f.name)
 
@@ -54,10 +53,10 @@ def test_load_matter_requires_charges() -> None:
 
 
 def test_load_matter_requires_arrest() -> None:
-    import tempfile
     import json
+    import tempfile
 
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         json.dump({"matter": {"client": {"name": "Test"}, "charges": [{"statute": "PC 123", "description": "Test"}]}}, f)
         temp_path = Path(f.name)
 

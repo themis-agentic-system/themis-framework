@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import sys
 from pathlib import Path
 from typing import Any
-
-import sys
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 

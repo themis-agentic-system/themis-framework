@@ -3,6 +3,7 @@
 
 import asyncio
 import os
+
 from dotenv import load_dotenv
 
 from orchestrator.service import OrchestratorService
@@ -97,7 +98,7 @@ async def main():
     plan = await orchestrator.plan(matter)
     print(f"  Plan ID: {plan['plan_id']}")
     print(f"  Steps: {len(plan['steps'])}")
-    for i, step in enumerate(plan['steps'], 1):
+    for i, step in enumerate(plan["steps"], 1):
         print(f"    {i}. {step['agent']}: {step['description']}")
     print()
 
@@ -154,7 +155,7 @@ async def main():
             print(f"    Strength: {issue.get('strength', 'N/A')}")
             if issue.get("facts"):
                 print("    Supporting Facts:")
-                for fact in issue['facts'][:3]:
+                for fact in issue["facts"][:3]:
                     print(f"      - {fact}")
 
         print("\n\nLegal Analysis:")

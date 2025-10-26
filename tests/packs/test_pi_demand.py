@@ -6,6 +6,7 @@ from pathlib import Path
 from packs.personal_injury import catalog_assets
 from packs.personal_injury.config import DOCUMENTS
 from packs.personal_injury.run import render_documents
+
 FIXTURE_DIR = Path(__file__).resolve().parents[2] / "packs" / "personal_injury" / "fixtures"
 
 

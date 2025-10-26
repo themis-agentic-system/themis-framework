@@ -20,7 +20,8 @@ import json
 import logging
 import os
 import re
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 from anthropic import Anthropic
 from tenacity import (
@@ -463,9 +464,8 @@ class LLMClient:
                 bullet = stripped.lstrip("-• ").strip()
                 if bullet:
                     bullets.append(bullet)
-            else:
-                if bullets:
-                    bullets[-1] = f"{bullets[-1]} {stripped}".strip()
+            elif bullets:
+                bullets[-1] = f"{bullets[-1]} {stripped}".strip()
         return LLMClient._dedupe(bullets)
 
     @staticmethod

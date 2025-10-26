@@ -1,6 +1,7 @@
 """Edge case testing for agent signal propagation."""
 
 import asyncio
+
 from agents.dea import DEAAgent
 from agents.lsa import LSAAgent
 

@@ -1,6 +1,7 @@
 """Test error handling in agents."""
 
 import asyncio
+
 from agents.dea import DEAAgent
 from agents.lsa import LSAAgent
 

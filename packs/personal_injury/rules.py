@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date, timedelta
-from typing import Any, Dict, List
+from typing import Any
 
 from packs.personal_injury.llm_support import run_structured_prompt
 from packs.personal_injury.schema import PersonalInjuryMatter
@@ -15,11 +15,11 @@ class JurisdictionProfile:
     """Normalized view of personal-injury rules for a jurisdiction."""
 
     statute_years: int | None = None
-    comparative_fault: Dict[str, int] = field(
+    comparative_fault: dict[str, int] = field(
         default_factory=lambda: {"plaintiff": 0, "defendant": 100}
     )
-    jury_instructions: List[str] = field(default_factory=list)
-    affirmative_defenses: List[str] = field(default_factory=list)
+    jury_instructions: list[str] = field(default_factory=list)
+    affirmative_defenses: list[str] = field(default_factory=list)
     damages_multiplier: float | None = None
 
 
@@ -32,7 +32,7 @@ DEFAULT_PROFILE = JurisdictionProfile(
 )
 
 
-SEED_PROFILES: Dict[str, JurisdictionProfile] = {
+SEED_PROFILES: dict[str, JurisdictionProfile] = {
     "california": JurisdictionProfile(
         statute_years=2,
         comparative_fault={"plaintiff": 0, "defendant": 100},
@@ -71,12 +71,12 @@ SEED_PROFILES: Dict[str, JurisdictionProfile] = {
 }
 
 
-_PROFILE_CACHE: Dict[str, JurisdictionProfile] = {
+_PROFILE_CACHE: dict[str, JurisdictionProfile] = {
     key: profile for key, profile in SEED_PROFILES.items()
 }
 
 
-PLEADING_ELEMENTS: Dict[str, Dict[str, List[str]]] = {
+PLEADING_ELEMENTS: dict[str, dict[str, list[str]]] = {
     "negligence": {
         "Negligence": [
             "Duty of care owed by Defendant",
@@ -142,7 +142,7 @@ def _resolve_profile(jurisdiction: str | None, cause: str | None) -> Jurisdictio
     return profile
 
 
-def _merge_profile(default: JurisdictionProfile, payload: Dict[str, Any]) -> JurisdictionProfile:
+def _merge_profile(default: JurisdictionProfile, payload: dict[str, Any]) -> JurisdictionProfile:
     statute_years = _coerce_int(payload.get("statute_years"), default.statute_years)
     multiplier = _coerce_float(payload.get("damages_multiplier"), default.damages_multiplier)
     comparative = _normalize_fault(payload.get("comparative_fault"), default.comparative_fault)
@@ -179,8 +179,8 @@ def _coerce_float(value: Any, fallback: float | None) -> float | None:
 
 
 def _normalize_fault(
-    payload: Any, fallback: Dict[str, int]
-) -> Dict[str, int]:
+    payload: Any, fallback: dict[str, int]
+) -> dict[str, int]:
     if not isinstance(payload, dict):
         return dict(fallback)
     plaintiff = _coerce_int(payload.get("plaintiff"), fallback.get("plaintiff"))
@@ -194,7 +194,7 @@ def _normalize_fault(
     return result
 
 
-def _normalize_list(payload: Any, fallback: List[str]) -> List[str]:
+def _normalize_list(payload: Any, fallback: list[str]) -> list[str]:
     if isinstance(payload, list) and payload:
         return [str(item) for item in payload if str(item).strip()]
     return list(fallback)
@@ -223,22 +223,22 @@ def damages_multiplier(matter: PersonalInjuryMatter) -> float:
     return profile.damages_multiplier or DEFAULT_PROFILE.damages_multiplier or 2.5
 
 
-def jury_instructions_for(matter: PersonalInjuryMatter) -> List[str]:
+def jury_instructions_for(matter: PersonalInjuryMatter) -> list[str]:
     profile = _resolve_profile(matter.metadata.jurisdiction, matter.metadata.cause_of_action)
     instructions = profile.jury_instructions or DEFAULT_PROFILE.jury_instructions
     return instructions or ["Model negligence instruction"]
 
 
-def pleading_elements(matter: PersonalInjuryMatter) -> Dict[str, List[str]]:
+def pleading_elements(matter: PersonalInjuryMatter) -> dict[str, list[str]]:
     cause = matter.metadata.cause_of_action or "negligence"
     return PLEADING_ELEMENTS.get(cause, PLEADING_ELEMENTS["negligence"])
 
 
-def affirmative_defenses(matter: PersonalInjuryMatter) -> List[str]:
+def affirmative_defenses(matter: PersonalInjuryMatter) -> list[str]:
     profile = _resolve_profile(matter.metadata.jurisdiction, matter.metadata.cause_of_action)
     return profile.affirmative_defenses or []
 
 
-def comparative_fault_apportionment(matter: PersonalInjuryMatter) -> Dict[str, int]:
+def comparative_fault_apportionment(matter: PersonalInjuryMatter) -> dict[str, int]:
     profile = _resolve_profile(matter.metadata.jurisdiction, matter.metadata.cause_of_action)
     return profile.comparative_fault or DEFAULT_PROFILE.comparative_fault

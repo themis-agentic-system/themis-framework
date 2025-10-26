@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import date, datetime
-from typing import Any, Iterable, Optional
+from typing import Any
 
 SCHEMA_VERSION = "2024.10"
 
@@ -15,8 +16,8 @@ class Party:
 
     name: str
     role: str
-    counsel: Optional[str] = None
-    contact: Optional[str] = None
+    counsel: str | None = None
+    contact: str | None = None
 
 
 @dataclass(slots=True)
@@ -24,11 +25,11 @@ class InsurancePolicy:
     """Insurance coverage information."""
 
     carrier: str
-    policy_number: Optional[str] = None
-    coverage_limits: Optional[str] = None
-    adjuster: Optional[str] = None
-    contact: Optional[str] = None
-    notes: Optional[str] = None
+    policy_number: str | None = None
+    coverage_limits: str | None = None
+    adjuster: str | None = None
+    contact: str | None = None
+    notes: str | None = None
 
 
 @dataclass(slots=True)
@@ -37,8 +38,8 @@ class Deadline:
 
     name: str
     due: date
-    description: Optional[str] = None
-    source: Optional[str] = None
+    description: str | None = None
+    source: str | None = None
 
 
 @dataclass(slots=True)
@@ -46,17 +47,17 @@ class MedicalRecord:
     """Record produced by a medical provider."""
 
     provider: str
-    date_of_service: Optional[date] = None
-    description: Optional[str] = None
-    balance: Optional[float] = None
-    notes: Optional[str] = None
+    date_of_service: date | None = None
+    description: str | None = None
+    balance: float | None = None
+    notes: str | None = None
 
 
 @dataclass(slots=True)
 class MedicalProvider:
     name: str
-    specialty: Optional[str] = None
-    contact: Optional[str] = None
+    specialty: str | None = None
+    contact: str | None = None
     records: list[MedicalRecord] = field(default_factory=list)
 
 
@@ -64,9 +65,9 @@ class MedicalProvider:
 class Injury:
     description: str
     body_parts: list[str] = field(default_factory=list)
-    severity: Optional[str] = None
-    treatment: Optional[str] = None
-    prognosis: Optional[str] = None
+    severity: str | None = None
+    treatment: str | None = None
+    prognosis: str | None = None
 
 
 @dataclass(slots=True)
@@ -83,7 +84,7 @@ class DamagesProfile:
     punitive: float = 0.0
     wage_loss: float = 0.0
     future_medical: float = 0.0
-    notes: Optional[str] = None
+    notes: str | None = None
 
     def total(self) -> float:
         return float(
@@ -108,10 +109,10 @@ class MatterMetadata:
     id: str
     title: str
     jurisdiction: str
-    venue: Optional[str] = None
-    cause_of_action: Optional[str] = None
-    phase: Optional[str] = None
-    created_at: Optional[datetime] = None
+    venue: str | None = None
+    cause_of_action: str | None = None
+    phase: str | None = None
+    created_at: datetime | None = None
 
 
 @dataclass(slots=True)
@@ -138,7 +139,7 @@ def _ensure_list(value: Any) -> list[Any]:
     return [value]
 
 
-def _parse_date(value: Any) -> Optional[date]:
+def _parse_date(value: Any) -> date | None:
     if not value:
         return None
     if isinstance(value, date) and not isinstance(value, datetime):
@@ -335,7 +336,7 @@ def load_matter(data: dict[str, Any]) -> PersonalInjuryMatter:
     )
 
 
-def _parse_datetime(value: Any) -> Optional[datetime]:
+def _parse_datetime(value: Any) -> datetime | None:
     if not value:
         return None
     if isinstance(value, datetime):

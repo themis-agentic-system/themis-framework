@@ -2,16 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Dict, List
-
 from packs.personal_injury.llm_support import run_structured_prompt
 
-EXEMPLAR_COMPLAINTS: Dict[str, str] = {
+EXEMPLAR_COMPLAINTS: dict[str, str] = {
     "california": "Doe v. DeliveryCo, Los Angeles Superior Court, No. 21STCV12345",
     "texas": "Smith v. BigBox LLC, Harris County District Court, No. 2021-54321",
 }
 
-KEY_AUTHORITIES: Dict[str, List[str]] = {
+KEY_AUTHORITIES: dict[str, list[str]] = {
     "california": [
         "Li v. Yellow Cab Co. (1975) 13 Cal.3d 804",
         "Rowland v. Christian (1968) 69 Cal.2d 108",
@@ -58,7 +56,7 @@ def exemplar_complaint_captions(jurisdiction: str) -> str | None:
     return result
 
 
-def key_authorities(jurisdiction: str) -> List[str]:
+def key_authorities(jurisdiction: str) -> list[str]:
     key = _normalize_key(jurisdiction)
     if key is None:
         return list(DEFAULT_AUTHORITIES)

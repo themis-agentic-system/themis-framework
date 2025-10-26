@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Dict
-
 from packs.personal_injury.schema import PersonalInjuryMatter
 
 
-def damages_calculator(matter: PersonalInjuryMatter) -> Dict[str, float]:
+def damages_calculator(matter: PersonalInjuryMatter) -> dict[str, float]:
     damages = matter.damages
     totals = {
         "specials": damages.specials,

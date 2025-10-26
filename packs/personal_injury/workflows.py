@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List
 
 from packs.personal_injury import config
 from packs.personal_injury.knowledge.negotiation_playbooks import negotiation_steps
@@ -14,14 +13,14 @@ from packs.personal_injury.schema import PersonalInjuryMatter
 class PhasePlan:
     name: str
     description: str
-    documents: List[config.DocumentConfig]
-    checklist: List[str]
+    documents: list[config.DocumentConfig]
+    checklist: list[str]
 
 
-PHASES: Dict[str, PhasePlan] = {}
+PHASES: dict[str, PhasePlan] = {}
 
 
-def _register_phase(phase: str, description: str, checklist: List[str]):
+def _register_phase(phase: str, description: str, checklist: list[str]):
     PHASES[phase] = PhasePlan(
         name=phase,
         description=description,
@@ -86,7 +85,7 @@ def active_phase(matter: PersonalInjuryMatter) -> PhasePlan:
     return PHASES.get(phase, PHASES["intake"])
 
 
-def workflow_summary(matter: PersonalInjuryMatter) -> Dict[str, List[str]]:
+def workflow_summary(matter: PersonalInjuryMatter) -> dict[str, list[str]]:
     plan = active_phase(matter)
     return {
         "phase": plan.name,

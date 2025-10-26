@@ -134,9 +134,9 @@ def extract_text_from_file(file_path: str) -> str:
         return extract_text_from_pdf(file_path)
 
     # Handle text files
-    elif path.suffix.lower() in [".txt", ".md", ".json", ".yaml", ".yml"]:
+    if path.suffix.lower() in [".txt", ".md", ".json", ".yaml", ".yml"]:
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 return f.read()
         except Exception:
             return ""
@@ -164,7 +164,7 @@ def extract_text_from_pdf(file_path: str) -> str:
 
         return "\n\n".join(text_parts)
     except Exception as e:
-        return f"Error reading PDF: {str(e)}"
+        return f"Error reading PDF: {e!s}"
 
 
 def extract_text_from_bytes(pdf_bytes: bytes) -> str:
@@ -187,4 +187,4 @@ def extract_text_from_bytes(pdf_bytes: bytes) -> str:
 
         return "\n\n".join(text_parts)
     except Exception as e:
-        return f"Error reading PDF: {str(e)}"
+        return f"Error reading PDF: {e!s}"

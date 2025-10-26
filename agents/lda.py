@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable
 from datetime import datetime
-from typing import Any, Callable, Iterable
+from typing import Any
 
 from agents.base import BaseAgent
 from agents.tooling import ToolSpec
@@ -113,7 +114,7 @@ async def _default_document_parser(matter: dict[str, Any]) -> list[dict[str, Any
             parsed.append(
                 {
                     "document": title,
-                    "summary": f"Error parsing document: {str(e)}",
+                    "summary": f"Error parsing document: {e!s}",
                     "key_facts": [],
                     "date": document.get("date"),
                 }

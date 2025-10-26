@@ -2,16 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Dict, List
-
 from packs.personal_injury import config, knowledge
 from packs.personal_injury.knowledge import discovery_bank
+from packs.personal_injury.knowledge.negotiation_playbooks import NEGOTIATION_STEPS
 from packs.personal_injury.schema import required_fields
 from packs.personal_injury.workflows import PHASES
-from packs.personal_injury.knowledge.negotiation_playbooks import NEGOTIATION_STEPS
 
 
-def catalog_assets() -> Dict[str, List[str]]:
+def catalog_assets() -> dict[str, list[str]]:
     """Return a catalog of variables, templates, automations, and knowledge assets."""
 
     documents = {key: cfg.title for key, cfg in config.DOCUMENTS.items()}
