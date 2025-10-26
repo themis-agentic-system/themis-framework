@@ -16,7 +16,6 @@ Table of Contents
 - [Development Guide](#development-guide)
 - [Observability & Metrics](#observability--metrics)
 - [Documentation](#documentation)
-- [Roadmap](#roadmap)
 - [Contributing](#contributing)
 - [License](#license)
 - [Support](#support)
@@ -398,27 +397,7 @@ async def run_legal_analysis():
 asyncio.run(run_legal_analysis())
 ```
 
-### API Reference
-**Orchestration Endpoints:**
-
-| Endpoint | Method | Rate Limit | Description |
-|----------|--------|------------|-------------|
-| `/orchestrator/plan` | POST | 20 req/min | Create execution plan from matter payload |
-| `/orchestrator/execute` | POST | 10 req/min | Execute workflow (with plan_id or matter) |
-| `/orchestrator/plans/{plan_id}` | GET | 60 req/min | Retrieve stored execution plan |
-| `/orchestrator/artifacts/{plan_id}` | GET | 60 req/min | Retrieve execution results and artifacts |
-
-**System Endpoints:**
-
-| Endpoint | Method | Rate Limit | Description |
-|----------|--------|------------|-------------|
-| `/health` | GET | None | Health check and readiness probe |
-| `/metrics` | GET | None | Prometheus-format metrics |
-
-**Authentication:**
-- Header: `Authorization: Bearer {your-api-key}` or `X-API-Key: {your-api-key}`
-- Development mode: No auth required when `THEMIS_API_KEY` not set
-- Supports key rotation with primary and previous keys
+> For complete API documentation including all endpoints, authentication, rate limits, and examples, see [docs/API_REFERENCE.md](docs/API_REFERENCE.md).
 
 ### Example 2: Custom Agent
 ```python
@@ -809,67 +788,17 @@ Documentation
 -------------
 ### Available Documentation
 
-| Document | Description | Lines |
-| --- | --- | --- |
-| `CODE_REVIEW_REPORT.md` | Comprehensive code review (A- grade) | 839 |
-| `REVIEW_FINDINGS.md` | Detailed review findings and recommendations | - |
-| `QUICKSTART.md` | Quick start guide for new users | - |
-| `docs/DEPLOYMENT_GUIDE.md` | Production deployment instructions | 698 |
-| `docs/DOCKER_README.md` | Docker setup and configuration | - |
-| `docs/IMPROVEMENTS.md` | Production features and enhancements | - |
-| `docs/THEMIS_CODE_REVIEW.md` | Original comprehensive code review | - |
-| `docs/IMPLEMENTATION_SUMMARY.md` | Technical implementation details | - |
-
-### Key Findings from Code Review
-Overall Grade: **A- (90/100)**
-
-**Strengths:**
-
-- ✅ Clean architecture with excellent separation of concerns
-- ✅ Comprehensive error handling and fallback mechanisms
-- ✅ Strong test coverage (85.7% pass rate)
-- ✅ Production-ready features (caching, metrics, logging)
-- ✅ Excellent documentation and code quality
-
-**Areas for Improvement:**
-
-- ⚠️ 5 async tests need pytest-asyncio configuration
-- ⚠️ API endpoints need comprehensive test coverage
-- ⚠️ Input sanitization for user-provided matter payloads
-- ⚠️ Enhanced security (log sanitization, key rotation)
-
-See `CODE_REVIEW_REPORT.md` for the complete analysis.
-
-Roadmap
--------
-### Near-Term (Q1 2025)
-- Complete DDA agent integration into default routing policy
-- Fix async test configuration for 100% test pass rate
-- Add comprehensive API endpoint tests
-- Expand Criminal Defense pack with document generators
-- Create RAG integration for legal research
-
-### Mid-Term (Q2–Q3 2025)
-- Expand practice packs (employment law, M&A diligence, regulatory compliance)
-- Implement parallel agent execution for performance
-- Add streaming document parsing for large files
-- Integrate docket monitoring with push notifications
-- Create web-based UI for matter management
-
-### Long-Term (Q4 2025+)
-- Support structured knowledge graphs for complex matters
-- Multi-tenancy with organization-level isolation
-- Advanced caching with Redis/Memcached
-- Circuit breakers and advanced resilience patterns
-- Publish benchmark suite for legal multi-agent systems
-
-### Research Areas
-- Fine-tuned models for legal domain
-- Automated discovery request generation
-- Contract analysis and review workflows
-- Predictive case outcome modeling
-
-Have ideas? Open an issue or start a discussion!
+| Document | Description |
+| --- | --- |
+| `README.md` | Main project overview (this file) |
+| `QUICKSTART.md` | Quick start guide for new users |
+| `docs/API_REFERENCE.md` | Complete API endpoint documentation |
+| `docs/DEPLOYMENT_GUIDE.md` | Production deployment instructions |
+| `docs/DOCKER_README.md` | Docker setup and configuration |
+| `docs/IMPROVEMENTS.md` | Production features and enhancements |
+| `docs/IMPLEMENTATION_SUMMARY.md` | Technical implementation details |
+| `CODE_REVIEW_REPORT.md` | Comprehensive code review |
+| `REVIEW_FINDINGS.md` | Detailed review findings |
 
 Contributing
 ------------
