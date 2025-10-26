@@ -1,0 +1,48 @@
+{
+  "$schema": "https://modelcontextprotocol.io/schema/mcp.json",
+  "description": "MCP server configuration for Themis legal framework",
+  "servers": {
+    "legal-research-example": {
+      "url": "${LEGAL_RESEARCH_MCP_URL}",
+      "api_key": "${LEGAL_RESEARCH_API_KEY}",
+      "enabled": false,
+      "description": "Example legal research database MCP server (configure with your provider)"
+    },
+    "document-repository": {
+      "url": "${DOCUMENT_REPO_MCP_URL}",
+      "api_key": "${DOCUMENT_REPO_API_KEY}",
+      "enabled": false,
+      "description": "Document management system MCP server"
+    },
+    "case-management": {
+      "url": "${CASE_MGMT_MCP_URL}",
+      "api_key": "${CASE_MGMT_API_KEY}",
+      "enabled": false,
+      "description": "Case management system integration (deadlines, calendar, tasks)"
+    },
+    "workflow-automation": {
+      "url": "${WORKFLOW_MCP_URL}",
+      "api_key": "${WORKFLOW_API_KEY}",
+      "enabled": false,
+      "description": "Workflow automation via Zapier or similar"
+    }
+  },
+  "notes": [
+    "To enable an MCP server:",
+    "1. Set the environment variables for URL and API_KEY",
+    "2. Change 'enabled' to true",
+    "3. Restart the Themis API service",
+    "",
+    "Available MCP integrations:",
+    "- Legal research databases (Westlaw, LexisNexis, etc.)",
+    "- Document repositories (Box, SharePoint, etc.)",
+    "- Case management systems (Clio, MyCase, etc.)",
+    "- Workflow automation (Zapier, Make, etc.)",
+    "",
+    "For custom MCP servers, add a new entry with:",
+    "- url: Your MCP server endpoint",
+    "- api_key: Authentication token (optional)",
+    "- enabled: true/false",
+    "- description: What the server provides"
+  ]
+}

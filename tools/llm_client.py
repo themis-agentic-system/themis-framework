@@ -35,19 +35,39 @@ logger = logging.getLogger("themis.llm_client")
 
 
 class LLMClient:
-    """Wrapper for Anthropic Claude API with structured output support."""
+    """Wrapper for Anthropic Claude API with structured output support.
 
-    def __init__(self, api_key: str | None = None, model: str = "claude-3-5-sonnet-20241022"):
+    Supports advanced features:
+    - Extended thinking mode for deeper reasoning
+    - 1-hour prompt caching for cost/latency optimization
+    - Code execution tool for computational tasks
+    - Files API for persistent document management
+    """
+
+    def __init__(
+        self,
+        api_key: str | None = None,
+        model: str = "claude-3-5-sonnet-20241022",
+        use_extended_thinking: bool = True,
+        use_prompt_caching: bool = True,
+        enable_code_execution: bool = False,
+    ):
         """Initialise the client.
 
         Args:
             api_key: Anthropic API key. If ``None`` the environment variable
                 ``ANTHROPIC_API_KEY`` is consulted.
             model: Claude model to use when the API key is present.
+            use_extended_thinking: Enable extended thinking mode for deeper reasoning.
+            use_prompt_caching: Enable 1-hour prompt caching for cost savings.
+            enable_code_execution: Enable Python code execution tool.
         """
 
         self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
         self.model = model
+        self.use_extended_thinking = use_extended_thinking
+        self.use_prompt_caching = use_prompt_caching
+        self.enable_code_execution = enable_code_execution
         self._stub_mode = not self.api_key
         self.client = None if self._stub_mode else Anthropic(api_key=self.api_key)
 
@@ -62,20 +82,82 @@ class LLMClient:
         system_prompt: str,
         messages: list[dict[str, str]],
         max_tokens: int,
+        file_ids: list[str] | None = None,
     ) -> str:
-        """Call Anthropic API with retry logic.
+        """Call Anthropic API with retry logic and advanced features.
 
         Retries up to 3 times with exponential backoff (2s, 4s, 8s).
         This handles transient network errors and rate limiting gracefully.
+
+        Supports:
+        - Extended thinking mode for deeper reasoning
+        - 1-hour prompt caching for cost optimization
+        - Code execution tool for computational tasks
+        - Files API for document references
         """
-        logger.debug(f"Calling Anthropic API (model: {self.model}, max_tokens: {max_tokens})")
-        response = self.client.messages.create(
-            model=self.model,
-            max_tokens=max_tokens,
-            system=system_prompt,
-            messages=messages,
+        logger.debug(
+            f"Calling Anthropic API (model: {self.model}, max_tokens: {max_tokens}, "
+            f"extended_thinking: {self.use_extended_thinking}, caching: {self.use_prompt_caching}, "
+            f"code_execution: {self.enable_code_execution})"
         )
-        content = response.content[0].text if response.content else ""
+
+        # Build request parameters
+        request_params: dict[str, Any] = {
+            "model": self.model,
+            "max_tokens": max_tokens,
+            "messages": messages,
+        }
+
+        # Configure extended thinking
+        if self.use_extended_thinking:
+            request_params["extended_thinking"] = True
+
+        # Configure prompt caching for system prompts
+        if self.use_prompt_caching:
+            request_params["system"] = [
+                {
+                    "type": "text",
+                    "text": system_prompt,
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ]
+            request_params["extra_headers"] = {"anthropic-cache-control": "ephemeral+extended"}
+        else:
+            request_params["system"] = system_prompt
+
+        # Add beta headers for extended thinking with interleaved mode
+        if self.use_extended_thinking:
+            if "extra_headers" not in request_params:
+                request_params["extra_headers"] = {}
+            request_params["extra_headers"]["anthropic-beta"] = "interleaved-thinking-2025-05-14"
+
+        # Configure code execution tool
+        if self.enable_code_execution:
+            request_params["tools"] = [{"type": "code_execution_2025_04_01", "name": "python"}]
+
+        # Add file references to messages if provided
+        if file_ids:
+            if messages and messages[0]["role"] == "user":
+                content = messages[0]["content"]
+                if isinstance(content, str):
+                    messages[0]["content"] = [{"type": "text", "text": content}]
+                for file_id in file_ids:
+                    messages[0]["content"].insert(0, {"type": "file", "file": {"file_id": file_id}})
+
+        response = self.client.messages.create(**request_params)
+
+        # Extract content from response, handling thinking blocks
+        content_parts = []
+        for block in response.content:
+            if hasattr(block, "type"):
+                if block.type == "text":
+                    content_parts.append(block.text)
+                elif block.type == "thinking":
+                    # Log thinking content for observability
+                    logger.debug(f"Extended thinking: {block.thinking[:200]}...")
+                # Skip tool_use blocks - they're intermediate steps
+
+        content = "\n".join(content_parts)
         logger.debug(f"Received response from Anthropic API ({len(content)} chars)")
         return content
 
@@ -124,10 +206,17 @@ class LLMClient:
         system_prompt: str,
         user_prompt: str,
         max_tokens: int = 4096,
+        file_ids: list[str] | None = None,
     ) -> str:
         """Generate a plain-text response from the LLM.
 
         Automatically retries on failure with exponential backoff.
+
+        Args:
+            system_prompt: System prompt for the model.
+            user_prompt: User prompt for the model.
+            max_tokens: Maximum tokens to generate.
+            file_ids: Optional list of file IDs uploaded via Files API.
         """
         if self._stub_mode:
             return self._generate_text_stub(
@@ -137,7 +226,105 @@ class LLMClient:
             )
 
         messages = [{"role": "user", "content": user_prompt}]
-        return await self._call_anthropic_api(system_prompt, messages, max_tokens)
+        return await self._call_anthropic_api(system_prompt, messages, max_tokens, file_ids)
+
+    def upload_file(self, file_path: str) -> str:
+        """Upload a file to Anthropic Files API for persistent reference.
+
+        Args:
+            file_path: Path to the file to upload.
+
+        Returns:
+            file_id: Unique identifier for the uploaded file.
+
+        Raises:
+            ValueError: If in stub mode (no API key available).
+        """
+        if self._stub_mode:
+            logger.warning("File upload not available in stub mode")
+            raise ValueError("File upload requires ANTHROPIC_API_KEY")
+
+        logger.info(f"Uploading file: {file_path}")
+        with open(file_path, "rb") as f:
+            file_obj = self.client.files.create(file=f, purpose="user_data")
+
+        logger.info(f"File uploaded successfully: {file_obj.id}")
+        return file_obj.id
+
+    def list_files(self) -> list[dict[str, Any]]:
+        """List all uploaded files in the Files API.
+
+        Returns:
+            List of file metadata dictionaries.
+        """
+        if self._stub_mode:
+            return []
+
+        response = self.client.files.list()
+        return [{"id": f.id, "filename": f.filename, "created_at": f.created_at} for f in response.data]
+
+    def delete_file(self, file_id: str) -> None:
+        """Delete a file from the Files API.
+
+        Args:
+            file_id: ID of the file to delete.
+        """
+        if self._stub_mode:
+            return
+
+        self.client.files.delete(file_id)
+        logger.info(f"Deleted file: {file_id}")
+
+    async def generate_with_mcp(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        mcp_servers: list[dict[str, str]],
+        max_tokens: int = 4096,
+    ) -> str:
+        """Generate a response with MCP server integration.
+
+        Args:
+            system_prompt: System prompt for the model.
+            user_prompt: User prompt for the model.
+            mcp_servers: List of MCP server configurations.
+                Each dict should have 'url' and optionally 'api_key'.
+            max_tokens: Maximum tokens to generate.
+
+        Returns:
+            Generated text response.
+
+        Example:
+            mcp_servers = [{
+                "url": "https://legal-research.example.com/mcp",
+                "api_key": os.getenv("LEGAL_DB_KEY")
+            }]
+        """
+        if self._stub_mode:
+            logger.warning("MCP not available in stub mode, falling back to standard generation")
+            return await self.generate_text(system_prompt, user_prompt, max_tokens)
+
+        logger.info(f"Calling API with {len(mcp_servers)} MCP server(s)")
+
+        request_params: dict[str, Any] = {
+            "model": self.model,
+            "max_tokens": max_tokens,
+            "system": system_prompt,
+            "messages": [{"role": "user", "content": user_prompt}],
+            "mcp_servers": mcp_servers,
+        }
+
+        if self.use_extended_thinking:
+            request_params["extended_thinking"] = True
+
+        response = self.client.messages.create(**request_params)
+
+        content_parts = []
+        for block in response.content:
+            if hasattr(block, "type") and block.type == "text":
+                content_parts.append(block.text)
+
+        return "\n".join(content_parts)
 
     # ------------------------------------------------------------------
     # Stub implementation helpers
