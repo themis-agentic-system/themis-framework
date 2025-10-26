@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import importlib.util
 import inspect
 from collections.abc import Generator
 
@@ -17,9 +18,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addini("asyncio_mode", "Configure asyncio support", default="auto")
 
 
-try:  # pragma: no cover - exercised indirectly during test discovery
-    import pytest_asyncio  # type: ignore
-except ModuleNotFoundError:  # pragma: no cover - used in constrained environments
+if importlib.util.find_spec("pytest_asyncio") is None:  # pragma: no cover - discovery hook
     @pytest.hookimpl(tryfirst=True)
     def pytest_pyfunc_call(pyfuncitem: pytest.Function) -> bool | None:
         """Execute async tests using asyncio when pytest-asyncio is unavailable."""

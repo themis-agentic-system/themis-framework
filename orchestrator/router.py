@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Annotated, Any
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict, ValidationError
