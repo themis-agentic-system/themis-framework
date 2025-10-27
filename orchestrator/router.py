@@ -192,7 +192,24 @@ async def execute(
         if execute_request.matter is not None:
             validated_matter = validate_and_extract_matter(execute_request.matter)
 
-        return await service.execute(plan_id=execute_request.plan_id, matter=validated_matter)
+        result = await service.execute(plan_id=execute_request.plan_id, matter=validated_matter)
+
+        # DEBUG: Log the final API response structure
+        if 'artifacts' in result and 'dda' in result['artifacts']:
+            logger.info("=== API ROUTER: Final response for DDA ===")
+            dda_artifact = result['artifacts']['dda']
+            logger.info(f"DDA artifact type: {type(dda_artifact)}")
+            logger.info(f"DDA artifact keys: {list(dda_artifact.keys()) if isinstance(dda_artifact, dict) else 'NOT A DICT'}")
+            if isinstance(dda_artifact, dict) and 'document' in dda_artifact:
+                logger.info(f"Document keys: {list(dda_artifact['document'].keys())}")
+                if 'full_text' in dda_artifact['document']:
+                    logger.info(f"✓ full_text present: {len(dda_artifact['document']['full_text'])} chars")
+                else:
+                    logger.error("✗ NO full_text in document!")
+            else:
+                logger.error("✗ NO document in DDA artifact!")
+
+        return result
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 

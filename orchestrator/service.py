@@ -117,6 +117,14 @@ class OrchestratorService:
             "connectors": self.connectors.catalogue(),
         }
 
+        # DEBUG: Log planned phases
+        phases = [step.get("phase") for step in plan["steps"]]
+        logger.info(f"=== PLANNED PHASES: {phases}")
+        if "document_assembly" in phases:
+            logger.info("✓ DOCUMENT_ASSEMBLY phase is included in plan")
+        else:
+            logger.warning("✗ DOCUMENT_ASSEMBLY phase is NOT in plan!")
+
         self.state.remember_plan(plan_id, deepcopy(plan))
         self._save_state()
         return plan
@@ -225,6 +233,21 @@ class OrchestratorService:
                 step_result["output"] = output
                 artifacts[agent_name] = output
                 propagated[agent_name] = output
+
+                # DEBUG: Log artifact storage for DDA
+                if agent_name == "dda":
+                    logger.info("=== ORCHESTRATOR: Storing DDA artifact ===")
+                    logger.info(f"DDA output type: {type(output)}")
+                    logger.info(f"DDA output keys: {list(output.keys()) if isinstance(output, dict) else 'NOT A DICT'}")
+                    if isinstance(output, dict) and 'document' in output:
+                        logger.info(f"DDA document keys: {list(output['document'].keys())}")
+                        if 'full_text' in output['document']:
+                            logger.info(f"DDA full_text length: {len(output['document']['full_text'])} chars")
+                        else:
+                            logger.error("DDA document has NO full_text!")
+                    else:
+                        logger.error("DDA output has NO document field!")
+
                 produced_artifacts = _collect_expected_artifacts(
                     output, step.get("expected_artifacts", [])
                 )

@@ -48,8 +48,8 @@ class LLMClient:
         self,
         api_key: str | None = None,
         model: str = "claude-3-5-sonnet-20241022",
-        use_extended_thinking: bool = False,  # Disabled: requires newer anthropic SDK
-        use_prompt_caching: bool = False,     # Disabled: requires newer anthropic SDK
+        use_extended_thinking: bool = True,  # Enabled by default for deeper reasoning
+        use_prompt_caching: bool = True,     # Enabled by default for cost/latency optimization
         enable_code_execution: bool = False,
     ):
         """Initialise the client.
@@ -272,7 +272,7 @@ class LLMClient:
         import asyncio
 
         if self._stub_mode:
-            return self._generate_with_tools_stub(
+            return await self._generate_with_tools_stub(
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
                 tools=tools,
@@ -530,6 +530,8 @@ class LLMClient:
             return self._stub_strategy_template(user_prompt)
         if {"confidence", "weaknesses", "evidentiary_gaps", "unknowns", "potential_problems"}.issubset(keys):
             return self._stub_risk_assessment(user_prompt)
+        if "full_document" in keys:
+            return self._stub_document_generator(user_prompt, system_prompt)
 
         result: dict[str, Any] = {}
         for key, template in response_format.items():
@@ -579,7 +581,7 @@ class LLMClient:
 
         return "\n\n".join(paragraph for paragraph in paragraphs if paragraph)
 
-    def _generate_with_tools_stub(
+    async def _generate_with_tools_stub(
         self,
         *,
         system_prompt: str,
@@ -588,12 +590,25 @@ class LLMClient:
         tool_functions: dict[str, Any],
     ) -> dict[str, Any]:
         """Stub implementation that heuristically uses tools based on prompt content."""
-        import json
-
         logger.info("Running in stub mode - simulating autonomous tool use")
 
         tool_calls = []
         result_text = f"Stub mode analysis based on {len(tools)} available tools.\n\n"
+
+        # Extract matter from user_prompt if it's JSON
+        import asyncio
+        import json
+        import re
+        matter = {}
+        try:
+            match = re.search(r'\{[^{}]*"summary"[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', user_prompt, re.DOTALL)
+            if not match:
+                # Try to find any JSON object
+                match = re.search(r'\{.*\}', user_prompt, re.DOTALL)
+            if match:
+                matter = json.loads(match.group(0))
+        except Exception:
+            logger.debug("Could not extract matter JSON from prompt")
 
         # Simulate calling relevant tools based on prompt content
         prompt_lower = user_prompt.lower()
@@ -601,42 +616,149 @@ class LLMClient:
         # If document-related keywords, call document_parser if available
         if any(kw in prompt_lower for kw in ["document", "parse", "extract", "text"]):
             if "document_parser" in tool_functions:
-                logger.info("Stub: Simulating document_parser call")
-                parsed = self._stub_document_parse(user_prompt)
+                logger.info("Stub: Calling document_parser")
+                try:
+                    parsed = tool_functions["document_parser"](matter)
+                    if asyncio.iscoroutine(parsed):
+                        parsed = await parsed
+                except Exception as e:
+                    logger.debug(f"Custom tool failed, using stub: {e}")
+                    parsed = self._stub_document_parse(user_prompt)
                 tool_calls.append({"tool": "document_parser", "input": {}, "result": parsed})
-                result_text += f"Parsed documents and extracted {len(parsed.get('key_facts', []))} key facts.\n\n"
+                # Handle both list and dict results
+                if isinstance(parsed, list):
+                    key_facts_count = sum(len(doc.get('key_facts', [])) for doc in parsed if isinstance(doc, dict))
+                else:
+                    key_facts_count = len(parsed.get('key_facts', []))
+                result_text += f"Parsed documents and extracted {key_facts_count} key facts.\n\n"
 
         # If timeline keywords, call timeline_builder if available
         if any(kw in prompt_lower for kw in ["timeline", "chronolog", "sequence", "events"]):
             if "timeline_builder" in tool_functions:
-                logger.info("Stub: Simulating timeline_builder call")
-                timeline = [{"date": "2024-01-15", "description": "Event from stub timeline"}]
+                logger.info("Stub: Calling timeline_builder")
+                try:
+                    timeline = tool_functions["timeline_builder"](matter, None)
+                    if asyncio.iscoroutine(timeline):
+                        timeline = await timeline
+                except Exception as e:
+                    logger.debug(f"Custom tool failed, using stub: {e}")
+                    timeline = [{"date": "2024-01-15", "description": "Event from stub timeline"}]
                 tool_calls.append({"tool": "timeline_builder", "input": {}, "result": timeline})
                 result_text += f"Built timeline with {len(timeline)} events.\n\n"
 
         # If damages/calculation keywords, call damages_calculator if available
         if any(kw in prompt_lower for kw in ["damage", "calculat", "expense", "loss", "wage"]):
             if "damages_calculator" in tool_functions:
-                logger.info("Stub: Simulating damages_calculator call")
-                damages = {"total": 110000, "medical": 85000, "lost_wages": 25000}
+                logger.info("Stub: Calling damages_calculator")
+                try:
+                    damages = tool_functions["damages_calculator"]({"economic_losses": {}, "non_economic_factors": {}})
+                    if asyncio.iscoroutine(damages):
+                        damages = await damages
+                except Exception as e:
+                    logger.debug(f"Custom tool failed, using stub: {e}")
+                    damages = {"total": 110000, "medical": 85000, "lost_wages": 25000}
                 tool_calls.append({"tool": "damages_calculator", "input": {}, "result": damages})
-                result_text += f"Calculated total damages: ${damages['total']}\n\n"
+                result_text += f"Calculated total damages: ${damages.get('total', 0)}\n\n"
 
         # If legal/issue keywords, call issue_spotter if available
         if any(kw in prompt_lower for kw in ["issue", "legal", "cause", "claim", "negligence"]):
+            issues = []
             if "issue_spotter" in tool_functions:
-                logger.info("Stub: Simulating issue_spotter call")
-                issues = self._stub_issue_spotter(user_prompt)
+                logger.info("Stub: Calling issue_spotter")
+                try:
+                    issues = tool_functions["issue_spotter"](matter)
+                    if asyncio.iscoroutine(issues):
+                        issues = await issues
+                except Exception as e:
+                    logger.debug(f"Custom tool failed, using stub: {e}")
+                    issues = self._stub_issue_spotter(user_prompt)
                 tool_calls.append({"tool": "issue_spotter", "input": {}, "result": issues})
                 result_text += f"Identified {len(issues)} legal issues.\n\n"
 
+            # If citation_retriever available, call it after issue_spotter
+            if "citation_retriever" in tool_functions and issues:
+                logger.info("Stub: Calling citation_retriever")
+                try:
+                    citations = tool_functions["citation_retriever"](matter, issues)
+                    # citation_retriever is typically not async, but check anyway
+                    if asyncio.iscoroutine(citations):
+                        citations = await citations
+                except Exception as e:
+                    logger.error(f"citation_retriever failed: {e}", exc_info=True)
+                    citations = []
+                tool_calls.append({"tool": "citation_retriever", "input": {}, "result": citations})
+                result_text += f"Retrieved {len(citations)} citations.\n\n"
+
         # If strategy keywords, call risk_assessor or strategy_template if available
         if any(kw in prompt_lower for kw in ["strategy", "risk", "negotiate", "settlement"]):
-            if "risk_assessor" in tool_functions:
-                logger.info("Stub: Simulating risk_assessor call")
-                risk = {"confidence": 85, "weaknesses": ["Stub weakness 1"], "unknowns": ["Stub unknown 1"]}
+            if "strategy_template" in tool_functions:
+                logger.info("Stub: Calling strategy_template")
+                try:
+                    strategy = tool_functions["strategy_template"](matter)
+                    if asyncio.iscoroutine(strategy):
+                        strategy = await strategy
+                    tool_calls.append({"tool": "strategy_template", "input": {}, "result": strategy})
+                    result_text += "Developed legal strategy.\n\n"
+                    # Also call risk_assessor if available
+                    if "risk_assessor" in tool_functions:
+                        logger.info("Stub: Calling risk_assessor")
+                        risk = tool_functions["risk_assessor"](matter, strategy)
+                        if asyncio.iscoroutine(risk):
+                            risk = await risk
+                        tool_calls.append({"tool": "risk_assessor", "input": {}, "result": risk})
+                        result_text += "Assessed case risks and strategic considerations.\n\n"
+                except Exception as e:
+                    logger.debug(f"Custom tool failed: {e}")
+            elif "risk_assessor" in tool_functions:
+                logger.info("Stub: Calling risk_assessor")
+                try:
+                    risk = tool_functions["risk_assessor"](matter, {})
+                    if asyncio.iscoroutine(risk):
+                        risk = await risk
+                except Exception as e:
+                    logger.debug(f"Custom tool failed, using stub: {e}")
+                    risk = {"confidence": 85, "weaknesses": ["Stub weakness 1"], "unknowns": ["Stub unknown 1"]}
                 tool_calls.append({"tool": "risk_assessor", "input": {}, "result": risk})
                 result_text += "Assessed case risks and strategic considerations.\n\n"
+
+        # If document drafting keywords, call DDA tools if available
+        if any(kw in prompt_lower for kw in ["document", "draft", "generate", "compose", "memorandum", "complaint", "motion"]):
+            # Call section_generator if available
+            if "section_generator" in tool_functions:
+                logger.info("Stub: Calling section_generator")
+                try:
+                    sections = tool_functions["section_generator"](
+                        document_type=matter.get("document_type", "memorandum"),
+                        facts=matter.get("facts", {}),
+                        legal_analysis=matter.get("legal_analysis", {}),
+                        strategy=matter.get("strategy", {}),
+                        jurisdiction=matter.get("jurisdiction", "federal")
+                    )
+                    if asyncio.iscoroutine(sections):
+                        sections = await sections
+                    tool_calls.append({"tool": "section_generator", "input": {}, "result": sections})
+                    result_text += "Generated document sections.\n\n"
+                except Exception as e:
+                    logger.debug(f"section_generator failed: {e}")
+                    sections = {}
+
+            # Call document_composer if available
+            if "document_composer" in tool_functions:
+                logger.info("Stub: Calling document_composer")
+                try:
+                    composed = tool_functions["document_composer"](
+                        document_type=matter.get("document_type", "memorandum"),
+                        sections=sections if "section_generator" in tool_functions else {},
+                        citations=matter.get("authorities", {}),
+                        jurisdiction=matter.get("jurisdiction", "federal"),
+                        matter=matter
+                    )
+                    if asyncio.iscoroutine(composed):
+                        composed = await composed
+                    tool_calls.append({"tool": "document_composer", "input": {}, "result": composed})
+                    result_text += "Composed final document.\n\n"
+                except Exception as e:
+                    logger.debug(f"document_composer failed: {e}")
 
         # Default: generate text summary
         if not tool_calls:
@@ -834,6 +956,241 @@ class LLMClient:
             "unknowns": self._dedupe(unknowns),
             "potential_problems": potential_problems,
         }
+
+    def _stub_document_generator(self, user_prompt: str, system_prompt: str) -> dict[str, Any]:
+        """Generate a stub legal document based on prompt analysis."""
+        import re
+
+        # Extract document type from prompt
+        doc_type = "complaint"
+        if "demand letter" in user_prompt.lower() or "demand_letter" in user_prompt.lower():
+            doc_type = "demand_letter"
+        elif "motion" in user_prompt.lower():
+            doc_type = "motion"
+        elif "memorandum" in user_prompt.lower():
+            doc_type = "memorandum"
+
+        # Extract key information from the prompt
+        jurisdiction = self._extract_line(user_prompt, "Jurisdiction:") or "California"
+
+        # Try to extract parties information from various sections
+        plaintiff = "PLAINTIFF NAME"
+        defendant = "DEFENDANT NAME"
+
+        # Look for parties in different formats
+        parties_line = self._extract_line(user_prompt, "Parties:")
+        if parties_line:
+            # Handle formats like "Alex Benedict (Plaintiff), Hien Ngo (Defendant)"
+            # Remove role labels in parentheses for parsing
+            clean_line = re.sub(r'\([^)]*\)', '', parties_line)
+            parts = [p.strip() for p in clean_line.split(",")]
+            if len(parts) >= 1 and parts[0]:
+                plaintiff = parts[0]
+            if len(parts) >= 2 and parts[1]:
+                defendant = parts[1]
+
+        # Also try extracting from JSON-like structures in the prompt
+        # Look for parties array format: [{"name": "...", "role": "Plaintiff"}, ...]
+        if plaintiff == "PLAINTIFF NAME" or defendant == "DEFENDANT NAME":
+            parties_array_match = re.search(r'"parties":\s*\[(.*?)\]', user_prompt, re.DOTALL)
+            if parties_array_match:
+                parties_json = parties_array_match.group(1)
+                # Extract plaintiff
+                plaintiff_obj = re.search(r'{[^}]*"name":\s*"([^"]+)"[^}]*"role":\s*"[Pp]laintiff', parties_json)
+                if plaintiff_obj:
+                    plaintiff = plaintiff_obj.group(1)
+                # Extract defendant
+                defendant_obj = re.search(r'{[^}]*"name":\s*"([^"]+)"[^}]*"role":\s*"[Dd]efendant', parties_json)
+                if defendant_obj:
+                    defendant = defendant_obj.group(1)
+
+        # Extract facts
+        facts_section = self._extract_section(user_prompt, "Facts:", stop_markers=("LEGAL ANALYSIS", "Legal Analysis", "Legal Issues"))
+        if not facts_section:
+            facts_section = self._extract_section(user_prompt, "MATTER INFORMATION:", stop_markers=("INSTRUCTIONS", "Legal"))
+        if not facts_section:
+            # Try to get fact pattern summary
+            facts_bullets = self._extract_bullets(user_prompt, "fact_pattern_summary")
+            if facts_bullets:
+                facts_section = "\n".join(facts_bullets)
+
+        # Extract legal issues
+        issues = self._extract_bullets(user_prompt, "Legal Issues:")
+        if not issues:
+            issues = self._extract_bullets(user_prompt, "issues")
+
+        # Build the document based on type
+        if doc_type == "complaint":
+            return self._generate_stub_complaint(jurisdiction, plaintiff, defendant, facts_section, issues)
+        elif doc_type == "demand_letter":
+            return self._generate_stub_demand_letter(plaintiff, defendant, facts_section, issues)
+        else:
+            return self._generate_stub_generic_document(doc_type, jurisdiction, facts_section, issues)
+
+    def _generate_stub_complaint(self, jurisdiction: str, plaintiff: str, defendant: str, facts: str, issues: list[str]) -> dict[str, Any]:
+        """Generate a stub complaint document."""
+        # Extract specific facts if available
+        fact_lines = facts.split("\n") if facts else []
+        fact_paragraphs = []
+        for line in fact_lines[:10]:  # Limit to first 10 lines
+            line = line.strip().lstrip("•-*").strip()
+            if line and len(line) > 10:
+                fact_paragraphs.append(line)
+
+        facts_text = "\n\n".join(fact_paragraphs) if fact_paragraphs else "On or about [DATE], the events giving rise to this action occurred. [Additional factual allegations to be provided]"
+
+        # Generate causes of action from issues
+        causes_of_action = []
+        for i, issue in enumerate(issues[:3], 1):  # Limit to 3 causes of action
+            issue_clean = issue.strip().lstrip("•-*").strip()
+            if issue_clean:
+                causes_of_action.append(f"FIRST CAUSE OF ACTION\n({issue_clean})\n\nPlaintiff re-alleges and incorporates by reference all previous paragraphs. [Additional elements and allegations for {issue_clean} to be provided based on {jurisdiction} law.]")
+
+        if not causes_of_action:
+            causes_of_action = ["FIRST CAUSE OF ACTION\n(Negligence)\n\nPlaintiff re-alleges and incorporates by reference all previous paragraphs. Defendant owed Plaintiff a duty of care, breached that duty, and caused damages as a direct and proximate result."]
+
+        causes_text = "\n\n".join(causes_of_action)
+
+        document = f"""SUPERIOR COURT OF {jurisdiction.upper()}
+
+{plaintiff},
+    Plaintiff,
+
+v.                                  Case No. [TO BE ASSIGNED]
+
+{defendant},
+    Defendant.
+
+COMPLAINT FOR DAMAGES
+
+Plaintiff {plaintiff} alleges as follows:
+
+PARTIES
+
+1. Plaintiff {plaintiff} is an individual residing in {jurisdiction}.
+
+2. Defendant {defendant} is an individual residing in {jurisdiction}.
+
+JURISDICTION AND VENUE
+
+3. This Court has jurisdiction over this action pursuant to applicable state law.
+
+4. Venue is proper in this Court.
+
+FACTUAL ALLEGATIONS
+
+5. {facts_text}
+
+CAUSES OF ACTION
+
+{causes_text}
+
+PRAYER FOR RELIEF
+
+WHEREFORE, Plaintiff prays for judgment as follows:
+
+1. For general damages according to proof;
+2. For special damages according to proof;
+3. For costs of suit incurred herein;
+4. For such other and further relief as the Court deems just and proper.
+
+Dated: [DATE]
+
+Respectfully submitted,
+
+_________________________
+[Attorney Name]
+[Law Firm]
+[Bar Number]
+Attorney for Plaintiff
+
+VERIFICATION
+
+I, {plaintiff}, declare under penalty of perjury that I have read the foregoing Complaint and know the contents thereof. The same is true of my own knowledge, except as to those matters stated on information and belief, and as to those matters, I believe them to be true.
+
+Executed on [DATE] at [CITY], {jurisdiction}.
+
+_________________________
+{plaintiff}
+"""
+        return {"full_document": document}
+
+    def _generate_stub_demand_letter(self, plaintiff: str, defendant: str, facts: str, issues: list[str]) -> dict[str, Any]:
+        """Generate a stub demand letter."""
+        fact_lines = facts.split("\n") if facts else []
+        facts_text = " ".join([line.strip().lstrip("•-*").strip() for line in fact_lines if line.strip()])[:500]
+
+        document = f"""[DATE]
+
+{defendant}
+[Address]
+
+Re: Demand for Settlement - {plaintiff} v. {defendant}
+
+Dear {defendant}:
+
+This office represents {plaintiff} in connection with the incident that occurred on [DATE]. This letter serves as a formal demand for settlement.
+
+FACTS
+
+{facts_text or "The incident giving rise to this claim occurred on [DATE]. [Additional facts to be provided]"}
+
+LIABILITY
+
+Based on the facts outlined above, {defendant} is liable for the damages sustained by {plaintiff}. The evidence clearly establishes your responsibility for this matter.
+
+DAMAGES
+
+{plaintiff} has sustained substantial damages as a result of your actions, including but not limited to medical expenses, lost wages, pain and suffering, and emotional distress. Detailed damages documentation is available upon request.
+
+DEMAND
+
+We demand payment of $[AMOUNT] to settle all claims arising from this incident. This demand is valid for 30 days from the date of this letter.
+
+Please contact our office immediately to discuss resolution. If we do not hear from you within 30 days, we will proceed with filing a lawsuit without further notice.
+
+Sincerely,
+
+[Attorney Name]
+[Law Firm]
+Attorney for {plaintiff}
+"""
+        return {"full_document": document}
+
+    def _generate_stub_generic_document(self, doc_type: str, jurisdiction: str, facts: str, issues: list[str]) -> dict[str, Any]:
+        """Generate a generic stub document."""
+        facts_text = facts[:1000] if facts else "[Facts to be provided]"
+        issues_text = "\n".join([f"• {issue}" for issue in issues[:5]]) if issues else "[Legal issues to be analyzed]"
+
+        document = f"""{doc_type.upper().replace('_', ' ')}
+
+Re: Legal Matter in {jurisdiction}
+
+INTRODUCTION
+
+This {doc_type.replace('_', ' ')} addresses the legal issues arising from the following circumstances.
+
+FACTS
+
+{facts_text}
+
+LEGAL ISSUES
+
+{issues_text}
+
+ANALYSIS
+
+[Detailed legal analysis to be provided based on applicable {jurisdiction} law]
+
+CONCLUSION
+
+[Conclusion and recommendations to be provided]
+
+[Attorney Name]
+[Law Firm]
+[Date]
+"""
+        return {"full_document": document}
 
     # ------------------------------------------------------------------
     # Utility helpers for stub mode

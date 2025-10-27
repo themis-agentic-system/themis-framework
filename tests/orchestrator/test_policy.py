@@ -19,10 +19,12 @@ def test_routing_policy_builds_expected_phases():
         "research_retrieval",
         "application_analysis",
         "draft_review",
+        "document_assembly",
     ]
     assert steps[0]["agent"] == "lda"
     assert steps[1]["agent"] == "dea"
-    assert steps[-1]["agent"] == "lsa"
+    assert steps[-2]["agent"] == "lsa"  # draft_review phase
+    assert steps[-1]["agent"] == "dda"  # document_assembly phase
     assert any(step.get("supporting_agents") for step in steps)
 
 

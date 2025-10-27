@@ -2,7 +2,6 @@
 """Test autonomous agent workflow end-to-end."""
 
 import asyncio
-import json
 from agents.lda import LDAAgent
 from agents.dea import DEAAgent
 from agents.lsa import LSAAgent
@@ -103,7 +102,7 @@ async def test_autonomous_workflow():
 
     if full_text and len(full_text) > 100:
         print("\n✅ SUCCESS: Document generated with substantial content")
-        print(f"\nFirst 500 characters of document:")
+        print("\nFirst 500 characters of document:")
         print("-" * 80)
         print(full_text[:500])
         print("-" * 80)

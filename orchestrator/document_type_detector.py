@@ -7,6 +7,19 @@ from typing import Any
 from tools.llm_client import get_llm_client
 
 
+def _format_parties(parties: list) -> str:
+    """Format parties list (either strings or dicts) into a comma-separated string."""
+    if not parties:
+        return "N/A"
+    formatted = []
+    for p in parties:
+        if isinstance(p, dict):
+            formatted.append(p.get('name', str(p)))
+        else:
+            formatted.append(str(p))
+    return ', '.join(formatted)
+
+
 async def determine_document_type(matter: dict[str, Any]) -> str:
     """Determine appropriate legal document type based on matter context.
 
@@ -41,33 +54,41 @@ async def determine_document_type(matter: dict[str, Any]) -> str:
     # Parties
     parties = matter.get("parties", [])
     if parties:
-        context_parts.append(f"Parties: {', '.join(parties)}")
+        context_parts.append(f"Parties: {_format_parties(parties)}")
 
     # Legal issues from DEA
     legal_analysis = matter.get("legal_analysis", {})
-    if legal_analysis:
+    if legal_analysis and isinstance(legal_analysis, dict):
         issues = legal_analysis.get("issues", [])
-        if issues:
-            issues_list = "\n".join(f"  - {issue.get('issue', 'N/A')}" for issue in issues)
+        if issues and isinstance(issues, list):
+            # Ensure each issue is a dict before calling .get()
+            issues_list = "\n".join(
+                f"  - {issue.get('issue', 'N/A') if isinstance(issue, dict) else str(issue)}"
+                for issue in issues
+            )
             context_parts.append(f"Legal Issues:\n{issues_list}")
 
     # Strategy from LSA
     strategy = matter.get("strategy", {})
-    if strategy:
+    if strategy and isinstance(strategy, dict):
         recommended_actions = strategy.get("recommended_actions", [])
-        if recommended_actions:
-            context_parts.append(f"Recommended Actions: {', '.join(recommended_actions[:3])}")
+        if recommended_actions and isinstance(recommended_actions, list):
+            # Ensure all items are strings
+            action_strings = [str(action) if not isinstance(action, str) else action for action in recommended_actions[:3]]
+            context_parts.append(f"Recommended Actions: {', '.join(action_strings)}")
 
         negotiation_positions = strategy.get("negotiation_positions", {})
         if negotiation_positions:
-            context_parts.append(f"Strategy Includes Settlement Negotiation: Yes")
+            context_parts.append("Strategy Includes Settlement Negotiation: Yes")
 
     # Draft guidance from LSA
     draft = matter.get("draft", {})
-    if draft:
+    if draft and isinstance(draft, dict):
         next_steps = draft.get("next_steps", [])
-        if next_steps:
-            context_parts.append(f"Next Steps: {', '.join(next_steps[:3])}")
+        if next_steps and isinstance(next_steps, list):
+            # Ensure all items are strings
+            step_strings = [str(step) if not isinstance(step, str) else step for step in next_steps[:3]]
+            context_parts.append(f"Next Steps: {', '.join(step_strings)}")
 
     context = "\n\n".join(context_parts)
 
@@ -182,12 +203,16 @@ def _heuristic_document_type(matter: dict[str, Any]) -> str:
 
     # Check strategy for settlement vs litigation intent
     strategy = matter.get("strategy", {})
-    if strategy:
-        actions = " ".join(strategy.get("recommended_actions", [])).lower()
-        if "settlement" in actions or "negotiate" in actions:
-            return "demand_letter"
-        if "file" in actions or "complaint" in actions:
-            return "complaint"
+    if strategy and isinstance(strategy, dict):
+        recommended_actions = strategy.get("recommended_actions", [])
+        if recommended_actions and isinstance(recommended_actions, list):
+            # Ensure all items are strings before joining
+            action_strings = [str(action) if not isinstance(action, str) else action for action in recommended_actions]
+            actions = " ".join(action_strings).lower()
+            if "settlement" in actions or "negotiate" in actions:
+                return "demand_letter"
+            if "file" in actions or "complaint" in actions:
+                return "complaint"
 
     # Default to memorandum if unclear
     return "memorandum"
