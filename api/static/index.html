@@ -498,22 +498,34 @@
             }
 
             // DEA (Doctrinal Expert Agent) - Legal Analysis
-            if (artifacts.dea?.legal_issues) {
+            if (artifacts.dea?.legal_analysis) {
                 const dea = artifacts.dea;
+                const legal_analysis = dea.legal_analysis;
 
                 html += '<div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #764ba2;">';
                 html += '<h4 style="color: #764ba2; margin-bottom: 10px;">⚖️ Legal Analysis (DEA)</h4>';
 
-                if (dea.legal_issues && dea.legal_issues.length > 0) {
+                // Display legal analysis summary if available
+                if (legal_analysis.analysis) {
+                    html += `<p style="margin-bottom: 15px;">${escapeHtml(legal_analysis.analysis.substring(0, 500))}${legal_analysis.analysis.length > 500 ? '...' : ''}</p>`;
+                }
+
+                // Display identified legal issues
+                if (legal_analysis.issues && legal_analysis.issues.length > 0) {
                     html += '<p style="margin-bottom: 5px;"><strong>Identified Legal Issues:</strong></p>';
-                    html += '<ul style="margin-left: 20px;">';
-                    dea.legal_issues.forEach(issue => {
+                    html += '<ul style="margin-left: 20px; margin-bottom: 10px;">';
+                    legal_analysis.issues.forEach(issue => {
                         if (typeof issue === 'string') {
                             html += `<li>${escapeHtml(issue)}</li>`;
                         } else if (issue.issue) {
                             html += `<li><strong>${escapeHtml(issue.issue)}</strong>`;
-                            if (issue.analysis) {
-                                html += `<br><span style="color: #666;">${escapeHtml(issue.analysis)}</span>`;
+                            if (issue.strength) {
+                                const strengthColor = issue.strength === 'strong' ? '#28a745' :
+                                                     issue.strength === 'moderate' ? '#ffc107' : '#dc3545';
+                                html += ` <span style="color: ${strengthColor}; font-size: 0.85em;">(${escapeHtml(issue.strength)})</span>`;
+                            }
+                            if (issue.area_of_law) {
+                                html += `<br><span style="color: #666; font-size: 0.9em;">Area: ${escapeHtml(issue.area_of_law)}</span>`;
                             }
                             html += '</li>';
                         }
@@ -521,13 +533,22 @@
                     html += '</ul>';
                 }
 
-                if (dea.claims && dea.claims.length > 0) {
-                    html += '<p style="margin-top: 10px; margin-bottom: 5px;"><strong>Potential Claims:</strong></p>';
-                    html += '<ul style="margin-left: 20px;">';
-                    dea.claims.forEach(claim => {
-                        html += `<li>${escapeHtml(claim)}</li>`;
-                    });
-                    html += '</ul>';
+                // Display authorities
+                if (dea.authorities?.controlling_authorities && dea.authorities.controlling_authorities.length > 0) {
+                    const nonPlaceholder = dea.authorities.controlling_authorities.filter(auth =>
+                        !auth.includes('Secondary research required')
+                    );
+                    if (nonPlaceholder.length > 0) {
+                        html += '<p style="margin-bottom: 5px;"><strong>Legal Authorities:</strong></p>';
+                        html += '<ul style="margin-left: 20px;">';
+                        nonPlaceholder.slice(0, 3).forEach(auth => {
+                            html += `<li style="font-size: 0.9em;">${escapeHtml(auth)}</li>`;
+                        });
+                        if (nonPlaceholder.length > 3) {
+                            html += `<li style="font-size: 0.9em;"><em>... and ${nonPlaceholder.length - 3} more authorities</em></li>`;
+                        }
+                        html += '</ul>';
+                    }
                 }
 
                 html += '</div>';
@@ -706,27 +727,69 @@
                 if (response.ok) {
                     result.className = 'result success';
 
-                    // Extract the complaint document from DDA agent output
-                    const ddaOutput = data.artifacts?.dda?.core;
-                    const documentText = ddaOutput?.document?.full_text;
+                    // Extract the document from DDA agent output - check multiple possible locations
+                    let documentText = null;
 
-                    if (documentText) {
+                    // Try different possible paths for the document
+                    if (data.artifacts?.dda?.document?.full_text) {
+                        documentText = data.artifacts.dda.document.full_text;
+                    } else if (data.artifacts?.dda?.core?.document?.full_text) {
+                        documentText = data.artifacts.dda.core.document.full_text;
+                    } else if (data.artifacts?.dda?.full_text) {
+                        documentText = data.artifacts.dda.full_text;
+                    }
+
+                    // Also check in the steps for DDA output
+                    if (!documentText && data.steps) {
+                        const ddaStep = data.steps.find(step => step.agent === 'dda' && step.output?.document);
+                        if (ddaStep?.output?.document?.full_text) {
+                            documentText = ddaStep.output.document.full_text;
+                        }
+                    }
+
+                    // Log for debugging
+                    console.log('Response data:', data);
+                    console.log('Document text found:', documentText ? 'YES' : 'NO');
+                    if (data.artifacts?.dda) {
+                        console.log('DDA artifacts:', data.artifacts.dda);
+                    }
+
+                    if (documentText && documentText.length > 100) {
                         // Display the formatted legal document
+                        const docType = data.artifacts?.dda?.document?.type || 'document';
                         result.innerHTML = `
-                            <h3>✅ Legal Complaint Generated!</h3>
-                            <p>Themis has drafted a formal complaint based on your case information.</p>
-                            <div style="background: white; padding: 20px; border-radius: 6px; margin-top: 15px; font-family: 'Courier New', monospace; white-space: pre-wrap; line-height: 1.6; max-height: 600px; overflow-y: auto;">${documentText}</div>
+                            <h3>✅ Legal ${docType.charAt(0).toUpperCase() + docType.slice(1)} Generated!</h3>
+                            <p>Themis has drafted a formal ${docType} based on your case information.</p>
+                            <div style="background: white; padding: 20px; border-radius: 6px; margin-top: 15px; font-family: 'Courier New', monospace; white-space: pre-wrap; line-height: 1.6; max-height: 600px; overflow-y: auto; border: 1px solid #ddd;">${escapeHtml(documentText)}</div>
                             <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 6px;">
                                 <strong>⚠️ Attorney Review Required:</strong> This document is AI-generated and must be reviewed by a licensed attorney before filing.
                             </div>
                             <details style="margin-top: 15px;">
-                                <summary style="cursor: pointer; color: #666;">View Full Analysis (JSON)</summary>
+                                <summary style="cursor: pointer; color: #666;">View Full Response Data (JSON)</summary>
                                 <pre style="background: white; padding: 15px; border-radius: 6px; overflow-x: auto; margin-top: 10px;">${JSON.stringify(data, null, 2)}</pre>
                             </details>
                         `;
                     } else {
-                        // Display formatted analysis results
-                        result.innerHTML = formatAnalysisResults(data);
+                        // Check if DDA ran but we couldn't find the document
+                        const ddaRan = data.artifacts?.dda || data.steps?.some(s => s.agent === 'dda');
+
+                        if (ddaRan) {
+                            // DDA ran but we couldn't extract the document - show error with JSON
+                            result.className = 'result error';
+                            result.innerHTML = `
+                                <h3>⚠️ Document Generated But Not Displayed</h3>
+                                <p>The DDA agent generated a document, but there was an issue extracting it for display.</p>
+                                <p><strong>Please check the JSON response below to see the document structure:</strong></p>
+                                <details open style="margin-top: 15px;">
+                                    <summary style="cursor: pointer; color: #666; font-weight: bold;">View Response Data (JSON)</summary>
+                                    <pre style="background: white; padding: 15px; border-radius: 6px; overflow-x: auto; margin-top: 10px; max-height: 600px; overflow-y: auto;">${JSON.stringify(data, null, 2)}</pre>
+                                </details>
+                                <p style="margin-top: 15px; color: #666;">Look for the "dda" section in the JSON above to find the generated document.</p>
+                            `;
+                        } else {
+                            // Display formatted analysis results
+                            result.innerHTML = formatAnalysisResults(data);
+                        }
                     }
                 } else {
                     throw new Error(data.detail || 'Failed to process matter');
