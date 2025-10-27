@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "themis-framework"
-version = "0.1.0"
+version = "0.2.0"
 description = "Scaffolding for a multi-agent legal reasoning framework"
 readme = "README.md"
 authors = [{name = "Themis Maintainers"}]

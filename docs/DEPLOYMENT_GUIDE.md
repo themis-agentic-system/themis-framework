@@ -52,6 +52,12 @@ ANTHROPIC_API_KEY=sk-ant-your-key-here
 
 # Set a secure PostgreSQL password
 POSTGRES_PASSWORD=$(python -c "import secrets; print(secrets.token_urlsafe(16))")
+
+# NEW (2025): Agentic Features - Claude Advanced Capabilities
+USE_EXTENDED_THINKING=true        # Enable deep reasoning (default: true)
+USE_PROMPT_CACHING=true           # Enable 1-hour caching (default: true)
+ENABLE_CODE_EXECUTION=false       # Enable Python execution (default: false)
+MODEL=claude-3-5-sonnet-20241022  # Claude model version
 ```
 
 ### Step 3: Launch
@@ -227,10 +233,21 @@ THEMIS_API_KEY=your-secret-key
 ANTHROPIC_API_KEY=sk-ant-...
 POSTGRES_PASSWORD=secure-password
 
-# Optional
+# Optional - System Configuration
 LOG_LEVEL=INFO                 # DEBUG, INFO, WARNING, ERROR
 CACHE_TTL_SECONDS=60          # Cache TTL in seconds
 GRAFANA_PASSWORD=admin        # Grafana admin password
+
+# Optional - Agentic Features (2025)
+USE_EXTENDED_THINKING=true        # Enable deep reasoning (default: true)
+USE_PROMPT_CACHING=true           # Enable 1-hour caching (default: true)
+ENABLE_CODE_EXECUTION=false       # Enable Python execution (default: false)
+MODEL=claude-3-5-sonnet-20241022  # Claude model version
+
+# Optional - MCP Integration
+# Configure MCP servers in .mcp.json
+LEGAL_RESEARCH_MCP_URL=https://example.com/mcp
+LEGAL_RESEARCH_API_KEY=your-mcp-key
 ```
 
 ### Database Management

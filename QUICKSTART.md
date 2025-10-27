@@ -33,8 +33,29 @@ Copy the sample environment file and edit it as needed:
 cp .env.example .env
 ```
 
-Populate `ANTHROPIC_API_KEY` to talk to Anthropic’s API.  Leave it unset to operate in stub mode.  Set
+Populate `ANTHROPIC_API_KEY` to talk to Anthropic's API.  Leave it unset to operate in stub mode.  Set
 `THEMIS_API_KEY` if you want the HTTP API to require authentication tokens.
+
+**NEW (2025): Agentic Features Configuration**
+
+The framework now supports advanced Claude API features. These are configurable via environment variables:
+
+```bash
+# Extended Thinking - Deeper reasoning for complex legal analysis (default: true)
+USE_EXTENDED_THINKING=true
+
+# 1-Hour Prompt Caching - Up to 90% cost reduction (default: true)
+USE_PROMPT_CACHING=true
+
+# Code Execution - Python execution for calculations (default: false)
+ENABLE_CODE_EXECUTION=false
+
+# Model version
+MODEL=claude-3-5-sonnet-20241022
+```
+
+For MCP (Model Context Protocol) integration, edit `.mcp.json` to configure external tool servers.
+See `docs/AGENTIC_ENHANCEMENTS.md` for complete details on all 7 new features.
 
 ## 4. Run the FastAPI service
 
