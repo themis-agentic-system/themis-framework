@@ -530,6 +530,8 @@ class LLMClient:
             return self._stub_strategy_template(user_prompt)
         if {"confidence", "weaknesses", "evidentiary_gaps", "unknowns", "potential_problems"}.issubset(keys):
             return self._stub_risk_assessment(user_prompt)
+        if "full_document" in keys:
+            return self._stub_document_generator(user_prompt, system_prompt)
 
         result: dict[str, Any] = {}
         for key, template in response_format.items():
@@ -834,6 +836,241 @@ class LLMClient:
             "unknowns": self._dedupe(unknowns),
             "potential_problems": potential_problems,
         }
+
+    def _stub_document_generator(self, user_prompt: str, system_prompt: str) -> dict[str, Any]:
+        """Generate a stub legal document based on prompt analysis."""
+        import re
+
+        # Extract document type from prompt
+        doc_type = "complaint"
+        if "demand letter" in user_prompt.lower() or "demand_letter" in user_prompt.lower():
+            doc_type = "demand_letter"
+        elif "motion" in user_prompt.lower():
+            doc_type = "motion"
+        elif "memorandum" in user_prompt.lower():
+            doc_type = "memorandum"
+
+        # Extract key information from the prompt
+        jurisdiction = self._extract_line(user_prompt, "Jurisdiction:") or "California"
+
+        # Try to extract parties information from various sections
+        plaintiff = "PLAINTIFF NAME"
+        defendant = "DEFENDANT NAME"
+
+        # Look for parties in different formats
+        parties_line = self._extract_line(user_prompt, "Parties:")
+        if parties_line:
+            # Handle formats like "Alex Benedict (Plaintiff), Hien Ngo (Defendant)"
+            # Remove role labels in parentheses for parsing
+            clean_line = re.sub(r'\([^)]*\)', '', parties_line)
+            parts = [p.strip() for p in clean_line.split(",")]
+            if len(parts) >= 1 and parts[0]:
+                plaintiff = parts[0]
+            if len(parts) >= 2 and parts[1]:
+                defendant = parts[1]
+
+        # Also try extracting from JSON-like structures in the prompt
+        # Look for parties array format: [{"name": "...", "role": "Plaintiff"}, ...]
+        if plaintiff == "PLAINTIFF NAME" or defendant == "DEFENDANT NAME":
+            parties_array_match = re.search(r'"parties":\s*\[(.*?)\]', user_prompt, re.DOTALL)
+            if parties_array_match:
+                parties_json = parties_array_match.group(1)
+                # Extract plaintiff
+                plaintiff_obj = re.search(r'{[^}]*"name":\s*"([^"]+)"[^}]*"role":\s*"[Pp]laintiff', parties_json)
+                if plaintiff_obj:
+                    plaintiff = plaintiff_obj.group(1)
+                # Extract defendant
+                defendant_obj = re.search(r'{[^}]*"name":\s*"([^"]+)"[^}]*"role":\s*"[Dd]efendant', parties_json)
+                if defendant_obj:
+                    defendant = defendant_obj.group(1)
+
+        # Extract facts
+        facts_section = self._extract_section(user_prompt, "Facts:", stop_markers=("LEGAL ANALYSIS", "Legal Analysis", "Legal Issues"))
+        if not facts_section:
+            facts_section = self._extract_section(user_prompt, "MATTER INFORMATION:", stop_markers=("INSTRUCTIONS", "Legal"))
+        if not facts_section:
+            # Try to get fact pattern summary
+            facts_bullets = self._extract_bullets(user_prompt, "fact_pattern_summary")
+            if facts_bullets:
+                facts_section = "\n".join(facts_bullets)
+
+        # Extract legal issues
+        issues = self._extract_bullets(user_prompt, "Legal Issues:")
+        if not issues:
+            issues = self._extract_bullets(user_prompt, "issues")
+
+        # Build the document based on type
+        if doc_type == "complaint":
+            return self._generate_stub_complaint(jurisdiction, plaintiff, defendant, facts_section, issues)
+        elif doc_type == "demand_letter":
+            return self._generate_stub_demand_letter(plaintiff, defendant, facts_section, issues)
+        else:
+            return self._generate_stub_generic_document(doc_type, jurisdiction, facts_section, issues)
+
+    def _generate_stub_complaint(self, jurisdiction: str, plaintiff: str, defendant: str, facts: str, issues: list[str]) -> dict[str, Any]:
+        """Generate a stub complaint document."""
+        # Extract specific facts if available
+        fact_lines = facts.split("\n") if facts else []
+        fact_paragraphs = []
+        for line in fact_lines[:10]:  # Limit to first 10 lines
+            line = line.strip().lstrip("•-*").strip()
+            if line and len(line) > 10:
+                fact_paragraphs.append(line)
+
+        facts_text = "\n\n".join(fact_paragraphs) if fact_paragraphs else "On or about [DATE], the events giving rise to this action occurred. [Additional factual allegations to be provided]"
+
+        # Generate causes of action from issues
+        causes_of_action = []
+        for i, issue in enumerate(issues[:3], 1):  # Limit to 3 causes of action
+            issue_clean = issue.strip().lstrip("•-*").strip()
+            if issue_clean:
+                causes_of_action.append(f"FIRST CAUSE OF ACTION\n({issue_clean})\n\nPlaintiff re-alleges and incorporates by reference all previous paragraphs. [Additional elements and allegations for {issue_clean} to be provided based on {jurisdiction} law.]")
+
+        if not causes_of_action:
+            causes_of_action = ["FIRST CAUSE OF ACTION\n(Negligence)\n\nPlaintiff re-alleges and incorporates by reference all previous paragraphs. Defendant owed Plaintiff a duty of care, breached that duty, and caused damages as a direct and proximate result."]
+
+        causes_text = "\n\n".join(causes_of_action)
+
+        document = f"""SUPERIOR COURT OF {jurisdiction.upper()}
+
+{plaintiff},
+    Plaintiff,
+
+v.                                  Case No. [TO BE ASSIGNED]
+
+{defendant},
+    Defendant.
+
+COMPLAINT FOR DAMAGES
+
+Plaintiff {plaintiff} alleges as follows:
+
+PARTIES
+
+1. Plaintiff {plaintiff} is an individual residing in {jurisdiction}.
+
+2. Defendant {defendant} is an individual residing in {jurisdiction}.
+
+JURISDICTION AND VENUE
+
+3. This Court has jurisdiction over this action pursuant to applicable state law.
+
+4. Venue is proper in this Court.
+
+FACTUAL ALLEGATIONS
+
+5. {facts_text}
+
+CAUSES OF ACTION
+
+{causes_text}
+
+PRAYER FOR RELIEF
+
+WHEREFORE, Plaintiff prays for judgment as follows:
+
+1. For general damages according to proof;
+2. For special damages according to proof;
+3. For costs of suit incurred herein;
+4. For such other and further relief as the Court deems just and proper.
+
+Dated: [DATE]
+
+Respectfully submitted,
+
+_________________________
+[Attorney Name]
+[Law Firm]
+[Bar Number]
+Attorney for Plaintiff
+
+VERIFICATION
+
+I, {plaintiff}, declare under penalty of perjury that I have read the foregoing Complaint and know the contents thereof. The same is true of my own knowledge, except as to those matters stated on information and belief, and as to those matters, I believe them to be true.
+
+Executed on [DATE] at [CITY], {jurisdiction}.
+
+_________________________
+{plaintiff}
+"""
+        return {"full_document": document}
+
+    def _generate_stub_demand_letter(self, plaintiff: str, defendant: str, facts: str, issues: list[str]) -> dict[str, Any]:
+        """Generate a stub demand letter."""
+        fact_lines = facts.split("\n") if facts else []
+        facts_text = " ".join([line.strip().lstrip("•-*").strip() for line in fact_lines if line.strip()])[:500]
+
+        document = f"""[DATE]
+
+{defendant}
+[Address]
+
+Re: Demand for Settlement - {plaintiff} v. {defendant}
+
+Dear {defendant}:
+
+This office represents {plaintiff} in connection with the incident that occurred on [DATE]. This letter serves as a formal demand for settlement.
+
+FACTS
+
+{facts_text or "The incident giving rise to this claim occurred on [DATE]. [Additional facts to be provided]"}
+
+LIABILITY
+
+Based on the facts outlined above, {defendant} is liable for the damages sustained by {plaintiff}. The evidence clearly establishes your responsibility for this matter.
+
+DAMAGES
+
+{plaintiff} has sustained substantial damages as a result of your actions, including but not limited to medical expenses, lost wages, pain and suffering, and emotional distress. Detailed damages documentation is available upon request.
+
+DEMAND
+
+We demand payment of $[AMOUNT] to settle all claims arising from this incident. This demand is valid for 30 days from the date of this letter.
+
+Please contact our office immediately to discuss resolution. If we do not hear from you within 30 days, we will proceed with filing a lawsuit without further notice.
+
+Sincerely,
+
+[Attorney Name]
+[Law Firm]
+Attorney for {plaintiff}
+"""
+        return {"full_document": document}
+
+    def _generate_stub_generic_document(self, doc_type: str, jurisdiction: str, facts: str, issues: list[str]) -> dict[str, Any]:
+        """Generate a generic stub document."""
+        facts_text = facts[:1000] if facts else "[Facts to be provided]"
+        issues_text = "\n".join([f"• {issue}" for issue in issues[:5]]) if issues else "[Legal issues to be analyzed]"
+
+        document = f"""{doc_type.upper().replace('_', ' ')}
+
+Re: Legal Matter in {jurisdiction}
+
+INTRODUCTION
+
+This {doc_type.replace('_', ' ')} addresses the legal issues arising from the following circumstances.
+
+FACTS
+
+{facts_text}
+
+LEGAL ISSUES
+
+{issues_text}
+
+ANALYSIS
+
+[Detailed legal analysis to be provided based on applicable {jurisdiction} law]
+
+CONCLUSION
+
+[Conclusion and recommendations to be provided]
+
+[Attorney Name]
+[Law Firm]
+[Date]
+"""
+        return {"full_document": document}
 
     # ------------------------------------------------------------------
     # Utility helpers for stub mode
