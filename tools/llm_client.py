@@ -48,8 +48,8 @@ class LLMClient:
         self,
         api_key: str | None = None,
         model: str = "claude-3-5-sonnet-20241022",
-        use_extended_thinking: bool = True,
-        use_prompt_caching: bool = True,
+        use_extended_thinking: bool = False,  # Disabled: requires newer anthropic SDK
+        use_prompt_caching: bool = False,     # Disabled: requires newer anthropic SDK
         enable_code_execution: bool = False,
     ):
         """Initialise the client.
