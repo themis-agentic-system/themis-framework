@@ -166,11 +166,6 @@ class DocumentDraftingAgent(BaseAgent):
         document_type = matter.get("document_type") or matter.get("metadata", {}).get("document_type", "memorandum")
         jurisdiction = matter.get("jurisdiction") or matter.get("metadata", {}).get("jurisdiction", "federal")
 
-        # Extract relevant data from prior agent outputs
-        facts = matter.get("facts", {})
-        legal_analysis = matter.get("legal_analysis", {})
-        strategy = matter.get("strategy", {})
-
         # Define available tools in Anthropic format
         tools = [
             {
@@ -395,7 +390,6 @@ Then provide the final document with metadata and validation results."""
     def _construct_document_from_tool_calls(self, tool_calls: list[dict], document_type: str, jurisdiction: str) -> dict[str, Any]:
         """Fallback: construct document payload from tool call results."""
         sections = {}
-        citations = {}
         document = {}
         tone_analysis = {}
         validation = {}
@@ -403,8 +397,6 @@ Then provide the final document with metadata and validation results."""
         for tc in tool_calls:
             if tc["tool"] == "section_generator" and isinstance(tc["result"], dict):
                 sections = tc["result"]
-            elif tc["tool"] == "citation_formatter" and isinstance(tc["result"], dict):
-                citations = tc["result"]
             elif tc["tool"] == "document_composer" and isinstance(tc["result"], dict):
                 document = tc["result"]
             elif tc["tool"] == "tone_analyzer" and isinstance(tc["result"], dict):
@@ -575,8 +567,8 @@ Return the document as a single complete text in the 'full_document' field."""
         if 'response' in result and isinstance(result['response'], str):
             try:
                 result = json.loads(result['response'])
-                logger.info(f"Parsed nested JSON from 'response' key")
-            except json.JSONDecodeError as parse_err:
+                logger.info("Parsed nested JSON from 'response' key")
+            except json.JSONDecodeError:
                 logger.error(f"Failed to parse nested JSON: {result['response'][:200]}", exc_info=True)
 
         # Log document preview if we got it
