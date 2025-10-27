@@ -346,7 +346,9 @@ async def _default_section_generator(
         system_prompts["memorandum"],  # Default to memo style
     )
 
-    user_prompt = f"""Generate a formal California civil complaint based on the following matter information:
+    # Document-type-specific prompts and response formats
+    if document_type == "complaint":
+        user_prompt = f"""Generate a formal California civil complaint based on the following matter information:
 
 {context}
 
@@ -355,89 +357,186 @@ Jurisdiction: {jurisdiction}
 Generate a complete, court-ready complaint with the following sections:
 
 1. **CAPTION**: Full court name, parties (Plaintiff vs. Defendant and DOES 1-50), case number placeholder, document title, checkboxes, jury demand
-
-2. **PARTIES SECTION**:
-   - Paragraph 1: Plaintiff's residency in Los Angeles County
-   - Paragraph 2: Defendant's residency and capacity (owner/operator of vehicle)
-   - Paragraph 3: DOE defendants boilerplate language
-
-3. **JURISDICTION AND VENUE SECTION**:
-   - Paragraph stating acts occurred in Los Angeles County
-   - Paragraph citing CCP section 395 for venue
-
-4. **GENERAL ALLEGATIONS SECTION**:
-   - Detailed numbered paragraphs (6-17 typical) covering:
-   - Date, time, location of incident
-   - Plaintiff's lawful conduct
-   - Defendant's wrongful conduct with specific details (BAC level, traffic violations, etc.)
-   - Police response and investigation
-   - Specific injuries sustained (fractured ribs, concussion, lacerated spleen, etc.)
-   - Medical treatment required (emergency surgery, hospitalization)
-   - Economic damages (medical expenses $85,000, lost wages $25,000)
-   - Ongoing symptoms (chronic pain, PTSD)
-
-5. **CAUSES OF ACTION**:
-   Each cause of action should:
-   - Start with "FIRST CAUSE OF ACTION", "SECOND CAUSE OF ACTION", etc.
-   - Begin with incorporation by reference: "Plaintiff incorporates by reference each and every allegation contained in paragraphs 1 through X above"
-   - Include detailed elements:
-     * Duty owed
-     * Breach with specific subsections (a, b, c, d, etc.) listing each negligent act
-     * Causation
-     * Damages
-   - For Negligence Per Se: cite specific Vehicle Code sections (23152(a), 23152(b), 21453(a))
-   - Include class of persons and type of harm analysis for negligence per se
-
-6. **DAMAGES SECTION**:
-   Separate paragraph listing all damages with subsections:
-   a. Past and future medical expenses ($85,000 known to date)
-   b. Past and future lost earnings ($25,000 known to date)
-   c. Physical pain and suffering
-   d. Mental and emotional distress
-   e. Loss of enjoyment of life
-   f. Physical disability and disfigurement
-   g. Other damages according to proof
-
-7. **PRAYER FOR RELIEF**:
-   "WHEREFORE, Plaintiff prays for judgment against Defendant..."
-   1. General damages according to proof
-   2. Special damages (specify medical expenses and lost wages amounts)
-   3. Costs of suit
-   4. Pre-judgment and post-judgment interest
-   5. Such other relief as Court deems proper
-
-8. **JURY TRIAL DEMAND**:
-   "Plaintiff hereby demands a trial by jury on all issues so triable."
-
-9. **SIGNATURE BLOCK**:
-   Date line, law firm name, attorney signature line, attorney name, bar number
-
-Use numbered paragraphs throughout. Be specific with facts, amounts, and citations. Make it court-ready.
+2. **PARTIES SECTION**: Residency, capacity, DOE boilerplate (paragraphs 1-3)
+3. **JURISDICTION AND VENUE SECTION**: Acts location, CCP §395 citation (paragraphs 4-5)
+4. **GENERAL ALLEGATIONS**: Detailed numbered paragraphs (6-17+) with dates, facts, injuries, damages
+5. **CAUSES OF ACTION**: Incorporation by reference, duty/breach (a,b,c,d)/causation/damages, statute citations
+6. **DAMAGES SECTION**: Subsections a-g with specific amounts
+7. **PRAYER FOR RELIEF**: WHEREFORE with numbered requests 1-5
+8. **JURY TRIAL DEMAND**: Standard jury demand language
+9. **SIGNATURE BLOCK**: Date, firm, attorney, bar number
 
 Respond in JSON format with these exact keys:
 {{
-  "caption": "complete caption with court name, parties, case number, title",
-  "parties_section": "paragraphs 1-3 about parties",
-  "jurisdiction_venue_section": "paragraphs 4-5 about jurisdiction and venue",
-  "general_allegations": "paragraphs 6-17+ with all factual allegations",
-  "causes_of_action": "all causes of action with incorporation, elements, and specific allegations",
-  "damages_section": "paragraph listing all damages with subsections a-g",
-  "prayer": "WHEREFORE clause with numbered relief requests 1-5",
-  "jury_demand": "jury trial demand language",
-  "signature_block": "DATED line, firm name, signature line, attorney info"
+  "caption": "complete caption",
+  "parties_section": "paragraphs 1-3",
+  "jurisdiction_venue_section": "paragraphs 4-5",
+  "general_allegations": "paragraphs 6-17+",
+  "causes_of_action": "all causes with incorporation and elements",
+  "damages_section": "damages with subsections a-g",
+  "prayer": "WHEREFORE with numbered requests",
+  "jury_demand": "jury trial demand",
+  "signature_block": "signature block"
 }}"""
 
-    response_format = {
-        "caption": "string",
-        "parties_section": "string",
-        "jurisdiction_venue_section": "string",
-        "general_allegations": "string",
-        "causes_of_action": "string",
-        "damages_section": "string",
-        "prayer": "string",
-        "jury_demand": "string",
-        "signature_block": "string",
-    }
+        response_format = {
+            "caption": "string",
+            "parties_section": "string",
+            "jurisdiction_venue_section": "string",
+            "general_allegations": "string",
+            "causes_of_action": "string",
+            "damages_section": "string",
+            "prayer": "string",
+            "jury_demand": "string",
+            "signature_block": "string",
+        }
+
+    elif document_type == "demand_letter":
+        user_prompt = f"""Generate a professional demand letter for settlement negotiations:
+
+{context}
+
+Jurisdiction: {jurisdiction}
+
+Generate a complete demand letter with the following sections:
+
+1. **HEADER**: Law firm letterhead, date, recipient address, RE: line with case description
+2. **INTRODUCTION**: Who you represent, purpose of letter, brief overview of incident
+3. **FACTS**: Chronological narrative of incident with specific details (dates, locations, parties, BAC levels, injuries)
+4. **LIABILITY**: Clear explanation of defendant's fault with legal support (negligence, negligence per se, statute citations)
+5. **DAMAGES**: Itemized breakdown:
+   - Medical expenses (specific amount)
+   - Lost wages (specific amount)
+   - Pain and suffering
+   - Ongoing treatment needs
+   - Future losses
+6. **DEMAND**: Specific settlement amount with deadline (typically 30 days)
+7. **CONSEQUENCES**: What happens if demand not met (litigation, additional costs, punitive damages exposure)
+8. **ENCLOSURES**: List of supporting documents
+9. **SIGNATURE**: Attorney name, contact info, bar number
+
+Use professional but firm tone. Be specific with amounts and dates. Make it persuasive.
+
+Respond in JSON format:
+{{
+  "header": "letterhead and recipient info",
+  "introduction": "opening paragraphs",
+  "facts": "chronological narrative",
+  "liability": "fault analysis with legal support",
+  "damages": "itemized damages breakdown",
+  "demand": "specific amount and deadline",
+  "consequences": "litigation consequences",
+  "enclosures": "list of attachments",
+  "signature": "attorney signature block"
+}}"""
+
+        response_format = {
+            "header": "string",
+            "introduction": "string",
+            "facts": "string",
+            "liability": "string",
+            "damages": "string",
+            "demand": "string",
+            "consequences": "string",
+            "enclosures": "string",
+            "signature": "string",
+        }
+
+    elif document_type == "motion":
+        user_prompt = f"""Generate a motion with memorandum of points and authorities:
+
+{context}
+
+Jurisdiction: {jurisdiction}
+
+Generate a complete motion with the following sections:
+
+1. **CAPTION**: Court name, parties, case number, motion title
+2. **NOTICE OF MOTION**: Notice to all parties, hearing date/time/location
+3. **MEMORANDUM OF POINTS AND AUTHORITIES**:
+   - INTRODUCTION: Relief sought and brief overview
+   - STATEMENT OF FACTS: Relevant procedural and factual background
+   - LEGAL STANDARD: Applicable standard (summary judgment, dismissal, etc.)
+   - ARGUMENT: IRAC structure with:
+     * Issue headings
+     * Legal rules with case citations
+     * Application to facts
+     * Conclusion for each issue
+4. **CONCLUSION**: Summary of argument and relief requested
+5. **DECLARATION**: Attorney declaration with exhibits if needed
+6. **PROPOSED ORDER**: Draft order for court to sign
+7. **SIGNATURE**: Attorney signature block with bar number
+
+Use persuasive tone with strong legal support. Cite controlling authority.
+
+Respond in JSON format:
+{{
+  "caption": "caption",
+  "notice": "notice of motion",
+  "introduction": "introduction section",
+  "facts": "statement of facts",
+  "legal_standard": "applicable standard",
+  "argument": "argument section with IRAC",
+  "conclusion": "conclusion",
+  "declaration": "attorney declaration",
+  "proposed_order": "draft order",
+  "signature": "signature block"
+}}"""
+
+        response_format = {
+            "caption": "string",
+            "notice": "string",
+            "introduction": "string",
+            "facts": "string",
+            "legal_standard": "string",
+            "argument": "string",
+            "conclusion": "string",
+            "declaration": "string",
+            "proposed_order": "string",
+            "signature": "string",
+        }
+
+    else:  # memorandum or default
+        user_prompt = f"""Generate a legal memorandum analyzing the issues:
+
+{context}
+
+Jurisdiction: {jurisdiction}
+
+Generate a complete memorandum with the following sections:
+
+1. **HEADING**: TO/FROM/DATE/RE format
+2. **QUESTION PRESENTED**: Specific legal question(s) in question format
+3. **BRIEF ANSWER**: Short answer to each question (likely/unlikely conclusion)
+4. **STATEMENT OF FACTS**: Objective recitation of relevant facts
+5. **DISCUSSION**: IRAC analysis for each issue:
+   - Issue statement
+   - Governing legal rules with citations
+   - Analysis applying law to facts
+   - Counter-arguments
+   - Conclusion
+6. **CONCLUSION**: Summary of findings and recommendations
+
+Use objective, analytical tone. Present both sides. Cite authorities.
+
+Respond in JSON format:
+{{
+  "heading": "TO/FROM/DATE/RE",
+  "question_presented": "legal question(s)",
+  "brief_answer": "short answer(s)",
+  "facts": "statement of facts",
+  "discussion": "IRAC analysis",
+  "conclusion": "conclusion and recommendations"
+}}"""
+
+        response_format = {
+            "heading": "string",
+            "question_presented": "string",
+            "brief_answer": "string",
+            "facts": "string",
+            "discussion": "string",
+            "conclusion": "string",
+        }
 
     try:
         result = await llm.generate_structured(
@@ -606,63 +705,141 @@ async def _default_document_composer(
     # Build document parts
     parts = []
 
-    # For complaints, use the detailed California structure
+    # Complaint structure
     if document_type == "complaint" and sections.get("parties_section"):
-        # Caption (already includes document title from LLM)
         if sections.get("caption"):
             parts.append(sections["caption"].strip())
             parts.append("\n\n")
-
-        # Parties section
         if sections.get("parties_section"):
-            parts.append("PARTIES\n")
-            parts.append("\n")
+            parts.append("PARTIES\n\n")
             parts.append(sections["parties_section"].strip())
             parts.append("\n\n")
-
-        # Jurisdiction and Venue section
         if sections.get("jurisdiction_venue_section"):
-            parts.append("JURISDICTION AND VENUE\n")
-            parts.append("\n")
+            parts.append("JURISDICTION AND VENUE\n\n")
             parts.append(sections["jurisdiction_venue_section"].strip())
             parts.append("\n\n")
-
-        # General Allegations section
         if sections.get("general_allegations"):
-            parts.append("GENERAL ALLEGATIONS\n")
-            parts.append("\n")
+            parts.append("GENERAL ALLEGATIONS\n\n")
             parts.append(sections["general_allegations"].strip())
             parts.append("\n\n")
-
-        # Causes of Action (already formatted by LLM with titles)
         if sections.get("causes_of_action"):
             parts.append(sections["causes_of_action"].strip())
             parts.append("\n\n")
-
-        # Damages section
         if sections.get("damages_section"):
-            parts.append("DAMAGES\n")
-            parts.append("\n")
+            parts.append("DAMAGES\n\n")
             parts.append(sections["damages_section"].strip())
             parts.append("\n\n")
-
-        # Prayer for Relief
         if sections.get("prayer"):
-            parts.append("PRAYER FOR RELIEF\n")
-            parts.append("\n")
+            parts.append("PRAYER FOR RELIEF\n\n")
             parts.append(sections["prayer"].strip())
             parts.append("\n\n")
-
-        # Jury Trial Demand
         if sections.get("jury_demand"):
-            parts.append("DEMAND FOR JURY TRIAL\n")
-            parts.append("\n")
+            parts.append("DEMAND FOR JURY TRIAL\n\n")
             parts.append(sections["jury_demand"].strip())
             parts.append("\n\n")
-
-        # Signature block from LLM
         if sections.get("signature_block"):
             parts.append(sections["signature_block"].strip())
+
+    # Demand letter structure
+    elif document_type == "demand_letter" and sections.get("header"):
+        if sections.get("header"):
+            parts.append(sections["header"].strip())
+            parts.append("\n\n")
+        if sections.get("introduction"):
+            parts.append(sections["introduction"].strip())
+            parts.append("\n\n")
+        if sections.get("facts"):
+            parts.append("FACTS\n\n")
+            parts.append(sections["facts"].strip())
+            parts.append("\n\n")
+        if sections.get("liability"):
+            parts.append("LIABILITY\n\n")
+            parts.append(sections["liability"].strip())
+            parts.append("\n\n")
+        if sections.get("damages"):
+            parts.append("DAMAGES\n\n")
+            parts.append(sections["damages"].strip())
+            parts.append("\n\n")
+        if sections.get("demand"):
+            parts.append("SETTLEMENT DEMAND\n\n")
+            parts.append(sections["demand"].strip())
+            parts.append("\n\n")
+        if sections.get("consequences"):
+            parts.append(sections["consequences"].strip())
+            parts.append("\n\n")
+        if sections.get("enclosures"):
+            parts.append("ENCLOSURES:\n")
+            parts.append(sections["enclosures"].strip())
+            parts.append("\n\n")
+        if sections.get("signature"):
+            parts.append(sections["signature"].strip())
+
+    # Motion structure
+    elif document_type == "motion" and sections.get("notice"):
+        if sections.get("caption"):
+            parts.append(sections["caption"].strip())
+            parts.append("\n\n")
+        if sections.get("notice"):
+            parts.append("NOTICE OF MOTION\n\n")
+            parts.append(sections["notice"].strip())
+            parts.append("\n\n")
+        if sections.get("introduction") or sections.get("facts") or sections.get("legal_standard") or sections.get("argument"):
+            parts.append("MEMORANDUM OF POINTS AND AUTHORITIES\n\n")
+        if sections.get("introduction"):
+            parts.append("I. INTRODUCTION\n\n")
+            parts.append(sections["introduction"].strip())
+            parts.append("\n\n")
+        if sections.get("facts"):
+            parts.append("II. STATEMENT OF FACTS\n\n")
+            parts.append(sections["facts"].strip())
+            parts.append("\n\n")
+        if sections.get("legal_standard"):
+            parts.append("III. LEGAL STANDARD\n\n")
+            parts.append(sections["legal_standard"].strip())
+            parts.append("\n\n")
+        if sections.get("argument"):
+            parts.append("IV. ARGUMENT\n\n")
+            parts.append(sections["argument"].strip())
+            parts.append("\n\n")
+        if sections.get("conclusion"):
+            parts.append("V. CONCLUSION\n\n")
+            parts.append(sections["conclusion"].strip())
+            parts.append("\n\n")
+        if sections.get("declaration"):
+            parts.append("DECLARATION OF [ATTORNEY NAME]\n\n")
+            parts.append(sections["declaration"].strip())
+            parts.append("\n\n")
+        if sections.get("proposed_order"):
+            parts.append("PROPOSED ORDER\n\n")
+            parts.append(sections["proposed_order"].strip())
+            parts.append("\n\n")
+        if sections.get("signature"):
+            parts.append(sections["signature"].strip())
+
+    # Memorandum structure
+    elif document_type == "memorandum" and sections.get("heading"):
+        if sections.get("heading"):
+            parts.append(sections["heading"].strip())
+            parts.append("\n\n")
+        if sections.get("question_presented"):
+            parts.append("QUESTION PRESENTED\n\n")
+            parts.append(sections["question_presented"].strip())
+            parts.append("\n\n")
+        if sections.get("brief_answer"):
+            parts.append("BRIEF ANSWER\n\n")
+            parts.append(sections["brief_answer"].strip())
+            parts.append("\n\n")
+        if sections.get("facts"):
+            parts.append("STATEMENT OF FACTS\n\n")
+            parts.append(sections["facts"].strip())
+            parts.append("\n\n")
+        if sections.get("discussion"):
+            parts.append("DISCUSSION\n\n")
+            parts.append(sections["discussion"].strip())
+            parts.append("\n\n")
+        if sections.get("conclusion"):
+            parts.append("CONCLUSION\n\n")
+            parts.append(sections["conclusion"].strip())
 
     else:
         # Legacy structure for other document types
