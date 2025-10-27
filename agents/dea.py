@@ -166,7 +166,12 @@ Respond in JSON format:
             user_prompt=user_prompt,
             response_format=response_format,
         )
-        return result.get("issues", [])
+        import logging
+        logger = logging.getLogger("themis.agents.dea")
+        logger.info(f"Issue spotter LLM response: {result}")
+        issues = result.get("issues", [])
+        logger.info(f"Extracted {len(issues)} issues from LLM response")
+        return issues
     except Exception as e:
         # Log the error so we can see what's failing
         import logging
