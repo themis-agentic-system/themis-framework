@@ -386,8 +386,19 @@ Respond in JSON format:
             response_format=response_format,
             max_tokens=4000,
         )
+
+        # Log the response for debugging
+        import logging
+        logger = logging.getLogger("themis.agents.dda")
+        logger.info(f"Section generator LLM response: {result}")
+        logger.info(f"Generated sections: {list(result.keys())}")
+
         return result
-    except Exception:
+    except Exception as e:
+        # Log the error so we can see what failed
+        import logging
+        logger = logging.getLogger("themis.agents.dda")
+        logger.error(f"Section generator LLM call failed: {e!s}", exc_info=True)
         # Fallback to basic section generation
         caption = f"IN THE MATTER OF: {facts.get('parties', {}).get('plaintiff', 'N/A')}"
         introduction = f"This {document_type} addresses the legal issues arising from the facts presented below."
