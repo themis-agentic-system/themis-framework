@@ -86,54 +86,163 @@ class LDAAgent(BaseAgent):
         self.require_tools(self.REQUIRED_TOOLS)
 
     async def _run(self, matter: dict[str, Any]) -> dict[str, Any]:
-        """Derive a structured fact summary from the provided matter."""
+        """Autonomously analyze matter and extract structured facts using available tools.
 
-        parsed_documents = await self._call_tool("document_parser", matter)
-        timeline = await self._call_tool("timeline_builder", matter, parsed_documents)
+        Claude decides which tools to use and in what order based on the matter data.
+        """
+        from tools.llm_client import get_llm_client
+        import json
 
-        key_facts: list[str] = []
-        for doc in parsed_documents:
-            key_facts.extend(doc.get("key_facts", []))
+        llm = get_llm_client()
 
-        parties = list(dict.fromkeys(matter.get("parties", [])))
-        unresolved: list[str] = []
-        if not parsed_documents:
-            unresolved.append("No source documents were provided for fact extraction.")
-        if not parties:
-            unresolved.append("Matter payload did not list any known parties.")
+        # Define available tools in Anthropic format
+        tools = [
+            {
+                "name": "document_parser",
+                "description": "Parse source documents to extract summaries, key facts, dates, and parties. Use this when documents are available.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "matter": {
+                            "type": "object",
+                            "description": "Full matter object containing documents and context"
+                        }
+                    },
+                    "required": ["matter"]
+                }
+            },
+            {
+                "name": "timeline_builder",
+                "description": "Build chronological timeline of events from matter data and parsed documents. Use after parsing documents.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "matter": {"type": "object", "description": "Matter object with events"},
+                        "parsed_documents": {
+                            "type": "array",
+                            "description": "Parsed documents from document_parser"
+                        }
+                    },
+                    "required": ["matter"]
+                }
+            },
+            {
+                "name": "damages_calculator",
+                "description": "Calculate total damages including economic, non-economic, and punitive damages. Use when damage data is available.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "damages_data": {
+                            "type": "object",
+                            "description": "Damages data with economic_losses, non_economic_factors, etc."
+                        }
+                    },
+                    "required": ["damages_data"]
+                }
+            },
+            {
+                "name": "timeline_analyzer",
+                "description": "Analyze timeline for patterns, gaps, and critical periods. Use after building timeline.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "timeline_data": {
+                            "type": "object",
+                            "description": "Object with timeline array"
+                        }
+                    },
+                    "required": ["timeline_data"]
+                }
+            }
+        ]
 
-        facts_payload = {
-            "fact_pattern_summary": key_facts,
-            "timeline": timeline,
-            "parties": parties,
-            "matter_overview": matter.get("summary")
-            or matter.get("description")
-            or "Summary unavailable from provided matter.",
+        # Map tool names to actual functions
+        tool_functions = {
+            "document_parser": lambda matter: _default_document_parser(matter),
+            "timeline_builder": lambda matter, parsed_documents=None: _default_timeline_builder(matter, parsed_documents),
+            "damages_calculator": lambda damages_data: _damages_calculator(damages_data),
+            "timeline_analyzer": lambda timeline_data: _timeline_analyzer(timeline_data),
         }
 
-        # Enhanced: Add computational analysis if code execution enabled
-        if self.enable_code_execution:
-            # Calculate damages if damage data is available
-            damages_data = matter.get("damages")
-            if damages_data:
-                try:
-                    damages_analysis = await self._call_tool("damages_calculator", damages_data)
-                    facts_payload["damages_analysis"] = damages_analysis
-                except Exception as e:
-                    unresolved.append(f"Unable to complete damages calculation: {e!s}")
+        # Let Claude autonomously decide which tools to use
+        system_prompt = """You are LDA (Legal Data Analyst), an expert at extracting and analyzing facts from legal matters.
 
-            # Analyze timeline for patterns and gaps
-            if timeline:
-                try:
-                    timeline_analysis = await self._call_tool("timeline_analyzer", {"timeline": timeline})
-                    facts_payload["timeline_analysis"] = timeline_analysis
-                except Exception as e:
-                    unresolved.append(f"Unable to complete timeline analysis: {e!s}")
+Your role:
+1. Parse all available documents to extract key facts, dates, parties, and summaries
+2. Build chronological timelines of events
+3. Calculate damages when financial data is available
+4. Analyze timelines for patterns, gaps, and critical periods
+5. Produce a structured fact summary ready for legal analysis
+
+Use the available tools intelligently based on what data is present in the matter.
+After using tools, provide your final analysis as a JSON object with these fields:
+- fact_pattern_summary: Array of key facts extracted
+- timeline: Array of chronological events
+- parties: Array of parties involved
+- matter_overview: Summary of the matter
+- damages_analysis: (optional) If damages calculated
+- timeline_analysis: (optional) If timeline analyzed
+
+Be thorough and extract all relevant factual details."""
+
+        user_prompt = f"""Analyze this legal matter and extract all relevant facts:
+
+MATTER DATA:
+{json.dumps(matter, indent=2)}
+
+Use the available tools to:
+1. Parse any documents provided
+2. Build a timeline of events
+3. Calculate damages if financial data is present
+4. Analyze the timeline for patterns
+
+Then provide your complete factual analysis."""
+
+        # Claude autonomously uses tools
+        result = await llm.generate_with_tools(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            tools=tools,
+            tool_functions=tool_functions,
+            max_tokens=4096,
+        )
+
+        # Parse Claude's final response
+        try:
+            # Try to extract JSON from response
+            response_text = result["result"]
+            json_start = response_text.find("{")
+            json_end = response_text.rfind("}") + 1
+            if json_start != -1 and json_end > json_start:
+                facts_payload = json.loads(response_text[json_start:json_end])
+            else:
+                # Fallback: construct from tool calls
+                facts_payload = self._construct_facts_from_tool_calls(result["tool_calls"], matter)
+        except (json.JSONDecodeError, KeyError):
+            # Fallback to constructing from tool calls
+            facts_payload = self._construct_facts_from_tool_calls(result["tool_calls"], matter)
+
+        # Ensure required fields
+        if "fact_pattern_summary" not in facts_payload:
+            facts_payload["fact_pattern_summary"] = []
+        if "timeline" not in facts_payload:
+            facts_payload["timeline"] = []
+        if "parties" not in facts_payload:
+            facts_payload["parties"] = matter.get("parties", [])
+        if "matter_overview" not in facts_payload:
+            facts_payload["matter_overview"] = matter.get("summary") or matter.get("description") or "Summary unavailable"
+
+        # Track unresolved issues
+        unresolved = []
+        if not facts_payload.get("fact_pattern_summary"):
+            unresolved.append("No facts were successfully extracted from the matter.")
+        if not facts_payload.get("parties"):
+            unresolved.append("No parties identified in the matter.")
 
         provenance = {
-            "source_documents": [doc.get("document") for doc in parsed_documents],
-            "tools_used": list(self.tools.keys()),
-            "code_execution_enabled": self.enable_code_execution,
+            "tools_used": [tc["tool"] for tc in result["tool_calls"]],
+            "tool_rounds": result["rounds"],
+            "autonomous_mode": True,
         }
 
         return self._build_response(
@@ -141,6 +250,28 @@ class LDAAgent(BaseAgent):
             provenance=provenance,
             unresolved_issues=unresolved,
         )
+
+    def _construct_facts_from_tool_calls(self, tool_calls: list[dict], matter: dict[str, Any]) -> dict[str, Any]:
+        """Fallback: construct facts payload from tool call results."""
+        facts = {
+            "fact_pattern_summary": [],
+            "timeline": [],
+            "parties": matter.get("parties", []),
+            "matter_overview": matter.get("summary") or matter.get("description") or "Summary unavailable"
+        }
+
+        for tc in tool_calls:
+            if tc["tool"] == "document_parser" and isinstance(tc["result"], list):
+                for doc in tc["result"]:
+                    facts["fact_pattern_summary"].extend(doc.get("key_facts", []))
+            elif tc["tool"] == "timeline_builder" and isinstance(tc["result"], list):
+                facts["timeline"] = tc["result"]
+            elif tc["tool"] == "damages_calculator" and isinstance(tc["result"], dict):
+                facts["damages_analysis"] = tc["result"]
+            elif tc["tool"] == "timeline_analyzer" and isinstance(tc["result"], dict):
+                facts["timeline_analysis"] = tc["result"]
+
+        return facts
 
 
 async def _default_document_parser(matter: dict[str, Any]) -> list[dict[str, Any]]:

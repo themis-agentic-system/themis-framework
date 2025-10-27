@@ -229,6 +229,170 @@ class LLMClient:
         messages = [{"role": "user", "content": user_prompt}]
         return await self._call_anthropic_api(system_prompt, messages, max_tokens, file_ids)
 
+    async def generate_with_tools(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        tools: list[dict[str, Any]],
+        tool_functions: dict[str, Any],
+        max_tokens: int = 4096,
+        max_tool_rounds: int = 10,
+    ) -> dict[str, Any]:
+        """Generate a response with autonomous tool use.
+
+        Claude will decide which tools to call, in what order, and with what parameters.
+        This method handles the tool use loop automatically.
+
+        Args:
+            system_prompt: System prompt describing the agent's role.
+            user_prompt: User prompt with the task.
+            tools: List of tool definitions in Anthropic format:
+                [
+                    {
+                        "name": "tool_name",
+                        "description": "What this tool does",
+                        "input_schema": {
+                            "type": "object",
+                            "properties": {...},
+                            "required": [...]
+                        }
+                    }
+                ]
+            tool_functions: Dict mapping tool names to callable functions:
+                {"tool_name": async_function or sync_function}
+            max_tokens: Maximum tokens for each generation.
+            max_tool_rounds: Maximum number of tool use rounds to prevent infinite loops.
+
+        Returns:
+            dict with:
+                - "result": Final response from Claude after all tool use
+                - "tool_calls": List of tools called and their results
+                - "reasoning": Claude's reasoning (if extended thinking enabled)
+        """
+        import asyncio
+
+        if self._stub_mode:
+            return self._generate_with_tools_stub(
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                tools=tools,
+                tool_functions=tool_functions,
+            )
+
+        messages = [{"role": "user", "content": user_prompt}]
+        tool_calls = []
+        rounds = 0
+
+        while rounds < max_tool_rounds:
+            rounds += 1
+            logger.info(f"Tool use round {rounds}/{max_tool_rounds}")
+
+            # Call Claude with available tools
+            request_params: dict[str, Any] = {
+                "model": self.model,
+                "max_tokens": max_tokens,
+                "system": system_prompt,
+                "messages": messages,
+                "tools": tools,
+            }
+
+            response = self.client.messages.create(**request_params)
+
+            # Check if Claude wants to use tools
+            if response.stop_reason == "tool_use":
+                # Extract tool use blocks
+                tool_use_blocks = [block for block in response.content if hasattr(block, 'type') and block.type == "tool_use"]
+
+                if not tool_use_blocks:
+                    # No tool use despite stop_reason - shouldn't happen, but handle gracefully
+                    break
+
+                # Add Claude's response to conversation
+                messages.append({"role": "assistant", "content": response.content})
+
+                # Execute each tool
+                tool_results = []
+                for tool_use in tool_use_blocks:
+                    tool_name = tool_use.name
+                    tool_input = tool_use.input
+
+                    logger.info(f"Claude calling tool: {tool_name} with input: {tool_input}")
+
+                    if tool_name not in tool_functions:
+                        error_msg = f"Tool {tool_name} not found in tool_functions"
+                        logger.error(error_msg)
+                        tool_results.append({
+                            "type": "tool_result",
+                            "tool_use_id": tool_use.id,
+                            "content": json.dumps({"error": error_msg}),
+                            "is_error": True
+                        })
+                        continue
+
+                    try:
+                        # Execute tool (handle both sync and async)
+                        tool_fn = tool_functions[tool_name]
+                        result = tool_fn(**tool_input) if callable(tool_fn) else tool_fn
+                        if asyncio.iscoroutine(result):
+                            result = await result
+
+                        logger.info(f"Tool {tool_name} returned: {str(result)[:200]}")
+
+                        tool_calls.append({
+                            "tool": tool_name,
+                            "input": tool_input,
+                            "result": result
+                        })
+
+                        tool_results.append({
+                            "type": "tool_result",
+                            "tool_use_id": tool_use.id,
+                            "content": json.dumps(result) if not isinstance(result, str) else result
+                        })
+                    except Exception as e:
+                        error_msg = f"Error executing {tool_name}: {str(e)}"
+                        logger.error(error_msg, exc_info=True)
+                        tool_results.append({
+                            "type": "tool_result",
+                            "tool_use_id": tool_use.id,
+                            "content": json.dumps({"error": error_msg}),
+                            "is_error": True
+                        })
+
+                # Add tool results to conversation
+                messages.append({"role": "user", "content": tool_results})
+
+            elif response.stop_reason == "end_turn":
+                # Claude is done using tools, extract final response
+                text_blocks = [block.text for block in response.content if hasattr(block, 'type') and block.type == "text"]
+                final_response = "\n".join(text_blocks)
+
+                return {
+                    "result": final_response,
+                    "tool_calls": tool_calls,
+                    "rounds": rounds
+                }
+            else:
+                # Unexpected stop reason
+                logger.warning(f"Unexpected stop_reason: {response.stop_reason}")
+                break
+
+        # Max rounds reached or unexpected termination
+        logger.warning(f"Tool use loop terminated after {rounds} rounds (max: {max_tool_rounds})")
+
+        # Try to extract any text response
+        if response.content:
+            text_blocks = [block.text for block in response.content if hasattr(block, 'type') and block.type == "text"]
+            final_response = "\n".join(text_blocks) if text_blocks else "Max tool rounds reached"
+        else:
+            final_response = "No response generated"
+
+        return {
+            "result": final_response,
+            "tool_calls": tool_calls,
+            "rounds": rounds
+        }
+
     def upload_file(self, file_path: str) -> str:
         """Upload a file to Anthropic Files API for persistent reference.
 
@@ -414,6 +578,79 @@ class LLMClient:
         ]
 
         return "\n\n".join(paragraph for paragraph in paragraphs if paragraph)
+
+    def _generate_with_tools_stub(
+        self,
+        *,
+        system_prompt: str,
+        user_prompt: str,
+        tools: list[dict[str, Any]],
+        tool_functions: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Stub implementation that heuristically uses tools based on prompt content."""
+        import json
+
+        logger.info("Running in stub mode - simulating autonomous tool use")
+
+        tool_calls = []
+        result_text = f"Stub mode analysis based on {len(tools)} available tools.\n\n"
+
+        # Simulate calling relevant tools based on prompt content
+        prompt_lower = user_prompt.lower()
+
+        # If document-related keywords, call document_parser if available
+        if any(kw in prompt_lower for kw in ["document", "parse", "extract", "text"]):
+            if "document_parser" in tool_functions:
+                logger.info("Stub: Simulating document_parser call")
+                parsed = self._stub_document_parse(user_prompt)
+                tool_calls.append({"tool": "document_parser", "input": {}, "result": parsed})
+                result_text += f"Parsed documents and extracted {len(parsed.get('key_facts', []))} key facts.\n\n"
+
+        # If timeline keywords, call timeline_builder if available
+        if any(kw in prompt_lower for kw in ["timeline", "chronolog", "sequence", "events"]):
+            if "timeline_builder" in tool_functions:
+                logger.info("Stub: Simulating timeline_builder call")
+                timeline = [{"date": "2024-01-15", "description": "Event from stub timeline"}]
+                tool_calls.append({"tool": "timeline_builder", "input": {}, "result": timeline})
+                result_text += f"Built timeline with {len(timeline)} events.\n\n"
+
+        # If damages/calculation keywords, call damages_calculator if available
+        if any(kw in prompt_lower for kw in ["damage", "calculat", "expense", "loss", "wage"]):
+            if "damages_calculator" in tool_functions:
+                logger.info("Stub: Simulating damages_calculator call")
+                damages = {"total": 110000, "medical": 85000, "lost_wages": 25000}
+                tool_calls.append({"tool": "damages_calculator", "input": {}, "result": damages})
+                result_text += f"Calculated total damages: ${damages['total']}\n\n"
+
+        # If legal/issue keywords, call issue_spotter if available
+        if any(kw in prompt_lower for kw in ["issue", "legal", "cause", "claim", "negligence"]):
+            if "issue_spotter" in tool_functions:
+                logger.info("Stub: Simulating issue_spotter call")
+                issues = self._stub_issue_spotter(user_prompt)
+                tool_calls.append({"tool": "issue_spotter", "input": {}, "result": issues})
+                result_text += f"Identified {len(issues)} legal issues.\n\n"
+
+        # If strategy keywords, call risk_assessor or strategy_template if available
+        if any(kw in prompt_lower for kw in ["strategy", "risk", "negotiate", "settlement"]):
+            if "risk_assessor" in tool_functions:
+                logger.info("Stub: Simulating risk_assessor call")
+                risk = {"confidence": 85, "weaknesses": ["Stub weakness 1"], "unknowns": ["Stub unknown 1"]}
+                tool_calls.append({"tool": "risk_assessor", "input": {}, "result": risk})
+                result_text += "Assessed case risks and strategic considerations.\n\n"
+
+        # Default: generate text summary
+        if not tool_calls:
+            result_text += self._generate_text_stub(
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                max_tokens=4096
+            )
+
+        return {
+            "result": result_text.strip(),
+            "tool_calls": tool_calls,
+            "rounds": len(tool_calls)
+        }
 
     def _stub_document_parse(self, user_prompt: str) -> dict[str, Any]:
         content = self._extract_section(

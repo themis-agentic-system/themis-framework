@@ -48,43 +48,162 @@ class LSAAgent(BaseAgent):
         self.require_tools(self.REQUIRED_TOOLS)
 
     async def _run(self, matter: dict[str, Any]) -> dict[str, Any]:
-        """Combine facts and legal theories into a strategy recommendation."""
+        """Autonomously develop legal strategy and assess risks.
 
-        strategy = await self._call_tool("strategy_template", matter)
-        risks = await self._call_tool("risk_assessor", matter, strategy)
+        Claude decides which tools to use and in what order based on the matter data.
+        """
+        import json
 
+        llm = get_llm_client()
+
+        # Define available tools in Anthropic format
+        tools = [
+            {
+                "name": "strategy_template",
+                "description": "Generate strategic recommendations for the matter including objectives, actions, negotiation positions, and contingencies. Use this to develop the overall case strategy.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "matter": {
+                            "type": "object",
+                            "description": "Full matter object with facts, legal analysis, and client goals"
+                        }
+                    },
+                    "required": ["matter"]
+                }
+            },
+            {
+                "name": "risk_assessor",
+                "description": "Score risk exposure, identify weaknesses, evidentiary gaps, and unknowns. Use this after developing strategy to assess viability and risks.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "matter": {
+                            "type": "object",
+                            "description": "Matter object with context"
+                        },
+                        "strategy": {
+                            "type": "object",
+                            "description": "Strategy object to assess risks for"
+                        }
+                    },
+                    "required": ["matter", "strategy"]
+                }
+            }
+        ]
+
+        # Map tool names to actual functions
+        tool_functions = {
+            "strategy_template": lambda matter: _default_strategy_template(matter),
+            "risk_assessor": lambda matter, strategy: _default_risk_assessor(matter, strategy),
+        }
+
+        # Let Claude autonomously decide which tools to use
+        system_prompt = """You are LSA (Legal Strategy Advisor), an expert at developing case strategy and risk assessment.
+
+Your role:
+1. Develop comprehensive legal strategies based on facts and legal analysis
+2. Identify tactical advantages, leverage points, and negotiation frameworks
+3. Assess risks, weaknesses, and evidentiary gaps
+4. Create actionable recommendations with fallback positions
+5. Provide realistic confidence assessments for case outcomes
+
+Use the available tools intelligently based on what data is present in the matter.
+After using tools, provide your final analysis as a JSON object with these fields:
+- strategy: Object with recommended_actions, negotiation_positions, contingencies, risk_assessment
+- client_safe_summary: Text safe to share with client summarizing strategy and outlook
+- next_steps: Array of specific actionable next steps
+- risk_level: "low", "moderate", or "high"
+- confidence: Numerical confidence score (0-100)
+
+Be strategic, realistic, and client-focused."""
+
+        user_prompt = f"""Develop comprehensive legal strategy and risk assessment for this matter:
+
+MATTER DATA:
+{json.dumps(matter, indent=2)}
+
+Use the available tools to:
+1. Develop a complete legal strategy with objectives, actions, and negotiation positions
+2. Assess risks, weaknesses, and confidence level for success
+
+Then provide your complete strategic analysis."""
+
+        # Claude autonomously uses tools
+        result = await llm.generate_with_tools(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            tools=tools,
+            tool_functions=tool_functions,
+            max_tokens=4096,
+        )
+
+        # Parse Claude's final response
+        try:
+            response_text = result["result"]
+            json_start = response_text.find("{")
+            json_end = response_text.rfind("}") + 1
+            if json_start != -1 and json_end > json_start:
+                strategy_payload = json.loads(response_text[json_start:json_end])
+            else:
+                # Fallback: construct from tool calls
+                strategy_payload = self._construct_strategy_from_tool_calls(result["tool_calls"], matter)
+        except (json.JSONDecodeError, KeyError):
+            # Fallback to constructing from tool calls
+            strategy_payload = self._construct_strategy_from_tool_calls(result["tool_calls"], matter)
+
+        # Extract components
+        strategy = strategy_payload.get("strategy", {})
+        risks = strategy_payload.get("risk_assessment") or strategy.get("risk_assessment", {})
+
+        # If not in payload, derive from tool calls
+        if not strategy or not risks:
+            fallback = self._construct_strategy_from_tool_calls(result["tool_calls"], matter)
+            if not strategy:
+                strategy = fallback.get("strategy", {})
+            if not risks:
+                risks = fallback.get("risk_assessment", {})
+
+        # Track unresolved issues
         unresolved: list[str] = []
-        if not strategy.get("objectives"):
+        if not strategy.get("recommended_actions") and not strategy.get("actions"):
             unresolved.append("Strategy template could not determine client objectives.")
         if risks.get("unknowns"):
             unresolved.extend(risks["unknowns"])
 
         plan = {
-            "recommended_actions": strategy.get("actions", []),
-            "negotiation_positions": strategy.get("positions", {}),
+            "recommended_actions": strategy.get("recommended_actions") or strategy.get("actions", []),
+            "negotiation_positions": strategy.get("negotiation_positions") or strategy.get("positions", {}),
             "contingencies": strategy.get("contingencies", []),
             "risk_assessment": risks,
         }
 
         # Build client-safe summary for the draft signal
         objectives = strategy.get("objectives", "")
-        confidence = risks.get("confidence", 60)
-        client_safe_text = f"Based on our analysis, we recommend pursuing {objectives}. "
-        client_safe_text += f"Our confidence in achieving a favorable outcome is {confidence}%. "
+        confidence = strategy_payload.get("confidence") or risks.get("confidence", 60)
 
-        if strategy.get("actions"):
-            next_steps = strategy["actions"][:3]  # Top 3 actions
-            client_safe_text += f"Next steps: {'; '.join(next_steps)}."
+        if strategy_payload.get("client_safe_summary"):
+            client_safe_text = strategy_payload["client_safe_summary"]
+        else:
+            client_safe_text = f"Based on our analysis, we recommend pursuing {objectives}. "
+            client_safe_text += f"Our confidence in achieving a favorable outcome is {confidence}%. "
+
+            actions = strategy.get("actions") or strategy.get("recommended_actions", [])
+            if actions:
+                next_steps = actions[:3]  # Top 3 actions
+                client_safe_text += f"Next steps: {'; '.join(next_steps)}."
 
         # Create draft structure with client-safe summary
         draft = {
             "client_safe_summary": client_safe_text,
-            "next_steps": strategy.get("actions", []),
-            "risk_level": "low" if confidence > 70 else "moderate" if confidence > 50 else "high",
+            "next_steps": strategy_payload.get("next_steps") or strategy.get("actions") or strategy.get("recommended_actions", []),
+            "risk_level": strategy_payload.get("risk_level") or ("low" if confidence > 70 else "moderate" if confidence > 50 else "high"),
         }
 
         provenance = {
-            "tools_used": list(self.tools.keys()),
+            "tools_used": [tc["tool"] for tc in result["tool_calls"]],
+            "tool_rounds": result["rounds"],
+            "autonomous_mode": True,
             "assumptions": strategy.get("assumptions", []),
         }
 
@@ -93,6 +212,33 @@ class LSAAgent(BaseAgent):
             provenance=provenance,
             unresolved_issues=unresolved,
         )
+
+    def _construct_strategy_from_tool_calls(self, tool_calls: list[dict], matter: dict[str, Any]) -> dict[str, Any]:
+        """Fallback: construct strategy payload from tool call results."""
+        strategy = {}
+        risks = {}
+
+        for tc in tool_calls:
+            if tc["tool"] == "strategy_template" and isinstance(tc["result"], dict):
+                strategy = tc["result"]
+            elif tc["tool"] == "risk_assessor" and isinstance(tc["result"], dict):
+                risks = tc["result"]
+
+        confidence = risks.get("confidence", 60)
+
+        return {
+            "strategy": {
+                "recommended_actions": strategy.get("actions", []),
+                "negotiation_positions": strategy.get("positions", {}),
+                "contingencies": strategy.get("contingencies", []),
+                "objectives": strategy.get("objectives", ""),
+                "risk_assessment": risks,
+            },
+            "risk_assessment": risks,
+            "confidence": confidence,
+            "risk_level": "low" if confidence > 70 else "moderate" if confidence > 50 else "high",
+            "next_steps": strategy.get("actions", []),
+        }
 
 
 async def _default_strategy_template(matter: dict[str, Any]) -> dict[str, Any]:
