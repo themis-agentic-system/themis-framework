@@ -389,9 +389,18 @@ Respond in JSON format:
 
         # Log the response for debugging
         import logging
+        import json
         logger = logging.getLogger("themis.agents.dda")
         logger.info(f"Section generator LLM response: {result}")
         logger.info(f"Generated sections: {list(result.keys())}")
+
+        # FIX: Handle case where LLM wraps response in 'response' key
+        if 'response' in result and isinstance(result['response'], str):
+            try:
+                result = json.loads(result['response'])
+                logger.info(f"Parsed nested JSON from 'response' key. Sections: {list(result.keys())}")
+            except json.JSONDecodeError as parse_err:
+                logger.error(f"Failed to parse nested JSON: {result['response'][:200]}", exc_info=True)
 
         return result
     except Exception as e:
