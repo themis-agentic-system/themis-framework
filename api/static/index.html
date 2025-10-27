@@ -727,27 +727,69 @@
                 if (response.ok) {
                     result.className = 'result success';
 
-                    // Extract the complaint document from DDA agent output
-                    const ddaOutput = data.artifacts?.dda?.core;
-                    const documentText = ddaOutput?.document?.full_text;
+                    // Extract the document from DDA agent output - check multiple possible locations
+                    let documentText = null;
 
-                    if (documentText) {
+                    // Try different possible paths for the document
+                    if (data.artifacts?.dda?.document?.full_text) {
+                        documentText = data.artifacts.dda.document.full_text;
+                    } else if (data.artifacts?.dda?.core?.document?.full_text) {
+                        documentText = data.artifacts.dda.core.document.full_text;
+                    } else if (data.artifacts?.dda?.full_text) {
+                        documentText = data.artifacts.dda.full_text;
+                    }
+
+                    // Also check in the steps for DDA output
+                    if (!documentText && data.steps) {
+                        const ddaStep = data.steps.find(step => step.agent === 'dda' && step.output?.document);
+                        if (ddaStep?.output?.document?.full_text) {
+                            documentText = ddaStep.output.document.full_text;
+                        }
+                    }
+
+                    // Log for debugging
+                    console.log('Response data:', data);
+                    console.log('Document text found:', documentText ? 'YES' : 'NO');
+                    if (data.artifacts?.dda) {
+                        console.log('DDA artifacts:', data.artifacts.dda);
+                    }
+
+                    if (documentText && documentText.length > 100) {
                         // Display the formatted legal document
+                        const docType = data.artifacts?.dda?.document?.type || 'document';
                         result.innerHTML = `
-                            <h3>✅ Legal Complaint Generated!</h3>
-                            <p>Themis has drafted a formal complaint based on your case information.</p>
-                            <div style="background: white; padding: 20px; border-radius: 6px; margin-top: 15px; font-family: 'Courier New', monospace; white-space: pre-wrap; line-height: 1.6; max-height: 600px; overflow-y: auto;">${documentText}</div>
+                            <h3>✅ Legal ${docType.charAt(0).toUpperCase() + docType.slice(1)} Generated!</h3>
+                            <p>Themis has drafted a formal ${docType} based on your case information.</p>
+                            <div style="background: white; padding: 20px; border-radius: 6px; margin-top: 15px; font-family: 'Courier New', monospace; white-space: pre-wrap; line-height: 1.6; max-height: 600px; overflow-y: auto; border: 1px solid #ddd;">${escapeHtml(documentText)}</div>
                             <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 6px;">
                                 <strong>⚠️ Attorney Review Required:</strong> This document is AI-generated and must be reviewed by a licensed attorney before filing.
                             </div>
                             <details style="margin-top: 15px;">
-                                <summary style="cursor: pointer; color: #666;">View Full Analysis (JSON)</summary>
+                                <summary style="cursor: pointer; color: #666;">View Full Response Data (JSON)</summary>
                                 <pre style="background: white; padding: 15px; border-radius: 6px; overflow-x: auto; margin-top: 10px;">${JSON.stringify(data, null, 2)}</pre>
                             </details>
                         `;
                     } else {
-                        // Display formatted analysis results
-                        result.innerHTML = formatAnalysisResults(data);
+                        // Check if DDA ran but we couldn't find the document
+                        const ddaRan = data.artifacts?.dda || data.steps?.some(s => s.agent === 'dda');
+
+                        if (ddaRan) {
+                            // DDA ran but we couldn't extract the document - show error with JSON
+                            result.className = 'result error';
+                            result.innerHTML = `
+                                <h3>⚠️ Document Generated But Not Displayed</h3>
+                                <p>The DDA agent generated a document, but there was an issue extracting it for display.</p>
+                                <p><strong>Please check the JSON response below to see the document structure:</strong></p>
+                                <details open style="margin-top: 15px;">
+                                    <summary style="cursor: pointer; color: #666; font-weight: bold;">View Response Data (JSON)</summary>
+                                    <pre style="background: white; padding: 15px; border-radius: 6px; overflow-x: auto; margin-top: 10px; max-height: 600px; overflow-y: auto;">${JSON.stringify(data, null, 2)}</pre>
+                                </details>
+                                <p style="margin-top: 15px; color: #666;">Look for the "dda" section in the JSON above to find the generated document.</p>
+                            `;
+                        } else {
+                            // Display formatted analysis results
+                            result.innerHTML = formatAnalysisResults(data);
+                        }
                     }
                 } else {
                     throw new Error(data.detail || 'Failed to process matter');
