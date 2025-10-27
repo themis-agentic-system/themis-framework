@@ -33,6 +33,8 @@ services:
         condition: service_healthy
     environment:
       # API Configuration
+      # For local dev: Leave THEMIS_API_KEY unset in .env for development mode (no auth)
+      # For production: Set a secure API key in .env
       THEMIS_API_KEY: ${THEMIS_API_KEY}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
 
