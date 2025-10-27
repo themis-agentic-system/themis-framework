@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL database
   postgres:
@@ -33,10 +31,10 @@ services:
         condition: service_healthy
     environment:
       # API Configuration
-      # For local dev: Leave THEMIS_API_KEY unset in .env for development mode (no auth)
-      # For production: Set a secure API key in .env
-      THEMIS_API_KEY: ${THEMIS_API_KEY}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      # For local dev: THEMIS_API_KEY is optional (runs in development mode with no auth)
+      # For production: Set THEMIS_API_KEY in .env to enable authentication
+      THEMIS_API_KEY: ${THEMIS_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
 
       # Database Configuration
       DATABASE_URL: postgresql://themis:${POSTGRES_PASSWORD:-themis_dev_password}@postgres:5432/themis
