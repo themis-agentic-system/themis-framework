@@ -32,6 +32,7 @@ Modern legal work blends facts + law + strategy. Themis models this as a crew of
 - Computes damages calculations and builds timelines
 - Prepares evidentiary exhibits and summaries
 - Identifies missing information and data gaps
+- **NEW (2025):** Uses code execution tool for computational tasks (damages calculations, timeline analysis)
 
 **DEA (Doctrinal Expert Agent) ⚖️**
 
@@ -39,6 +40,7 @@ Modern legal work blends facts + law + strategy. Themis models this as a crew of
 - Spots legal issues and analyzes claims
 - Guards against hallucinations with source tracking
 - Provides both controlling and contrary authorities
+- **NEW (2025):** Uses extended thinking for complex multi-issue analysis
 
 **LSA (Legal Strategy Agent) 🎯**
 
@@ -46,6 +48,7 @@ Modern legal work blends facts + law + strategy. Themis models this as a crew of
 - Drafts client-facing documents with appropriate tone
 - Performs risk assessment and identifies weaknesses
 - Develops contingency plans and fallback positions
+- **NEW (2025):** Uses extended thinking for strategic planning
 
 **DDA (Document Drafting Agent) ✍️**
 
@@ -78,6 +81,19 @@ Themis draws inspiration from multi-agent healthcare systems and adapts the appr
 
 Key Features
 ------------
+### 🚀 Agentic Enhancements (2025)
+NEW: 7 cutting-edge capabilities from Anthropic's 2025 API features:
+
+- **Extended Thinking Mode** – Deeper reasoning for complex legal analysis with interleaved thinking
+- **1-Hour Prompt Caching** – Up to 90% cost reduction and 85% latency improvement
+- **Code Execution Tool** – Python code execution for damages calculations, timelines, and statistical analysis
+- **Files API** – Upload case documents once, reference across multiple sessions
+- **MCP Connector** – Integration with Model Context Protocol servers for external tools
+- **CLAUDE.md** – Automatic context loading with legal domain knowledge and team guidelines
+- **Slash Commands** – Parameterized workflow templates (6 built-in commands)
+
+See `docs/AGENTIC_ENHANCEMENTS.md` for complete guide and `TEST_RESULTS.md` for verification (26/26 tests passing).
+
 ### Production-Ready Infrastructure
 - ✅ Docker Deployment – Complete stack with PostgreSQL, Prometheus, and Grafana
 - ✅ Authentication & Security – API key auth with rotation support, rate limiting (10-60 req/min), audit logging
@@ -86,7 +102,7 @@ Key Features
 - ✅ Type Safety – Pydantic models for Matter, Document, Event, Issue, Authority with validation
 
 ### Intelligent Agent System
-- 🤖 LLM-Powered Agents – Claude 3.5 Sonnet integration with structured outputs
+- 🤖 LLM-Powered Agents – Claude 3.5 Sonnet integration with structured outputs and extended thinking
 - 🔄 Automatic Retry Logic – Exponential backoff for transient failures (3 attempts, 2-10s intervals)
 - 🎯 Smart Routing – Phase-based orchestration with signal propagation and task graphs
 - 📝 Stub Mode – Run without API keys using heuristic fallback generation for testing and development
@@ -131,7 +147,8 @@ themis-framework/
 │   └── logging_config.py  # Structured logging configuration
 │
 ├── tools/                 # 🔧 Utilities and integrations
-│   ├── llm_client.py      # Anthropic Claude client with retry logic
+│   ├── llm_client.py      # Anthropic Claude client with extended thinking, caching, code execution
+│   ├── mcp_config.py      # NEW: Model Context Protocol configuration manager
 │   ├── document_parser.py # PDF/text extraction with LLM analysis
 │   ├── metrics.py         # Prometheus metrics registry
 │   └── registry.py        # Tool registration system
@@ -160,10 +177,20 @@ themis-framework/
 │
 ├── docs/                  # 📚 Technical documentation
 │   ├── DEPLOYMENT_GUIDE.md      # Production deployment (698 lines)
+│   ├── AGENTIC_ENHANCEMENTS.md  # NEW: Complete guide to 2025 agentic features
 │   ├── DOCKER_README.md         # Docker quick reference
 │   ├── IMPROVEMENTS.md          # Production features overview
 │   ├── THEMIS_CODE_REVIEW.md    # Original code review
 │   └── IMPLEMENTATION_SUMMARY.md # Technical implementation details
+│
+├── .claude/               # 🤖 NEW: Claude Code integration
+│   └── commands/          # Slash command workflow templates
+│       ├── analyze-case.md       # Full case analysis workflow
+│       ├── create-pack.md        # New practice pack boilerplate
+│       ├── deploy-docker.md      # Docker stack deployment
+│       ├── generate-demand.md    # PI demand letter generation
+│       ├── review-code.md        # Code review checklist
+│       └── run-tests.md          # Test suite execution
 │
 ├── infra/                 # 🏗️ Infrastructure configuration
 │   ├── init-db.sql        # PostgreSQL initialization
@@ -175,13 +202,16 @@ themis-framework/
 ├── CODE_REVIEW_REPORT.md  # 📋 Comprehensive code review (A- grade)
 ├── REVIEW_FINDINGS.md     # 🔍 Detailed review findings
 ├── QUICKSTART.md          # 🚀 Quick start guide
+├── CLAUDE.md              # 🤖 NEW: Agent guide with legal domain knowledge
+├── TEST_RESULTS.md        # ✅ NEW: Comprehensive test verification (26/26 passing)
 ├── README.md              # 📖 This file
 ├── Dockerfile             # 🐳 Production container build
 ├── docker-compose.yml     # 🐳 Full deployment stack
 ├── pyproject.toml         # 📦 Python dependencies
 ├── Makefile               # 🛠️ Development commands
-├── .env.example           # ⚙️ Environment template
-└── .env.docker            # ⚙️ Docker environment template
+├── .env.example           # ⚙️ Environment template (includes new agentic features)
+├── .env.docker            # ⚙️ Docker environment template
+└── .mcp.json              # 🔌 NEW: MCP server configuration template
 ```
 
 ### Agent Workflow
@@ -306,6 +336,12 @@ pip install -e .
 # Configure environment
 cp .env.example .env
 # Edit .env and add your ANTHROPIC_API_KEY (or leave blank for stub mode)
+
+# Optional: Configure agentic features (2025)
+# USE_EXTENDED_THINKING=true        # Enable deep reasoning (default: true)
+# USE_PROMPT_CACHING=true           # Enable 1-hour caching (default: true)
+# ENABLE_CODE_EXECUTION=false       # Enable Python execution (default: false)
+# See .env.example for all configuration options
 ```
 
 ### Run the API
@@ -792,6 +828,9 @@ Documentation
 | --- | --- |
 | `README.md` | Main project overview (this file) |
 | `QUICKSTART.md` | Quick start guide for new users |
+| `CLAUDE.md` | Agent guide with legal domain knowledge |
+| `TEST_RESULTS.md` | Comprehensive test verification report |
+| `docs/AGENTIC_ENHANCEMENTS.md` | Complete guide to 2025 agentic features |
 | `docs/API_REFERENCE.md` | Complete API endpoint documentation |
 | `docs/DEPLOYMENT_GUIDE.md` | Production deployment instructions |
 | `docs/DOCKER_README.md` | Docker setup and configuration |
@@ -799,6 +838,7 @@ Documentation
 | `docs/IMPLEMENTATION_SUMMARY.md` | Technical implementation details |
 | `CODE_REVIEW_REPORT.md` | Comprehensive code review |
 | `REVIEW_FINDINGS.md` | Detailed review findings |
+| `.claude/commands/*.md` | Slash command workflow templates (6 commands) |
 
 Contributing
 ------------
