@@ -479,16 +479,16 @@
                     const damages = facts.damages_analysis;
                     html += '<p style="margin-bottom: 5px;"><strong>Damages Analysis:</strong></p>';
                     html += '<ul style="margin-left: 20px;">';
-                    if (damages.economic_damages) {
+                    if (damages.economic_damages != null) {
                         html += `<li>Economic Damages: $${damages.economic_damages.toLocaleString()}</li>`;
                     }
-                    if (damages.non_economic_damages) {
+                    if (damages.non_economic_damages != null) {
                         html += `<li>Non-Economic Damages: $${damages.non_economic_damages.toLocaleString()}</li>`;
                     }
-                    if (damages.total_damages) {
+                    if (damages.total_damages != null) {
                         html += `<li><strong>Total Estimated: $${damages.total_damages.toLocaleString()}</strong></li>`;
                     }
-                    if (damages.settlement_range) {
+                    if (damages.settlement_range && damages.settlement_range.minimum != null && damages.settlement_range.maximum != null) {
                         html += `<li>Settlement Range: $${damages.settlement_range.minimum.toLocaleString()} - $${damages.settlement_range.maximum.toLocaleString()}</li>`;
                     }
                     html += '</ul>';
