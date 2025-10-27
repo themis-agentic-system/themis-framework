@@ -188,7 +188,11 @@ Then provide your complete legal analysis."""
             "tools_used": [tc["tool"] for tc in result["tool_calls"]],
             "tool_rounds": result["rounds"],
             "autonomous_mode": True,
-            "citations_considered": [citation.get("cite") for citation in citations if citation.get("cite")],
+            "citations_considered": [
+                citation.get("cite") if isinstance(citation, dict) else str(citation)
+                for citation in citations
+                if citation
+            ],
         }
 
         return self._build_response(
@@ -319,9 +323,14 @@ Respond in JSON format:
 
 def _default_citation_retriever(
     matter: dict[str, Any],
-    issues: list[dict[str, Any]],
+    issues: list[dict[str, Any]] | list[str],
 ) -> list[dict[str, Any]]:
-    """Return a list of candidate authorities relevant to the issues."""
+    """Return a list of candidate authorities relevant to the issues.
+
+    Args:
+        matter: Matter dictionary with context
+        issues: List of issues (can be dicts with 'issue' key or plain strings)
+    """
 
     authorities = []
     for authority in matter.get("authorities", []):
@@ -332,9 +341,15 @@ def _default_citation_retriever(
 
     if not authorities and issues:
         for issue in issues:
+            # Handle both dict and string issue formats
+            if isinstance(issue, dict):
+                issue_text = issue.get('issue', str(issue))
+            else:
+                issue_text = str(issue)
+
             authorities.append(
                 {
-                    "cite": f"Secondary research required for issue: {issue['issue']}",
+                    "cite": f"Secondary research required for issue: {issue_text}",
                     "summary": "No authority supplied; follow-up research needed.",
                 }
             )

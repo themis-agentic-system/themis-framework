@@ -725,8 +725,9 @@ async def _default_document_composer(
                     "liability", "causes_of_action", "argument", "argument_section",
                     "damages", "damages_section", "prayer", "conclusion",
                     "jury_demand", "signature", "signature_block"]:
-            if sections.get(key):
-                parts.append(sections[key].strip())
+            value = sections.get(key)
+            if value and isinstance(value, str):
+                parts.append(value.strip())
                 parts.append("\n\n")
 
         # If we have some parts, assemble them
