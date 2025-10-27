@@ -167,7 +167,12 @@ Respond in JSON format:
             response_format=response_format,
         )
         return result.get("issues", [])
-    except Exception:
+    except Exception as e:
+        # Log the error so we can see what's failing
+        import logging
+        logger = logging.getLogger("themis.agents.dea")
+        logger.error(f"Issue spotter LLM call failed: {e!s}", exc_info=True)
+
         # Fallback to extracting from matter payload
         issues: list[dict[str, Any]] = []
         for entry in matter.get("issues", []):
@@ -267,7 +272,12 @@ Provide a comprehensive legal analysis (3-5 paragraphs) that:
             max_tokens=2000,
         )
         return analysis
-    except Exception:
+    except Exception as e:
+        # Log the error so we can see what's failing
+        import logging
+        logger = logging.getLogger("themis.agents.dea")
+        logger.error(f"Analysis synthesis LLM call failed: {e!s}", exc_info=True)
+
         # Fallback to simple synthesis
         party_context = ", ".join(matter.get("parties", []))
         lead_issue = issues[0]["issue"]
