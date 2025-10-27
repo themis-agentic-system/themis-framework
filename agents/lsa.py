@@ -197,7 +197,12 @@ Then provide your complete strategic analysis."""
             actions = strategy.get("actions") or strategy.get("recommended_actions", [])
             if actions:
                 next_steps = actions[:3]  # Top 3 actions
-                client_safe_text += f"Next steps: {'; '.join(next_steps)}."
+                # Handle actions as either list of strings or list of dicts
+                step_strings = [
+                    action if isinstance(action, str) else action.get("action", str(action))
+                    for action in next_steps
+                ]
+                client_safe_text += f"Next steps: {'; '.join(step_strings)}."
 
         # Create draft structure with client-safe summary
         draft = {

@@ -426,7 +426,13 @@ Provide a comprehensive legal analysis (3-5 paragraphs) that:
         logger.error(f"Analysis synthesis LLM call failed: {e!s}", exc_info=True)
 
         # Fallback to simple synthesis
-        party_context = ", ".join(matter.get("parties", []))
+        parties = matter.get("parties", [])
+        # Handle parties as either list of strings or list of dicts
+        party_list = [
+            p if isinstance(p, str) else p.get("name", str(p))
+            for p in parties
+        ] if parties else []
+        party_context = ", ".join(party_list)
         lead_issue = issues[0]["issue"]
         cited_strings = [citation.get("cite") for citation in citations if citation.get("cite")]
         if cited_strings:

@@ -46,6 +46,15 @@ class DummyAgent:
                 "client_safe_summary": "We have strong liability arguments.",
                 "next_steps": ["Prepare demand letter"],
             }
+        elif self.name == "dda":
+            payload["document"] = {
+                "full_text": "Sample legal document content.",
+                "word_count": 100,
+            }
+            payload["metadata"] = {
+                "document_type": "complaint",
+                "jurisdiction": "federal",
+            }
         return payload
 
 
@@ -66,7 +75,7 @@ class RecordingAgent:
 
 @pytest.fixture
 def dummy_agents() -> dict[str, DummyAgent]:
-    return {name: DummyAgent(name) for name in ("lda", "dea", "lsa")}
+    return {name: DummyAgent(name) for name in ("lda", "dea", "lsa", "dda")}
 
 
 def test_plan_and_execution_are_persisted(tmp_path, dummy_agents):
@@ -85,6 +94,7 @@ def test_plan_and_execution_are_persisted(tmp_path, dummy_agents):
         "research_retrieval",
         "application_analysis",
         "draft_review",
+        "document_assembly",
     ]
     assert any(step.get("supporting_agents") for step in plan["steps"])
 
@@ -92,7 +102,7 @@ def test_plan_and_execution_are_persisted(tmp_path, dummy_agents):
     assert execution["status"] == "complete"
     for step in execution["steps"]:
         assert "phase" in step
-    assert set(execution["artifacts"]) == {"lda", "dea", "lsa"}
+    assert set(execution["artifacts"]) == {"lda", "dea", "lsa", "dda"}
 
     reloaded_service = OrchestratorService(
         agents=dummy_agents,
@@ -158,8 +168,22 @@ def test_execute_passes_expected_artifacts_between_agents(tmp_path):
 
     lsa_agent = RecordingAgent("lsa", lsa_payload)
 
+    def dda_payload(matter: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "document": {
+                "full_text": "Sample legal document content.",
+                "word_count": 100,
+            },
+            "metadata": {
+                "document_type": "complaint",
+                "jurisdiction": "federal",
+            },
+        }
+
+    dda_agent = RecordingAgent("dda", dda_payload)
+
     service = OrchestratorService(
-        agents={"lda": lda_agent, "dea": dea_agent, "lsa": lsa_agent},
+        agents={"lda": lda_agent, "dea": dea_agent, "lsa": lsa_agent, "dda": dda_agent},
         repository=SQLiteOrchestratorStateRepository(database_url=database_url),
     )
 
@@ -186,7 +210,7 @@ def test_execute_passes_expected_artifacts_between_agents(tmp_path):
     ]
 
     # Artifacts should still be persisted under agent names for compatibility.
-    assert set(execution["artifacts"].keys()) == {"lda", "dea", "lsa"}
+    assert set(execution["artifacts"].keys()) == {"lda", "dea", "lsa", "dda"}
     assert execution["artifacts"]["dea"]["legal_analysis"]["issues"] == [
         "Collision occurred at Mission & 5th"
     ]
