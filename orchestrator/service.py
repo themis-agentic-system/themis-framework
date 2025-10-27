@@ -19,6 +19,7 @@ from orchestrator.policy import RoutingPolicy
 from orchestrator.storage.sqlite_repository import SQLiteOrchestratorStateRepository
 from orchestrator.task_graph import TaskGraph
 from orchestrator.tracing import TraceRecorder
+from orchestrator.document_type_detector import determine_document_type
 
 logger = logging.getLogger("themis.orchestrator")
 
@@ -200,6 +201,18 @@ class OrchestratorService:
                 )
                 if resolved_connectors:
                     agent_input.setdefault("connectors", {}).update(resolved_connectors)
+
+                # Auto-detect document type before DDA runs
+                if agent_name == "dda" and "document_type" not in agent_input:
+                    if "document_type" not in agent_input.get("metadata", {}):
+                        logger.info("Auto-detecting document type for DDA agent...")
+                        detected_type = await determine_document_type(agent_input)
+                        logger.info(f"Document type detected: {detected_type}")
+                        agent_input["document_type"] = detected_type
+                        if "metadata" not in agent_input:
+                            agent_input["metadata"] = {}
+                        agent_input["metadata"]["document_type"] = detected_type
+
                 output = await agent.run(agent_input)
             except Exception as exc:  # pragma: no cover - defensive programming
                 step_result["status"] = "failed"

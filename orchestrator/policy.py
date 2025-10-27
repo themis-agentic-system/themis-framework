@@ -373,4 +373,29 @@ class RoutingPolicy:
                     ),
                 ],
             ),
+            PhaseDefinition(
+                phase=Phase.DOCUMENT_ASSEMBLY,
+                description="Generate formal legal documents with proper formatting and citations.",
+                default_primary_agent="dda",
+                expected_artifacts=[
+                    {
+                        "name": "document",
+                        "description": "Court-ready legal document (complaint, motion, demand letter, etc.).",
+                    },
+                ],
+                exit_signals=["document"],
+                entry_signals=["draft"],
+                supporting_agents=[
+                    SupportingAgent(
+                        agent="dea",
+                        role="citation_validation",
+                        description="Verify all legal citations are properly formatted.",
+                    ),
+                    SupportingAgent(
+                        agent="lsa",
+                        role="tone_review",
+                        description="Ensure document tone is appropriate for the document type.",
+                    ),
+                ],
+            ),
         ]

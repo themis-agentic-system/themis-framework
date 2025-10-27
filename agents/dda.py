@@ -154,9 +154,9 @@ class DocumentDraftingAgent(BaseAgent):
     async def _run(self, matter: dict[str, Any]) -> dict[str, Any]:
         """Generate formal legal documents from aggregated matter data."""
 
-        # Determine document type from matter or strategy
-        document_type = matter.get("document_type", "memorandum")
-        jurisdiction = matter.get("jurisdiction", "federal")
+        # Determine document type from matter - user should specify what they need
+        document_type = matter.get("document_type") or matter.get("metadata", {}).get("document_type", "memorandum")
+        jurisdiction = matter.get("jurisdiction") or matter.get("metadata", {}).get("jurisdiction", "federal")
 
         # Extract relevant data from prior agent outputs
         facts = matter.get("facts", {})
