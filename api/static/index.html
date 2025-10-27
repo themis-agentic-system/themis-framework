@@ -498,22 +498,34 @@
             }
 
             // DEA (Doctrinal Expert Agent) - Legal Analysis
-            if (artifacts.dea?.legal_issues) {
+            if (artifacts.dea?.legal_analysis) {
                 const dea = artifacts.dea;
+                const legal_analysis = dea.legal_analysis;
 
                 html += '<div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #764ba2;">';
                 html += '<h4 style="color: #764ba2; margin-bottom: 10px;">⚖️ Legal Analysis (DEA)</h4>';
 
-                if (dea.legal_issues && dea.legal_issues.length > 0) {
+                // Display legal analysis summary if available
+                if (legal_analysis.analysis) {
+                    html += `<p style="margin-bottom: 15px;">${escapeHtml(legal_analysis.analysis.substring(0, 500))}${legal_analysis.analysis.length > 500 ? '...' : ''}</p>`;
+                }
+
+                // Display identified legal issues
+                if (legal_analysis.issues && legal_analysis.issues.length > 0) {
                     html += '<p style="margin-bottom: 5px;"><strong>Identified Legal Issues:</strong></p>';
-                    html += '<ul style="margin-left: 20px;">';
-                    dea.legal_issues.forEach(issue => {
+                    html += '<ul style="margin-left: 20px; margin-bottom: 10px;">';
+                    legal_analysis.issues.forEach(issue => {
                         if (typeof issue === 'string') {
                             html += `<li>${escapeHtml(issue)}</li>`;
                         } else if (issue.issue) {
                             html += `<li><strong>${escapeHtml(issue.issue)}</strong>`;
-                            if (issue.analysis) {
-                                html += `<br><span style="color: #666;">${escapeHtml(issue.analysis)}</span>`;
+                            if (issue.strength) {
+                                const strengthColor = issue.strength === 'strong' ? '#28a745' :
+                                                     issue.strength === 'moderate' ? '#ffc107' : '#dc3545';
+                                html += ` <span style="color: ${strengthColor}; font-size: 0.85em;">(${escapeHtml(issue.strength)})</span>`;
+                            }
+                            if (issue.area_of_law) {
+                                html += `<br><span style="color: #666; font-size: 0.9em;">Area: ${escapeHtml(issue.area_of_law)}</span>`;
                             }
                             html += '</li>';
                         }
@@ -521,13 +533,22 @@
                     html += '</ul>';
                 }
 
-                if (dea.claims && dea.claims.length > 0) {
-                    html += '<p style="margin-top: 10px; margin-bottom: 5px;"><strong>Potential Claims:</strong></p>';
-                    html += '<ul style="margin-left: 20px;">';
-                    dea.claims.forEach(claim => {
-                        html += `<li>${escapeHtml(claim)}</li>`;
-                    });
-                    html += '</ul>';
+                // Display authorities
+                if (dea.authorities?.controlling_authorities && dea.authorities.controlling_authorities.length > 0) {
+                    const nonPlaceholder = dea.authorities.controlling_authorities.filter(auth =>
+                        !auth.includes('Secondary research required')
+                    );
+                    if (nonPlaceholder.length > 0) {
+                        html += '<p style="margin-bottom: 5px;"><strong>Legal Authorities:</strong></p>';
+                        html += '<ul style="margin-left: 20px;">';
+                        nonPlaceholder.slice(0, 3).forEach(auth => {
+                            html += `<li style="font-size: 0.9em;">${escapeHtml(auth)}</li>`;
+                        });
+                        if (nonPlaceholder.length > 3) {
+                            html += `<li style="font-size: 0.9em;"><em>... and ${nonPlaceholder.length - 3} more authorities</em></li>`;
+                        }
+                        html += '</ul>';
+                    }
                 }
 
                 html += '</div>';
