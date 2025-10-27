@@ -445,6 +445,156 @@
             return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
         }
 
+        function formatAnalysisResults(data) {
+            let html = '<h3>✅ Analysis Complete!</h3>';
+            html += '<p style="margin-bottom: 20px;">Themis agents have analyzed your case. Here are the key findings:</p>';
+
+            // Extract artifacts from the response
+            const artifacts = data.artifacts || {};
+
+            // LDA (Legal Data Analyst) - Facts and Timeline
+            if (artifacts.lda?.facts) {
+                const facts = artifacts.lda.facts;
+
+                html += '<div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #667eea;">';
+                html += '<h4 style="color: #667eea; margin-bottom: 10px;">📊 Case Facts (LDA)</h4>';
+
+                if (facts.matter_overview) {
+                    html += `<p style="margin-bottom: 10px;"><strong>Overview:</strong> ${escapeHtml(facts.matter_overview)}</p>`;
+                }
+
+                if (facts.fact_pattern_summary && facts.fact_pattern_summary.length > 0) {
+                    html += '<p style="margin-bottom: 5px;"><strong>Key Facts:</strong></p>';
+                    html += '<ul style="margin-left: 20px; margin-bottom: 10px;">';
+                    facts.fact_pattern_summary.slice(0, 5).forEach(fact => {
+                        html += `<li>${escapeHtml(fact)}</li>`;
+                    });
+                    if (facts.fact_pattern_summary.length > 5) {
+                        html += `<li><em>... and ${facts.fact_pattern_summary.length - 5} more facts</em></li>`;
+                    }
+                    html += '</ul>';
+                }
+
+                if (facts.damages_analysis) {
+                    const damages = facts.damages_analysis;
+                    html += '<p style="margin-bottom: 5px;"><strong>Damages Analysis:</strong></p>';
+                    html += '<ul style="margin-left: 20px;">';
+                    if (damages.economic_damages) {
+                        html += `<li>Economic Damages: $${damages.economic_damages.toLocaleString()}</li>`;
+                    }
+                    if (damages.non_economic_damages) {
+                        html += `<li>Non-Economic Damages: $${damages.non_economic_damages.toLocaleString()}</li>`;
+                    }
+                    if (damages.total_damages) {
+                        html += `<li><strong>Total Estimated: $${damages.total_damages.toLocaleString()}</strong></li>`;
+                    }
+                    if (damages.settlement_range) {
+                        html += `<li>Settlement Range: $${damages.settlement_range.minimum.toLocaleString()} - $${damages.settlement_range.maximum.toLocaleString()}</li>`;
+                    }
+                    html += '</ul>';
+                }
+
+                html += '</div>';
+            }
+
+            // DEA (Doctrinal Expert Agent) - Legal Analysis
+            if (artifacts.dea?.legal_issues) {
+                const dea = artifacts.dea;
+
+                html += '<div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #764ba2;">';
+                html += '<h4 style="color: #764ba2; margin-bottom: 10px;">⚖️ Legal Analysis (DEA)</h4>';
+
+                if (dea.legal_issues && dea.legal_issues.length > 0) {
+                    html += '<p style="margin-bottom: 5px;"><strong>Identified Legal Issues:</strong></p>';
+                    html += '<ul style="margin-left: 20px;">';
+                    dea.legal_issues.forEach(issue => {
+                        if (typeof issue === 'string') {
+                            html += `<li>${escapeHtml(issue)}</li>`;
+                        } else if (issue.issue) {
+                            html += `<li><strong>${escapeHtml(issue.issue)}</strong>`;
+                            if (issue.analysis) {
+                                html += `<br><span style="color: #666;">${escapeHtml(issue.analysis)}</span>`;
+                            }
+                            html += '</li>';
+                        }
+                    });
+                    html += '</ul>';
+                }
+
+                if (dea.claims && dea.claims.length > 0) {
+                    html += '<p style="margin-top: 10px; margin-bottom: 5px;"><strong>Potential Claims:</strong></p>';
+                    html += '<ul style="margin-left: 20px;">';
+                    dea.claims.forEach(claim => {
+                        html += `<li>${escapeHtml(claim)}</li>`;
+                    });
+                    html += '</ul>';
+                }
+
+                html += '</div>';
+            }
+
+            // LSA (Legal Strategy Agent) - Strategy
+            if (artifacts.lsa) {
+                const lsa = artifacts.lsa;
+
+                html += '<div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #28a745;">';
+                html += '<h4 style="color: #28a745; margin-bottom: 10px;">🎯 Strategic Recommendations (LSA)</h4>';
+
+                if (lsa.strategy) {
+                    html += `<p style="margin-bottom: 10px;">${escapeHtml(lsa.strategy)}</p>`;
+                }
+
+                if (lsa.strengths && lsa.strengths.length > 0) {
+                    html += '<p style="margin-bottom: 5px;"><strong>Case Strengths:</strong></p>';
+                    html += '<ul style="margin-left: 20px;">';
+                    lsa.strengths.forEach(strength => {
+                        html += `<li>${escapeHtml(strength)}</li>`;
+                    });
+                    html += '</ul>';
+                }
+
+                if (lsa.weaknesses && lsa.weaknesses.length > 0) {
+                    html += '<p style="margin-top: 10px; margin-bottom: 5px;"><strong>Potential Weaknesses:</strong></p>';
+                    html += '<ul style="margin-left: 20px;">';
+                    lsa.weaknesses.forEach(weakness => {
+                        html += `<li>${escapeHtml(weakness)}</li>`;
+                    });
+                    html += '</ul>';
+                }
+
+                if (lsa.recommendations && lsa.recommendations.length > 0) {
+                    html += '<p style="margin-top: 10px; margin-bottom: 5px;"><strong>Next Steps:</strong></p>';
+                    html += '<ul style="margin-left: 20px;">';
+                    lsa.recommendations.forEach(rec => {
+                        html += `<li>${escapeHtml(rec)}</li>`;
+                    });
+                    html += '</ul>';
+                }
+
+                html += '</div>';
+            }
+
+            // Attorney review warning
+            html += '<div style="margin-top: 15px; padding: 15px; background: #fff3cd; border-radius: 6px; border: 1px solid #ffc107;">';
+            html += '<strong>⚠️ Attorney Review Required:</strong> This analysis is AI-generated and must be reviewed by a licensed attorney before use in any legal proceedings.';
+            html += '</div>';
+
+            // Full JSON in collapsible section
+            html += '<details style="margin-top: 15px;">';
+            html += '<summary style="cursor: pointer; color: #666; font-weight: 600;">📋 View Full Technical Details (JSON)</summary>';
+            html += `<pre style="background: white; padding: 15px; border-radius: 6px; overflow-x: auto; margin-top: 10px; max-height: 400px; overflow-y: auto; font-size: 0.85em;">${JSON.stringify(data, null, 2)}</pre>`;
+            html += '</details>';
+
+            return html;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text.toString();
+            return div.innerHTML;
+        }
+
         document.getElementById('matterForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -554,12 +704,8 @@
                             </details>
                         `;
                     } else {
-                        // Fallback to JSON view if document not found
-                        result.innerHTML = `
-                            <h3>✅ Analysis Complete!</h3>
-                            <p>Themis has analyzed your matter, but no formal document was generated.</p>
-                            <pre style="background: white; padding: 15px; border-radius: 6px; overflow-x: auto; margin-top: 15px;">${JSON.stringify(data, null, 2)}</pre>
-                        `;
+                        // Display formatted analysis results
+                        result.innerHTML = formatAnalysisResults(data);
                     }
                 } else {
                     throw new Error(data.detail || 'Failed to process matter');
