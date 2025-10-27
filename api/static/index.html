@@ -321,14 +321,7 @@
 
                     <div class="form-group">
                         <label>Jurisdiction</label>
-                        <select id="jurisdiction" name="jurisdiction">
-                            <option value="California">California</option>
-                            <option value="New York">New York</option>
-                            <option value="Texas">Texas</option>
-                            <option value="Florida">Florida</option>
-                            <option value="Illinois">Illinois</option>
-                            <option value="Other">Other</option>
-                        </select>
+                        <input type="text" id="jurisdiction" name="jurisdiction" placeholder="e.g., California, New York, or C.D. Cal.">
                     </div>
 
                     <div class="form-group">
@@ -339,12 +332,22 @@
 
                 <div class="section">
                     <h2>👥 Parties</h2>
-                    <div id="partiesList" class="party-list">
-                        <div class="party-item">
-                            <input type="text" name="party[]" placeholder="Party name (required)" required style="flex: 1;">
-                        </div>
+                    <div class="form-group">
+                        <label>Plaintiff Name <span class="required">*</span></label>
+                        <input type="text" id="plaintiff_name" name="plaintiff_name" required placeholder="Name of plaintiff">
                     </div>
-                    <button type="button" class="add-party" onclick="addParty()">+ Add Party</button>
+                    <div class="form-group">
+                        <label>Defendant Name <span class="required">*</span></label>
+                        <input type="text" id="defendant_name" name="defendant_name" required placeholder="Name of defendant">
+                    </div>
+                    <div class="form-group">
+                        <label>Party We Represent <span class="required">*</span></label>
+                        <select id="party_represented" name="party_represented" required>
+                            <option value="">-- Select --</option>
+                            <option value="plaintiff">Plaintiff</option>
+                            <option value="defendant">Defendant</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="section">
@@ -402,17 +405,6 @@
     <script>
         let uploadedFiles = [];
 
-        function addParty() {
-            const partiesList = document.getElementById('partiesList');
-            const partyItem = document.createElement('div');
-            partyItem.className = 'party-item';
-            partyItem.innerHTML = `
-                <input type="text" name="party[]" placeholder="Party name" style="flex: 1;">
-                <button type="button" class="remove-file" onclick="this.parentElement.remove()">Remove</button>
-            `;
-            partiesList.appendChild(partyItem);
-        }
-
         function handleFiles(files) {
             const fileList = document.getElementById('fileList');
 
@@ -467,11 +459,17 @@
             try {
                 // Gather form data
                 const formData = new FormData(e.target);
-                const parties = Array.from(formData.getAll('party[]')).filter(p => p.trim());
 
-                if (parties.length === 0) {
-                    throw new Error('At least one party is required');
-                }
+                // Get party information
+                const plaintiffName = formData.get('plaintiff_name');
+                const defendantName = formData.get('defendant_name');
+                const partyRepresented = formData.get('party_represented');
+
+                // Build parties array
+                const parties = [
+                    `Plaintiff: ${plaintiffName}`,
+                    `Defendant: ${defendantName}`
+                ];
 
                 // Build documents array
                 const documents = [];
@@ -503,7 +501,10 @@
                     documents: documents,
                     metadata: {
                         jurisdiction: formData.get('jurisdiction'),
-                        cause_of_action: formData.get('cause_of_action') || undefined
+                        cause_of_action: formData.get('cause_of_action') || undefined,
+                        plaintiff_name: plaintiffName,
+                        defendant_name: defendantName,
+                        party_represented: partyRepresented
                     }
                 };
 
