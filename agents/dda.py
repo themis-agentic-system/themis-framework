@@ -346,37 +346,35 @@ async def _default_section_generator(
         system_prompts["memorandum"],  # Default to memo style
     )
 
-    user_prompt = f"""Generate a formal {document_type} based on the following matter information:
+    # Single flexible prompt that lets the LLM determine structure based on document type and jurisdiction
+    user_prompt = f"""Generate a complete, professional {document_type} appropriate for {jurisdiction} jurisdiction.
 
+MATTER INFORMATION:
 {context}
 
-Jurisdiction: {jurisdiction}
+INSTRUCTIONS:
+You are an expert legal writer. Generate a court-ready, professional {document_type} that:
 
-Generate the following sections in modern legal prose:
+1. Follows all formatting, pleading, and procedural requirements for {jurisdiction} jurisdiction
+2. Uses proper legal citations and statutory references for this jurisdiction
+3. Includes all required sections and elements for this document type in this jurisdiction
+4. Uses modern legal prose (clear, concise, plain language where appropriate)
+5. Is detailed, specific, and ready for filing or sending without revision
+6. Includes proper attorney signature blocks, verification if required, and any jurisdiction-specific formalities
 
-1. **Caption/Header** - Formal document header with case information
-2. **Introduction** - Opening paragraph establishing purpose
-3. **Facts** - Factual background section (objective, chronological)
-4. **Legal Analysis/Argument** - Application of law to facts
-5. **Conclusion** - Summary and relief requested
+For the facts, legal issues, and strategy provided, determine:
+- What structure this document type requires in this jurisdiction
+- What sections are mandatory vs. optional
+- What citations, statutes, and procedural rules apply
+- What tone is appropriate (objective for memos, persuasive for complaints/motions, firm for demand letters)
+- What specific language, forms, or boilerplate this jurisdiction expects
 
-For each section, use clear, modern legal writing. Avoid unnecessary legalese. Use short sentences and active voice where possible.
+Generate a complete {document_type} that an attorney could file or send immediately.
 
-Respond in JSON format:
-{{
-  "caption": "formatted caption/header",
-  "introduction": "introduction paragraph(s)",
-  "facts_section": "factual background narrative",
-  "argument_section": "legal analysis/argument",
-  "conclusion": "conclusion and prayer for relief"
-}}"""
+Return the document as a single complete text in the 'full_document' field."""
 
     response_format = {
-        "caption": "string",
-        "introduction": "string",
-        "facts_section": "string",
-        "argument_section": "string",
-        "conclusion": "string",
+        "full_document": "string",
     }
 
     try:
@@ -384,32 +382,63 @@ Respond in JSON format:
             system_prompt=system_prompt,
             user_prompt=user_prompt,
             response_format=response_format,
-            max_tokens=4000,
+            max_tokens=8000,  # Sufficient for full professional legal documents
         )
-        return result
-    except Exception:
-        # Fallback to basic section generation
-        caption = f"IN THE MATTER OF: {facts.get('parties', {}).get('plaintiff', 'N/A')}"
-        introduction = f"This {document_type} addresses the legal issues arising from the facts presented below."
 
+        # Log the response for debugging
+        import logging
+        import json
+        logger = logging.getLogger("themis.agents.dda")
+        logger.info(f"Document generator response keys: {list(result.keys())}")
+
+        # FIX: Handle case where LLM wraps response in 'response' key
+        if 'response' in result and isinstance(result['response'], str):
+            try:
+                result = json.loads(result['response'])
+                logger.info(f"Parsed nested JSON from 'response' key")
+            except json.JSONDecodeError as parse_err:
+                logger.error(f"Failed to parse nested JSON: {result['response'][:200]}", exc_info=True)
+
+        # Log document preview if we got it
+        if result.get('full_document'):
+            doc_preview = result['full_document'][:200].replace('\n', ' ')
+            logger.info(f"Generated {document_type} document ({len(result['full_document'])} chars): {doc_preview}...")
+
+        return result
+    except Exception as e:
+        # Log the error so we can see what failed
+        import logging
+        logger = logging.getLogger("themis.agents.dda")
+        logger.error(f"Document generator LLM call failed: {e!s}", exc_info=True)
+
+        # Fallback to basic document generation
         fact_pattern = facts.get("fact_pattern_summary", [])
-        facts_section = "\n\n".join(fact_pattern) if fact_pattern else "Facts to be provided."
+        facts_text = "\n\n".join(fact_pattern) if fact_pattern else "Facts to be provided."
 
         issues = legal_analysis.get("issues", [])
-        argument_section = "\n\n".join(
+        issues_text = "\n\n".join(
             f"{issue.get('issue')}: {issue.get('analysis', 'Analysis pending.')}"
             for issue in issues
         ) if issues else "Legal analysis to be provided."
 
-        conclusion = "For the foregoing reasons, the relief requested should be granted."
+        fallback_doc = f"""
+{document_type.upper()}
 
-        return {
-            "caption": caption,
-            "introduction": introduction,
-            "facts_section": facts_section,
-            "argument_section": argument_section,
-            "conclusion": conclusion,
-        }
+This {document_type} addresses the legal issues arising from the facts presented below.
+
+FACTS:
+{facts_text}
+
+LEGAL ANALYSIS:
+{issues_text}
+
+CONCLUSION:
+For the foregoing reasons, the relief requested should be granted.
+
+[Attorney Signature Block]
+"""
+
+        return {"full_document": fallback_doc.strip()}
 
 
 async def _default_citation_formatter(
@@ -523,84 +552,57 @@ async def _default_document_composer(
         court = matter.get("court") or matter.get("jurisdiction")
     court = court or "COURT NAME"
 
-    # Build document parts
-    parts = []
+    # If LLM returned a complete document, use it directly
+    if sections.get("full_document"):
+        full_text = sections["full_document"]
+    else:
+        # Fallback: try to assemble from sections
+        # This handles the 'response' wrapper case and legacy formats
+        parts = []
 
-    # Caption
-    caption = sections.get("caption") or f"""
-{court}
+        # Try to extract any sections we have
+        for key in ["caption", "header", "heading", "introduction", "parties_section",
+                    "jurisdiction_venue_section", "general_allegations", "facts", "facts_section",
+                    "liability", "causes_of_action", "argument", "argument_section",
+                    "damages", "damages_section", "prayer", "conclusion",
+                    "jury_demand", "signature", "signature_block"]:
+            if sections.get(key):
+                parts.append(sections[key].strip())
+                parts.append("\n\n")
 
-{plaintiff},
-    Plaintiff,
-v.                                  {case_number}
-{defendant},
-    Defendant.
-"""
-    parts.append(caption.strip())
-    parts.append("\n")
+        # If we have some parts, assemble them
+        if parts:
+            full_text = "".join(parts)
+        else:
+            # Ultimate fallback: generate a basic document
+            parts = []
+            parties = _normalise_party_roles(matter.get("parties"))
+            plaintiff = parties.get("plaintiff", "PLAINTIFF NAME")
+            defendant = parties.get("defendant", "DEFENDANT NAME")
 
-    # Document title
-    title_map = {
-        "complaint": "COMPLAINT",
-        "demand_letter": "DEMAND LETTER",
-        "motion": "MOTION",
-        "memorandum": "MEMORANDUM OF LAW",
-    }
-    title = title_map.get(document_type, "LEGAL DOCUMENT")
-    parts.append(f"\n{title}\n")
-    parts.append("=" * len(title))
-    parts.append("\n\n")
+            parts.append(f"{court}\n\n")
+            parts.append(f"{plaintiff},\n    Plaintiff,\nv.                                  {case_number}\n{defendant},\n    Defendant.\n\n")
 
-    # Introduction
-    if sections.get("introduction"):
-        parts.append(sections["introduction"])
-        parts.append("\n\n")
+            title_map = {
+                "complaint": "COMPLAINT",
+                "demand_letter": "DEMAND LETTER",
+                "motion": "MOTION",
+                "memorandum": "MEMORANDUM OF LAW",
+            }
+            title = title_map.get(document_type, "LEGAL DOCUMENT")
+            parts.append(f"{title}\n")
+            parts.append("=" * len(title))
+            parts.append("\n\n")
 
-    # Facts section
-    if sections.get("facts_section"):
-        parts.append("FACTUAL BACKGROUND\n")
-        parts.append("-" * 20)
-        parts.append("\n\n")
-        parts.append(sections["facts_section"])
-        parts.append("\n\n")
+            parts.append("[Document content to be generated]\n\n")
 
-    # Argument/Analysis section
-    if sections.get("argument_section"):
-        section_title = "ARGUMENT" if document_type in ["motion", "complaint"] else "LEGAL ANALYSIS"
-        parts.append(f"{section_title}\n")
-        parts.append("-" * len(section_title))
-        parts.append("\n\n")
-        parts.append(sections["argument_section"])
-        parts.append("\n\n")
+            attorney_name = matter.get("attorney_name", "[Attorney Name]")
+            attorney_bar = matter.get("attorney_bar_number", "[Bar Number]")
+            firm_name = matter.get("firm_name", "[Law Firm]")
 
-    # Conclusion
-    if sections.get("conclusion"):
-        parts.append("CONCLUSION\n")
-        parts.append("-" * 10)
-        parts.append("\n\n")
-        parts.append(sections["conclusion"])
-        parts.append("\n\n")
+            parts.append(f"Respectfully submitted,\n\n________________________\n{attorney_name}\n{firm_name}\nBar No. {attorney_bar}\n")
 
-    # Signature block
-    attorney_name = matter.get("attorney_name", "[Attorney Name]")
-    attorney_bar = matter.get("attorney_bar_number", "[Bar Number]")
-    firm_name = matter.get("firm_name", "[Law Firm]")
-
-    signature_block = f"""
-Respectfully submitted,
-
-________________________
-{attorney_name}
-{firm_name}
-Bar No. {attorney_bar}
-Attorney for {plaintiff}
-
-Dated: [Date]
-"""
-    parts.append(signature_block.strip())
-
-    # Assemble complete document
-    full_text = "".join(parts)
+            full_text = "".join(parts)
 
     # Calculate metrics
     word_count = len(full_text.split())
