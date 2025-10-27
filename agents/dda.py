@@ -356,7 +356,18 @@ Then provide the final document with metadata and validation results."""
             "jurisdiction": jurisdiction,
         }
 
-        return self._build_response(
+        # DEBUG: Log the document structure before returning
+        logger.info("=== DDA AGENT RESPONSE DEBUG ===")
+        logger.info(f"Document keys: {list(document.keys())}")
+        logger.info(f"Has full_text: {'full_text' in document}")
+        if 'full_text' in document:
+            logger.info(f"full_text length: {len(document['full_text'])} chars")
+            logger.info(f"full_text preview: {document['full_text'][:200]}")
+        else:
+            logger.error("NO full_text IN DOCUMENT!")
+            logger.error(f"Document structure: {document}")
+
+        response = self._build_response(
             core={
                 "document": document,
                 "metadata": {
@@ -370,6 +381,14 @@ Then provide the final document with metadata and validation results."""
             provenance=provenance,
             unresolved_issues=unresolved,
         )
+
+        # DEBUG: Log the final response structure
+        logger.info(f"Final response keys: {list(response.keys())}")
+        logger.info(f"Has document in response: {'document' in response}")
+        if 'document' in response:
+            logger.info(f"Response document keys: {list(response['document'].keys())}")
+
+        return response
 
     def _construct_document_from_tool_calls(self, tool_calls: list[dict], document_type: str, jurisdiction: str) -> dict[str, Any]:
         """Fallback: construct document payload from tool call results."""
