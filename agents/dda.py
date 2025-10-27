@@ -157,7 +157,9 @@ class DocumentDraftingAgent(BaseAgent):
         Claude decides which tools to use and in what order based on the document requirements.
         """
         import json
+        import logging
 
+        logger = logging.getLogger("themis.agents.dda")
         llm = get_llm_client()
 
         # Determine document type from matter - user should specify what they need
