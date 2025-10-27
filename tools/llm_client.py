@@ -590,8 +590,6 @@ class LLMClient:
         tool_functions: dict[str, Any],
     ) -> dict[str, Any]:
         """Stub implementation that heuristically uses tools based on prompt content."""
-        import json
-
         logger.info("Running in stub mode - simulating autonomous tool use")
 
         tool_calls = []

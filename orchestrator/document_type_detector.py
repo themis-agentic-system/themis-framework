@@ -60,7 +60,7 @@ async def determine_document_type(matter: dict[str, Any]) -> str:
 
         negotiation_positions = strategy.get("negotiation_positions", {})
         if negotiation_positions:
-            context_parts.append(f"Strategy Includes Settlement Negotiation: Yes")
+            context_parts.append("Strategy Includes Settlement Negotiation: Yes")
 
     # Draft guidance from LSA
     draft = matter.get("draft", {})
