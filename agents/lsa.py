@@ -138,6 +138,12 @@ Then provide your complete strategic analysis."""
             max_tokens=4096,
         )
 
+        # Track tool invocations for metrics
+        # Since we're using generate_with_tools which bypasses _call_tool,
+        # we need to manually track tool invocations
+        if "tool_calls" in result and result["tool_calls"]:
+            self._tool_invocations += len(result["tool_calls"])
+
         # Parse Claude's final response
         try:
             response_text = result["result"]
