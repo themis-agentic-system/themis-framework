@@ -540,35 +540,56 @@
                 html += '<div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #28a745;">';
                 html += '<h4 style="color: #28a745; margin-bottom: 10px;">🎯 Strategic Recommendations (LSA)</h4>';
 
-                if (lsa.strategy) {
-                    html += `<p style="margin-bottom: 10px;">${escapeHtml(lsa.strategy)}</p>`;
+                // Display client-safe summary from draft
+                if (lsa.draft?.client_safe_summary) {
+                    html += `<p style="margin-bottom: 15px;"><strong>Assessment:</strong> ${escapeHtml(lsa.draft.client_safe_summary)}</p>`;
                 }
 
-                if (lsa.strengths && lsa.strengths.length > 0) {
-                    html += '<p style="margin-bottom: 5px;"><strong>Case Strengths:</strong></p>';
+                // Display recommended actions from strategy
+                if (lsa.strategy?.recommended_actions && lsa.strategy.recommended_actions.length > 0) {
+                    html += '<p style="margin-bottom: 5px;"><strong>Recommended Actions:</strong></p>';
+                    html += '<ul style="margin-left: 20px; margin-bottom: 10px;">';
+                    lsa.strategy.recommended_actions.slice(0, 5).forEach(action => {
+                        html += `<li>${escapeHtml(action)}</li>`;
+                    });
+                    if (lsa.strategy.recommended_actions.length > 5) {
+                        html += `<li><em>... and ${lsa.strategy.recommended_actions.length - 5} more actions</em></li>`;
+                    }
+                    html += '</ul>';
+                }
+
+                // Display negotiation positions
+                if (lsa.strategy?.negotiation_positions) {
+                    const positions = lsa.strategy.negotiation_positions;
+                    html += '<p style="margin-bottom: 5px;"><strong>Settlement Strategy:</strong></p>';
+                    html += '<ul style="margin-left: 20px; margin-bottom: 10px;">';
+                    if (positions.initial_demand) {
+                        html += `<li>Initial Demand: ${escapeHtml(positions.initial_demand)}</li>`;
+                    }
+                    if (positions.target_settlement) {
+                        html += `<li>Target Settlement: ${escapeHtml(positions.target_settlement)}</li>`;
+                    }
+                    if (positions.minimum_acceptable) {
+                        html += `<li>Minimum Acceptable: ${escapeHtml(positions.minimum_acceptable)}</li>`;
+                    }
+                    html += '</ul>';
+                }
+
+                // Display next steps from draft
+                if (lsa.draft?.next_steps && lsa.draft.next_steps.length > 0) {
+                    html += '<p style="margin-bottom: 5px;"><strong>Next Steps:</strong></p>';
                     html += '<ul style="margin-left: 20px;">';
-                    lsa.strengths.forEach(strength => {
-                        html += `<li>${escapeHtml(strength)}</li>`;
+                    lsa.draft.next_steps.forEach(step => {
+                        html += `<li>${escapeHtml(step)}</li>`;
                     });
                     html += '</ul>';
                 }
 
-                if (lsa.weaknesses && lsa.weaknesses.length > 0) {
-                    html += '<p style="margin-top: 10px; margin-bottom: 5px;"><strong>Potential Weaknesses:</strong></p>';
-                    html += '<ul style="margin-left: 20px;">';
-                    lsa.weaknesses.forEach(weakness => {
-                        html += `<li>${escapeHtml(weakness)}</li>`;
-                    });
-                    html += '</ul>';
-                }
-
-                if (lsa.recommendations && lsa.recommendations.length > 0) {
-                    html += '<p style="margin-top: 10px; margin-bottom: 5px;"><strong>Next Steps:</strong></p>';
-                    html += '<ul style="margin-left: 20px;">';
-                    lsa.recommendations.forEach(rec => {
-                        html += `<li>${escapeHtml(rec)}</li>`;
-                    });
-                    html += '</ul>';
+                // Display risk level
+                if (lsa.draft?.risk_level) {
+                    const riskColor = lsa.draft.risk_level === 'low' ? '#28a745' :
+                                     lsa.draft.risk_level === 'medium' ? '#ffc107' : '#dc3545';
+                    html += `<p style="margin-top: 10px;"><strong>Risk Level:</strong> <span style="color: ${riskColor}; font-weight: bold; text-transform: uppercase;">${escapeHtml(lsa.draft.risk_level)}</span></p>`;
                 }
 
                 html += '</div>';
