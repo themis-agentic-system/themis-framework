@@ -272,7 +272,7 @@ class LLMClient:
         import asyncio
 
         if self._stub_mode:
-            return self._generate_with_tools_stub(
+            return await self._generate_with_tools_stub(
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
                 tools=tools,
@@ -581,7 +581,7 @@ class LLMClient:
 
         return "\n\n".join(paragraph for paragraph in paragraphs if paragraph)
 
-    def _generate_with_tools_stub(
+    async def _generate_with_tools_stub(
         self,
         *,
         system_prompt: str,
@@ -595,48 +595,170 @@ class LLMClient:
         tool_calls = []
         result_text = f"Stub mode analysis based on {len(tools)} available tools.\n\n"
 
+        # Extract matter from user_prompt if it's JSON
+        import asyncio
+        import json
+        import re
+        matter = {}
+        try:
+            match = re.search(r'\{[^{}]*"summary"[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', user_prompt, re.DOTALL)
+            if not match:
+                # Try to find any JSON object
+                match = re.search(r'\{.*\}', user_prompt, re.DOTALL)
+            if match:
+                matter = json.loads(match.group(0))
+        except Exception:
+            logger.debug("Could not extract matter JSON from prompt")
+
         # Simulate calling relevant tools based on prompt content
         prompt_lower = user_prompt.lower()
 
         # If document-related keywords, call document_parser if available
         if any(kw in prompt_lower for kw in ["document", "parse", "extract", "text"]):
             if "document_parser" in tool_functions:
-                logger.info("Stub: Simulating document_parser call")
-                parsed = self._stub_document_parse(user_prompt)
+                logger.info("Stub: Calling document_parser")
+                try:
+                    parsed = tool_functions["document_parser"](matter)
+                    if asyncio.iscoroutine(parsed):
+                        parsed = await parsed
+                except Exception as e:
+                    logger.debug(f"Custom tool failed, using stub: {e}")
+                    parsed = self._stub_document_parse(user_prompt)
                 tool_calls.append({"tool": "document_parser", "input": {}, "result": parsed})
-                result_text += f"Parsed documents and extracted {len(parsed.get('key_facts', []))} key facts.\n\n"
+                # Handle both list and dict results
+                if isinstance(parsed, list):
+                    key_facts_count = sum(len(doc.get('key_facts', [])) for doc in parsed if isinstance(doc, dict))
+                else:
+                    key_facts_count = len(parsed.get('key_facts', []))
+                result_text += f"Parsed documents and extracted {key_facts_count} key facts.\n\n"
 
         # If timeline keywords, call timeline_builder if available
         if any(kw in prompt_lower for kw in ["timeline", "chronolog", "sequence", "events"]):
             if "timeline_builder" in tool_functions:
-                logger.info("Stub: Simulating timeline_builder call")
-                timeline = [{"date": "2024-01-15", "description": "Event from stub timeline"}]
+                logger.info("Stub: Calling timeline_builder")
+                try:
+                    timeline = tool_functions["timeline_builder"](matter, None)
+                    if asyncio.iscoroutine(timeline):
+                        timeline = await timeline
+                except Exception as e:
+                    logger.debug(f"Custom tool failed, using stub: {e}")
+                    timeline = [{"date": "2024-01-15", "description": "Event from stub timeline"}]
                 tool_calls.append({"tool": "timeline_builder", "input": {}, "result": timeline})
                 result_text += f"Built timeline with {len(timeline)} events.\n\n"
 
         # If damages/calculation keywords, call damages_calculator if available
         if any(kw in prompt_lower for kw in ["damage", "calculat", "expense", "loss", "wage"]):
             if "damages_calculator" in tool_functions:
-                logger.info("Stub: Simulating damages_calculator call")
-                damages = {"total": 110000, "medical": 85000, "lost_wages": 25000}
+                logger.info("Stub: Calling damages_calculator")
+                try:
+                    damages = tool_functions["damages_calculator"]({"economic_losses": {}, "non_economic_factors": {}})
+                    if asyncio.iscoroutine(damages):
+                        damages = await damages
+                except Exception as e:
+                    logger.debug(f"Custom tool failed, using stub: {e}")
+                    damages = {"total": 110000, "medical": 85000, "lost_wages": 25000}
                 tool_calls.append({"tool": "damages_calculator", "input": {}, "result": damages})
-                result_text += f"Calculated total damages: ${damages['total']}\n\n"
+                result_text += f"Calculated total damages: ${damages.get('total', 0)}\n\n"
 
         # If legal/issue keywords, call issue_spotter if available
         if any(kw in prompt_lower for kw in ["issue", "legal", "cause", "claim", "negligence"]):
+            issues = []
             if "issue_spotter" in tool_functions:
-                logger.info("Stub: Simulating issue_spotter call")
-                issues = self._stub_issue_spotter(user_prompt)
+                logger.info("Stub: Calling issue_spotter")
+                try:
+                    issues = tool_functions["issue_spotter"](matter)
+                    if asyncio.iscoroutine(issues):
+                        issues = await issues
+                except Exception as e:
+                    logger.debug(f"Custom tool failed, using stub: {e}")
+                    issues = self._stub_issue_spotter(user_prompt)
                 tool_calls.append({"tool": "issue_spotter", "input": {}, "result": issues})
                 result_text += f"Identified {len(issues)} legal issues.\n\n"
 
+            # If citation_retriever available, call it after issue_spotter
+            if "citation_retriever" in tool_functions and issues:
+                logger.info("Stub: Calling citation_retriever")
+                try:
+                    citations = tool_functions["citation_retriever"](matter, issues)
+                    # citation_retriever is typically not async, but check anyway
+                    if asyncio.iscoroutine(citations):
+                        citations = await citations
+                except Exception as e:
+                    logger.error(f"citation_retriever failed: {e}", exc_info=True)
+                    citations = []
+                tool_calls.append({"tool": "citation_retriever", "input": {}, "result": citations})
+                result_text += f"Retrieved {len(citations)} citations.\n\n"
+
         # If strategy keywords, call risk_assessor or strategy_template if available
         if any(kw in prompt_lower for kw in ["strategy", "risk", "negotiate", "settlement"]):
-            if "risk_assessor" in tool_functions:
-                logger.info("Stub: Simulating risk_assessor call")
-                risk = {"confidence": 85, "weaknesses": ["Stub weakness 1"], "unknowns": ["Stub unknown 1"]}
+            if "strategy_template" in tool_functions:
+                logger.info("Stub: Calling strategy_template")
+                try:
+                    strategy = tool_functions["strategy_template"](matter)
+                    if asyncio.iscoroutine(strategy):
+                        strategy = await strategy
+                    tool_calls.append({"tool": "strategy_template", "input": {}, "result": strategy})
+                    result_text += "Developed legal strategy.\n\n"
+                    # Also call risk_assessor if available
+                    if "risk_assessor" in tool_functions:
+                        logger.info("Stub: Calling risk_assessor")
+                        risk = tool_functions["risk_assessor"](matter, strategy)
+                        if asyncio.iscoroutine(risk):
+                            risk = await risk
+                        tool_calls.append({"tool": "risk_assessor", "input": {}, "result": risk})
+                        result_text += "Assessed case risks and strategic considerations.\n\n"
+                except Exception as e:
+                    logger.debug(f"Custom tool failed: {e}")
+            elif "risk_assessor" in tool_functions:
+                logger.info("Stub: Calling risk_assessor")
+                try:
+                    risk = tool_functions["risk_assessor"](matter, {})
+                    if asyncio.iscoroutine(risk):
+                        risk = await risk
+                except Exception as e:
+                    logger.debug(f"Custom tool failed, using stub: {e}")
+                    risk = {"confidence": 85, "weaknesses": ["Stub weakness 1"], "unknowns": ["Stub unknown 1"]}
                 tool_calls.append({"tool": "risk_assessor", "input": {}, "result": risk})
                 result_text += "Assessed case risks and strategic considerations.\n\n"
+
+        # If document drafting keywords, call DDA tools if available
+        if any(kw in prompt_lower for kw in ["document", "draft", "generate", "compose", "memorandum", "complaint", "motion"]):
+            # Call section_generator if available
+            if "section_generator" in tool_functions:
+                logger.info("Stub: Calling section_generator")
+                try:
+                    sections = tool_functions["section_generator"](
+                        document_type=matter.get("document_type", "memorandum"),
+                        facts=matter.get("facts", {}),
+                        legal_analysis=matter.get("legal_analysis", {}),
+                        strategy=matter.get("strategy", {}),
+                        jurisdiction=matter.get("jurisdiction", "federal")
+                    )
+                    if asyncio.iscoroutine(sections):
+                        sections = await sections
+                    tool_calls.append({"tool": "section_generator", "input": {}, "result": sections})
+                    result_text += "Generated document sections.\n\n"
+                except Exception as e:
+                    logger.debug(f"section_generator failed: {e}")
+                    sections = {}
+
+            # Call document_composer if available
+            if "document_composer" in tool_functions:
+                logger.info("Stub: Calling document_composer")
+                try:
+                    composed = tool_functions["document_composer"](
+                        document_type=matter.get("document_type", "memorandum"),
+                        sections=sections if "section_generator" in tool_functions else {},
+                        citations=matter.get("authorities", {}),
+                        jurisdiction=matter.get("jurisdiction", "federal"),
+                        matter=matter
+                    )
+                    if asyncio.iscoroutine(composed):
+                        composed = await composed
+                    tool_calls.append({"tool": "document_composer", "input": {}, "result": composed})
+                    result_text += "Composed final document.\n\n"
+                except Exception as e:
+                    logger.debug(f"document_composer failed: {e}")
 
         # Default: generate text summary
         if not tool_calls:

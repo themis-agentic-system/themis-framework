@@ -10,6 +10,19 @@ from agents.tooling import ToolSpec
 from tools.llm_client import get_llm_client
 
 
+def _format_parties(parties: list) -> str:
+    """Format parties list (either strings or dicts) into a comma-separated string."""
+    if not parties:
+        return "N/A"
+    formatted = []
+    for p in parties:
+        if isinstance(p, dict):
+            formatted.append(p.get('name', str(p)))
+        else:
+            formatted.append(str(p))
+    return ', '.join(formatted)
+
+
 class LSAAgent(BaseAgent):
     """Craft negotiation or litigation strategy based on prior analysis."""
 
@@ -92,11 +105,10 @@ class LSAAgent(BaseAgent):
             }
         ]
 
-        # Map tool names to actual functions
-        tool_functions = {
-            "strategy_template": lambda matter: _default_strategy_template(matter),
-            "risk_assessor": lambda matter, strategy: _default_risk_assessor(matter, strategy),
-        }
+        # Map tool names to actual functions from registered tools
+        tool_functions = {}
+        for tool_name, tool_spec in self._tools.items():
+            tool_functions[tool_name] = tool_spec.fn
 
         # Let Claude autonomously decide which tools to use
         system_prompt = """You are LSA (Legal Strategy Advisor), an expert at developing case strategy and risk assessment.
@@ -276,7 +288,7 @@ async def _default_strategy_template(matter: dict[str, Any]) -> dict[str, Any]:
 
     # Basic matter info
     context_parts.append(f"Matter: {matter.get('summary') or matter.get('description', 'N/A')}")
-    context_parts.append(f"Parties: {', '.join(matter.get('parties', ['N/A']))}")
+    context_parts.append(f"Parties: {_format_parties(matter.get('parties', []))}")
 
     # Legal analysis from DEA
     legal_analysis = matter.get("legal_analysis", {})

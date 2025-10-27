@@ -12,6 +12,19 @@ from pypdf import PdfReader
 from tools.llm_client import get_llm_client
 
 
+def _format_parties(parties: list) -> str:
+    """Format parties list (either strings or dicts) into a comma-separated string."""
+    if not parties:
+        return "N/A"
+    formatted = []
+    for p in parties:
+        if isinstance(p, dict):
+            formatted.append(p.get('name', str(p)))
+        else:
+            formatted.append(str(p))
+    return ', '.join(formatted)
+
+
 async def parse_document_with_llm(
     document: dict[str, Any],
     matter_context: dict[str, Any] | None = None,
@@ -59,7 +72,7 @@ async def parse_document_with_llm(
         if matter_context.get("summary"):
             context_str += f"Summary: {matter_context['summary']}\n"
         if matter_context.get("parties"):
-            context_str += f"Parties: {', '.join(matter_context['parties'])}\n"
+            context_str += f"Parties: {_format_parties(matter_context['parties'])}\n"
 
     # Create prompt for LLM to extract key facts
     system_prompt = """You are a legal document analyst. Your job is to:

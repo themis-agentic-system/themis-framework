@@ -237,19 +237,10 @@ class DocumentDraftingAgent(BaseAgent):
             }
         ]
 
-        # Map tool names to actual functions
-        tool_functions = {
-            "section_generator": lambda document_type, facts={}, legal_analysis={}, strategy={}, jurisdiction="federal":
-                _default_section_generator(document_type, facts, legal_analysis, strategy, jurisdiction),
-            "citation_formatter": lambda authorities, jurisdiction:
-                _default_citation_formatter(authorities, jurisdiction),
-            "document_composer": lambda document_type, sections, citations={}, jurisdiction="federal", matter={}:
-                _default_document_composer(document_type, sections, citations, jurisdiction, matter),
-            "tone_analyzer": lambda document, document_type:
-                _default_tone_analyzer(document, document_type),
-            "document_validator": lambda document, document_type, matter={}:
-                _default_document_validator(document, document_type, matter),
-        }
+        # Map tool names to actual functions from registered tools
+        tool_functions = {}
+        for tool_name, tool_spec in self._tools.items():
+            tool_functions[tool_name] = tool_spec.fn
 
         # Let Claude autonomously decide which tools to use
         system_prompt = """You are DDA (Document Drafting Agent), an expert at generating professional legal documents.

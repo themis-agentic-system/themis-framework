@@ -7,6 +7,19 @@ from typing import Any
 from tools.llm_client import get_llm_client
 
 
+def _format_parties(parties: list) -> str:
+    """Format parties list (either strings or dicts) into a comma-separated string."""
+    if not parties:
+        return "N/A"
+    formatted = []
+    for p in parties:
+        if isinstance(p, dict):
+            formatted.append(p.get('name', str(p)))
+        else:
+            formatted.append(str(p))
+    return ', '.join(formatted)
+
+
 async def determine_document_type(matter: dict[str, Any]) -> str:
     """Determine appropriate legal document type based on matter context.
 
@@ -41,7 +54,7 @@ async def determine_document_type(matter: dict[str, Any]) -> str:
     # Parties
     parties = matter.get("parties", [])
     if parties:
-        context_parts.append(f"Parties: {', '.join(parties)}")
+        context_parts.append(f"Parties: {_format_parties(parties)}")
 
     # Legal issues from DEA
     legal_analysis = matter.get("legal_analysis", {})

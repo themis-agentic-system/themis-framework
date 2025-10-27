@@ -156,13 +156,10 @@ class LDAAgent(BaseAgent):
             }
         ]
 
-        # Map tool names to actual functions
-        tool_functions = {
-            "document_parser": lambda matter: _default_document_parser(matter),
-            "timeline_builder": lambda matter, parsed_documents=None: _default_timeline_builder(matter, parsed_documents),
-            "damages_calculator": lambda damages_data: _damages_calculator(damages_data),
-            "timeline_analyzer": lambda timeline_data: _timeline_analyzer(timeline_data),
-        }
+        # Map tool names to actual functions from registered tools
+        tool_functions = {}
+        for tool_name, tool_spec in self._tools.items():
+            tool_functions[tool_name] = tool_spec.fn
 
         # Let Claude autonomously decide which tools to use
         system_prompt = """You are LDA (Legal Data Analyst), an expert at extracting and analyzing facts from legal matters.

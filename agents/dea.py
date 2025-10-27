@@ -10,6 +10,19 @@ from agents.tooling import ToolSpec
 from tools.llm_client import get_llm_client
 
 
+def _format_parties(parties: list) -> str:
+    """Format parties list (either strings or dicts) into a comma-separated string."""
+    if not parties:
+        return "N/A"
+    formatted = []
+    for p in parties:
+        if isinstance(p, dict):
+            formatted.append(p.get('name', str(p)))
+        else:
+            formatted.append(str(p))
+    return ', '.join(formatted)
+
+
 class DEAAgent(BaseAgent):
     """Produce legal theories, citations, and doctrinal analysis."""
 
@@ -92,11 +105,10 @@ class DEAAgent(BaseAgent):
             }
         ]
 
-        # Map tool names to actual functions
-        tool_functions = {
-            "issue_spotter": lambda matter: _default_issue_spotter(matter),
-            "citation_retriever": lambda matter, issues: _default_citation_retriever(matter, issues),
-        }
+        # Map tool names to actual functions from registered tools
+        tool_functions = {}
+        for tool_name, tool_spec in self._tools.items():
+            tool_functions[tool_name] = tool_spec.fn
 
         # Let Claude autonomously decide which tools to use
         system_prompt = """You are DEA (Doctrinal & Equitable Analysis), an expert at identifying legal issues and researching controlling authority.
@@ -270,7 +282,7 @@ async def _default_issue_spotter(matter: dict[str, Any]) -> list[dict[str, Any]]
     if matter.get("summary") or matter.get("description"):
         context_parts.append(f"Matter: {matter.get('summary') or matter.get('description')}")
     if matter.get("parties"):
-        context_parts.append(f"Parties: {', '.join(matter.get('parties', []))}")
+        context_parts.append(f"Parties: {_format_parties(matter.get('parties', []))}")
 
     # Include facts if available from LDA output
     facts = matter.get("facts", {})
@@ -429,7 +441,7 @@ Write in a formal but clear legal style."""
     user_prompt = f"""Write a legal analysis synthesizing these issues and authorities.
 
 Matter Context: {matter.get('summary') or matter.get('description', 'N/A')}
-Parties: {', '.join(matter.get('parties', ['N/A']))}
+Parties: {_format_parties(matter.get('parties', []))}
 
 Legal Issues Identified:
 {issues_text}

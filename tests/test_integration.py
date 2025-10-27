@@ -82,6 +82,7 @@ async def test_full_orchestration():
         "research_retrieval",
         "application_analysis",
         "draft_review",
+        "document_assembly",
     ]
     assert phases_completed == expected_phases, f"Phase mismatch: {phases_completed}"
 
@@ -91,6 +92,7 @@ async def test_full_orchestration():
     assert "lda" in artifacts, "Missing LDA artifacts"
     assert "dea" in artifacts, "Missing DEA artifacts"
     assert "lsa" in artifacts, "Missing LSA artifacts"
+    assert "dda" in artifacts, "Missing DDA artifacts"
 
     # Verify LDA produced facts
     lda_output = artifacts["lda"]
@@ -120,6 +122,16 @@ async def test_full_orchestration():
     assert "client_safe_summary" in draft, "Draft should have client_safe_summary"
     assert len(draft["client_safe_summary"]) > 0, "client_safe_summary should not be empty"
     print(f"  LSA: Draft created with {len(draft['client_safe_summary'])} char summary")
+
+    # Verify DDA produced document
+    dda_output = artifacts["dda"]
+    assert "document" in dda_output, "DDA should produce document"
+    assert "metadata" in dda_output, "DDA should produce metadata"
+
+    document = dda_output["document"]
+    assert "full_text" in document, "Document should have full_text"
+    assert len(document["full_text"]) > 0, "Document full_text should not be empty"
+    print(f"  DDA: Document created with {len(document['full_text'])} characters")
 
     print("\n=== Integration Test Passed ===\n")
     return True
