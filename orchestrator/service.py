@@ -117,6 +117,14 @@ class OrchestratorService:
             "connectors": self.connectors.catalogue(),
         }
 
+        # DEBUG: Log planned phases
+        phases = [step.get("phase") for step in plan["steps"]]
+        logger.info(f"=== PLANNED PHASES: {phases}")
+        if "document_assembly" in phases:
+            logger.info("✓ DOCUMENT_ASSEMBLY phase is included in plan")
+        else:
+            logger.warning("✗ DOCUMENT_ASSEMBLY phase is NOT in plan!")
+
         self.state.remember_plan(plan_id, deepcopy(plan))
         self._save_state()
         return plan
