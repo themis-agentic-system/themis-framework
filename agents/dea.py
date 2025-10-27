@@ -48,45 +48,147 @@ class DEAAgent(BaseAgent):
         self.require_tools(self.REQUIRED_TOOLS)
 
     async def _run(self, matter: dict[str, Any]) -> dict[str, Any]:
-        """Derive legal issues and map them to supporting authorities."""
+        """Autonomously identify legal issues and research authorities.
 
-        spotted_issues = await self._call_tool("issue_spotter", matter)
-        citations = await self._call_tool("citation_retriever", matter, spotted_issues)
+        Claude decides which tools to use and in what order based on the matter data.
+        """
+        import json
 
+        llm = get_llm_client()
+
+        # Define available tools in Anthropic format
+        tools = [
+            {
+                "name": "issue_spotter",
+                "description": "Identify potential legal issues from facts and objectives. Use this to analyze the fact pattern and spot all legal issues.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "matter": {
+                            "type": "object",
+                            "description": "Full matter object containing facts, parties, and context"
+                        }
+                    },
+                    "required": ["matter"]
+                }
+            },
+            {
+                "name": "citation_retriever",
+                "description": "Locate supporting legal authorities for spotted issues. Use this after identifying issues to find relevant case law and statutes.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "matter": {
+                            "type": "object",
+                            "description": "Matter object with context"
+                        },
+                        "issues": {
+                            "type": "array",
+                            "description": "List of identified legal issues to research"
+                        }
+                    },
+                    "required": ["matter", "issues"]
+                }
+            }
+        ]
+
+        # Map tool names to actual functions
+        tool_functions = {
+            "issue_spotter": lambda matter: _default_issue_spotter(matter),
+            "citation_retriever": lambda matter, issues: _default_citation_retriever(matter, issues),
+        }
+
+        # Let Claude autonomously decide which tools to use
+        system_prompt = """You are DEA (Doctrinal & Equitable Analysis), an expert at identifying legal issues and researching controlling authority.
+
+Your role:
+1. Analyze fact patterns to identify all potential legal issues
+2. Research relevant case law, statutes, and authorities for each issue
+3. Distinguish between controlling and contrary authorities
+4. Synthesize a comprehensive legal analysis
+5. Flag gaps requiring additional research
+
+Use the available tools intelligently based on what data is present in the matter.
+After using tools, provide your final analysis as a JSON object with these fields:
+- issues: Array of legal issues identified
+- authorities: Array of relevant citations and authorities
+- controlling_authorities: Array of controlling authority citations
+- contrary_authorities: Array of contrary authority citations
+- analysis: Comprehensive legal analysis narrative
+
+Be thorough in issue spotting and diligent in authority research."""
+
+        user_prompt = f"""Analyze this legal matter and identify all legal issues with supporting authorities:
+
+MATTER DATA:
+{json.dumps(matter, indent=2)}
+
+Use the available tools to:
+1. Identify all potential legal issues from the facts
+2. Research relevant authorities for each issue
+3. Distinguish controlling from contrary authority
+
+Then provide your complete legal analysis."""
+
+        # Claude autonomously uses tools
+        result = await llm.generate_with_tools(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            tools=tools,
+            tool_functions=tool_functions,
+            max_tokens=4096,
+        )
+
+        # Parse Claude's final response
+        try:
+            response_text = result["result"]
+            json_start = response_text.find("{")
+            json_end = response_text.rfind("}") + 1
+            if json_start != -1 and json_end > json_start:
+                analysis_payload = json.loads(response_text[json_start:json_end])
+            else:
+                # Fallback: construct from tool calls
+                analysis_payload = self._construct_analysis_from_tool_calls(result["tool_calls"], matter)
+        except (json.JSONDecodeError, KeyError):
+            # Fallback to constructing from tool calls
+            analysis_payload = self._construct_analysis_from_tool_calls(result["tool_calls"], matter)
+
+        # Extract components
+        spotted_issues = analysis_payload.get("issues", [])
+        citations = analysis_payload.get("authorities", [])
+        controlling_auths = analysis_payload.get("controlling_authorities", [])
+        contrary_auths = analysis_payload.get("contrary_authorities", [])
+        analysis_text = analysis_payload.get("analysis", "")
+
+        # If not provided in payload, derive from citations
+        if not controlling_auths:
+            controlling_auths = [c.get("cite", "") for c in citations if c.get("cite")]
+
+        # Track unresolved issues
         unresolved: list[str] = []
         if not spotted_issues:
             unresolved.append("No legal issues identified from the fact pattern.")
         if not citations:
             unresolved.append("Unable to locate supporting authorities for the issues raised.")
-
-        # Separate authorities into controlling and contrary
-        controlling_auths = []
-        contrary_auths = []
-
-        for citation in citations:
-            # In a real implementation, this would use metadata or analysis
-            # For now, treat all as controlling (can be enhanced with LLM classification)
-            controlling_auths.append(citation.get("cite", ""))
-
-        # If we have no contrary authority, note it in unresolved
         if not contrary_auths:
             unresolved.append("No contrary authority identified - consider researching opposing arguments.")
 
         legal_analysis = {
             "issues": spotted_issues,
-            "authorities": citations,  # Keep full citations for backward compatibility
-            "analysis": await _synthesise_analysis(spotted_issues, citations, matter),
+            "authorities": citations,
+            "analysis": analysis_text or await _synthesise_analysis(spotted_issues, citations, matter),
         }
 
-        # Provide authorities in the expected signal format
         authorities_signal = {
             "controlling_authorities": controlling_auths,
             "contrary_authorities": contrary_auths or ["None identified - further research recommended"],
         }
 
         provenance = {
-            "tools_used": list(self.tools.keys()),
-            "citations_considered": [citation.get("cite") for citation in citations],
+            "tools_used": [tc["tool"] for tc in result["tool_calls"]],
+            "tool_rounds": result["rounds"],
+            "autonomous_mode": True,
+            "citations_considered": [citation.get("cite") for citation in citations if citation.get("cite")],
         }
 
         return self._build_response(
@@ -97,6 +199,25 @@ class DEAAgent(BaseAgent):
             provenance=provenance,
             unresolved_issues=unresolved,
         )
+
+    def _construct_analysis_from_tool_calls(self, tool_calls: list[dict], matter: dict[str, Any]) -> dict[str, Any]:
+        """Fallback: construct analysis payload from tool call results."""
+        issues = []
+        authorities = []
+
+        for tc in tool_calls:
+            if tc["tool"] == "issue_spotter" and isinstance(tc["result"], list):
+                issues = tc["result"]
+            elif tc["tool"] == "citation_retriever" and isinstance(tc["result"], list):
+                authorities = tc["result"]
+
+        return {
+            "issues": issues,
+            "authorities": authorities,
+            "controlling_authorities": [a.get("cite", "") for a in authorities if a.get("cite")],
+            "contrary_authorities": [],
+            "analysis": ""
+        }
 
 
 async def _default_issue_spotter(matter: dict[str, Any]) -> list[dict[str, Any]]:

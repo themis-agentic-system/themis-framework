@@ -152,7 +152,13 @@ class DocumentDraftingAgent(BaseAgent):
         self.require_tools(self.REQUIRED_TOOLS)
 
     async def _run(self, matter: dict[str, Any]) -> dict[str, Any]:
-        """Generate formal legal documents from aggregated matter data."""
+        """Autonomously generate formal legal documents.
+
+        Claude decides which tools to use and in what order based on the document requirements.
+        """
+        import json
+
+        llm = get_llm_client()
 
         # Determine document type from matter - user should specify what they need
         document_type = matter.get("document_type") or matter.get("metadata", {}).get("document_type", "memorandum")
@@ -163,52 +169,174 @@ class DocumentDraftingAgent(BaseAgent):
         legal_analysis = matter.get("legal_analysis", {})
         strategy = matter.get("strategy", {})
 
-        # Generate document sections
-        sections = await self._call_tool(
-            "section_generator",
-            document_type=document_type,
-            facts=facts,
-            legal_analysis=legal_analysis,
-            strategy=strategy,
-            jurisdiction=jurisdiction,
+        # Define available tools in Anthropic format
+        tools = [
+            {
+                "name": "section_generator",
+                "description": "Generates specific document sections (facts, arguments, prayer for relief, etc.). Use this to create the main content of the document.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "document_type": {"type": "string", "description": "Type of document to generate"},
+                        "facts": {"type": "object", "description": "Facts from LDA"},
+                        "legal_analysis": {"type": "object", "description": "Legal analysis from DEA"},
+                        "strategy": {"type": "object", "description": "Strategy from LSA"},
+                        "jurisdiction": {"type": "string", "description": "Jurisdiction for document"}
+                    },
+                    "required": ["document_type", "jurisdiction"]
+                }
+            },
+            {
+                "name": "citation_formatter",
+                "description": "Formats legal citations according to jurisdiction standards (Bluebook, etc.). Use this to ensure citations are properly formatted.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "authorities": {"type": "array", "description": "Array of authorities to format"},
+                        "jurisdiction": {"type": "string", "description": "Jurisdiction citation style"}
+                    },
+                    "required": ["authorities", "jurisdiction"]
+                }
+            },
+            {
+                "name": "document_composer",
+                "description": "Assembles multi-section legal documents from components into a complete, formatted document. Use this after generating sections to create the final document.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "document_type": {"type": "string"},
+                        "sections": {"type": "object", "description": "Generated sections"},
+                        "citations": {"type": "object", "description": "Formatted citations"},
+                        "jurisdiction": {"type": "string"},
+                        "matter": {"type": "object"}
+                    },
+                    "required": ["document_type", "sections", "jurisdiction"]
+                }
+            },
+            {
+                "name": "tone_analyzer",
+                "description": "Analyzes legal writing quality and tone appropriateness. Use this to verify the document has the appropriate tone for its purpose.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "document": {"type": "object", "description": "Complete document to analyze"},
+                        "document_type": {"type": "string"}
+                    },
+                    "required": ["document", "document_type"]
+                }
+            },
+            {
+                "name": "document_validator",
+                "description": "Validates document completeness and compliance with jurisdiction requirements. Use this as a final check before returning the document.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "document": {"type": "object", "description": "Complete document to validate"},
+                        "document_type": {"type": "string"},
+                        "matter": {"type": "object"}
+                    },
+                    "required": ["document", "document_type"]
+                }
+            }
+        ]
+
+        # Map tool names to actual functions
+        tool_functions = {
+            "section_generator": lambda document_type, facts={}, legal_analysis={}, strategy={}, jurisdiction="federal":
+                _default_section_generator(document_type, facts, legal_analysis, strategy, jurisdiction),
+            "citation_formatter": lambda authorities, jurisdiction:
+                _default_citation_formatter(authorities, jurisdiction),
+            "document_composer": lambda document_type, sections, citations={}, jurisdiction="federal", matter={}:
+                _default_document_composer(document_type, sections, citations, jurisdiction, matter),
+            "tone_analyzer": lambda document, document_type:
+                _default_tone_analyzer(document, document_type),
+            "document_validator": lambda document, document_type, matter={}:
+                _default_document_validator(document, document_type, matter),
+        }
+
+        # Let Claude autonomously decide which tools to use
+        system_prompt = """You are DDA (Document Drafting Agent), an expert at generating professional legal documents.
+
+Your role:
+1. Generate complete, court-ready legal documents (complaints, motions, memoranda, demand letters)
+2. Format citations according to jurisdiction standards (Bluebook)
+3. Ensure documents have appropriate tone and structure for their purpose
+4. Validate completeness and compliance with jurisdiction requirements
+5. Produce documents that attorneys can file or send without revision
+
+Use the available tools intelligently to create the document:
+1. Generate document sections using section_generator
+2. Format citations using citation_formatter if needed
+3. Compose the complete document using document_composer
+4. Analyze tone appropriateness using tone_analyzer
+5. Validate completeness using document_validator
+
+After using tools, provide your final analysis as a JSON object with these fields:
+- document: Complete document object with full_text
+- metadata: Document metadata (type, jurisdiction, word_count, etc.)
+- validation: Validation results
+- tone_analysis: Tone analysis results
+
+Be professional, precise, and produce court-ready documents."""
+
+        user_prompt = f"""Generate a complete, professional {document_type} for {jurisdiction} jurisdiction.
+
+MATTER DATA:
+{json.dumps(matter, indent=2)}
+
+Use the available tools to:
+1. Generate all necessary document sections
+2. Format citations appropriately
+3. Compose the complete document
+4. Validate tone and completeness
+
+Then provide the final document with metadata and validation results."""
+
+        # Claude autonomously uses tools
+        result = await llm.generate_with_tools(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            tools=tools,
+            tool_functions=tool_functions,
+            max_tokens=8192,  # Larger for document generation
         )
 
-        # Format citations
-        formatted_citations = await self._call_tool(
-            "citation_formatter",
-            authorities=legal_analysis.get("authorities", []),
-            jurisdiction=jurisdiction,
-        )
+        # Parse Claude's final response
+        try:
+            response_text = result["result"]
+            json_start = response_text.find("{")
+            json_end = response_text.rfind("}") + 1
+            if json_start != -1 and json_end > json_start:
+                document_payload = json.loads(response_text[json_start:json_end])
+            else:
+                # Fallback: construct from tool calls
+                document_payload = self._construct_document_from_tool_calls(result["tool_calls"], document_type, jurisdiction)
+        except (json.JSONDecodeError, KeyError):
+            # Fallback to constructing from tool calls
+            document_payload = self._construct_document_from_tool_calls(result["tool_calls"], document_type, jurisdiction)
 
-        # Compose complete document
-        document = await self._call_tool(
-            "document_composer",
-            document_type=document_type,
-            sections=sections,
-            citations=formatted_citations,
-            jurisdiction=jurisdiction,
-            matter=matter,
-        )
+        # Extract components
+        document = document_payload.get("document", {})
+        metadata = document_payload.get("metadata", {})
+        tone_analysis = document_payload.get("tone_analysis", {})
+        validation = document_payload.get("validation", {})
 
-        # Analyze tone and quality
-        tone_analysis = await self._call_tool(
-            "tone_analyzer",
-            document=document,
-            document_type=document_type,
-        )
-
-        # Validate document
-        validation = await self._call_tool(
-            "document_validator",
-            document=document,
-            document_type=document_type,
-            matter=matter,
-        )
+        # If not in payload, derive from tool calls
+        if not document or not metadata:
+            fallback = self._construct_document_from_tool_calls(result["tool_calls"], document_type, jurisdiction)
+            if not document:
+                document = fallback.get("document", {})
+            if not metadata:
+                metadata = fallback.get("metadata", {})
+            if not tone_analysis:
+                tone_analysis = fallback.get("tone_analysis", {})
+            if not validation:
+                validation = fallback.get("validation", {})
 
         # Track unresolved issues
         unresolved: list[str] = []
-        if not sections.get("facts_section"):
-            unresolved.append("Unable to generate factual background section.")
+        if not document.get("full_text"):
+            unresolved.append("Unable to generate complete document text.")
         if validation.get("missing_elements"):
             unresolved.extend(
                 f"Missing document element: {elem}"
@@ -221,11 +349,11 @@ class DocumentDraftingAgent(BaseAgent):
             )
 
         provenance = {
-            "tools_used": list(self.tools.keys()),
+            "tools_used": [tc["tool"] for tc in result["tool_calls"]],
+            "tool_rounds": result["rounds"],
+            "autonomous_mode": True,
             "document_type": document_type,
             "jurisdiction": jurisdiction,
-            "sections_generated": list(sections.keys()),
-            "citation_count": len(formatted_citations.get("citations", [])),
         }
 
         return self._build_response(
@@ -234,8 +362,7 @@ class DocumentDraftingAgent(BaseAgent):
                 "metadata": {
                     "document_type": document_type,
                     "jurisdiction": jurisdiction,
-                    "word_count": document.get("word_count", 0),
-                    "section_count": len(sections),
+                    **metadata
                 },
                 "tone_analysis": tone_analysis,
                 "validation": validation,
@@ -243,6 +370,38 @@ class DocumentDraftingAgent(BaseAgent):
             provenance=provenance,
             unresolved_issues=unresolved,
         )
+
+    def _construct_document_from_tool_calls(self, tool_calls: list[dict], document_type: str, jurisdiction: str) -> dict[str, Any]:
+        """Fallback: construct document payload from tool call results."""
+        sections = {}
+        citations = {}
+        document = {}
+        tone_analysis = {}
+        validation = {}
+
+        for tc in tool_calls:
+            if tc["tool"] == "section_generator" and isinstance(tc["result"], dict):
+                sections = tc["result"]
+            elif tc["tool"] == "citation_formatter" and isinstance(tc["result"], dict):
+                citations = tc["result"]
+            elif tc["tool"] == "document_composer" and isinstance(tc["result"], dict):
+                document = tc["result"]
+            elif tc["tool"] == "tone_analyzer" and isinstance(tc["result"], dict):
+                tone_analysis = tc["result"]
+            elif tc["tool"] == "document_validator" and isinstance(tc["result"], dict):
+                validation = tc["result"]
+
+        return {
+            "document": document,
+            "metadata": {
+                "document_type": document_type,
+                "jurisdiction": jurisdiction,
+                "word_count": document.get("word_count", 0),
+                "section_count": len(sections),
+            },
+            "tone_analysis": tone_analysis,
+            "validation": validation,
+        }
 
 
 async def _default_section_generator(
