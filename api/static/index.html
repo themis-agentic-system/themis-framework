@@ -534,11 +534,33 @@
 
                 if (response.ok) {
                     result.className = 'result success';
-                    result.innerHTML = `
-                        <h3>✅ Analysis Complete!</h3>
-                        <p>Themis has successfully analyzed your matter.</p>
-                        <pre style="background: white; padding: 15px; border-radius: 6px; overflow-x: auto; margin-top: 15px;">${JSON.stringify(data, null, 2)}</pre>
-                    `;
+
+                    // Extract the complaint document from DDA agent output
+                    const ddaOutput = data.artifacts?.dda?.core;
+                    const documentText = ddaOutput?.document?.full_text;
+
+                    if (documentText) {
+                        // Display the formatted legal document
+                        result.innerHTML = `
+                            <h3>✅ Legal Complaint Generated!</h3>
+                            <p>Themis has drafted a formal complaint based on your case information.</p>
+                            <div style="background: white; padding: 20px; border-radius: 6px; margin-top: 15px; font-family: 'Courier New', monospace; white-space: pre-wrap; line-height: 1.6; max-height: 600px; overflow-y: auto;">${documentText}</div>
+                            <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 6px;">
+                                <strong>⚠️ Attorney Review Required:</strong> This document is AI-generated and must be reviewed by a licensed attorney before filing.
+                            </div>
+                            <details style="margin-top: 15px;">
+                                <summary style="cursor: pointer; color: #666;">View Full Analysis (JSON)</summary>
+                                <pre style="background: white; padding: 15px; border-radius: 6px; overflow-x: auto; margin-top: 10px;">${JSON.stringify(data, null, 2)}</pre>
+                            </details>
+                        `;
+                    } else {
+                        // Fallback to JSON view if document not found
+                        result.innerHTML = `
+                            <h3>✅ Analysis Complete!</h3>
+                            <p>Themis has analyzed your matter, but no formal document was generated.</p>
+                            <pre style="background: white; padding: 15px; border-radius: 6px; overflow-x: auto; margin-top: 15px;">${JSON.stringify(data, null, 2)}</pre>
+                        `;
+                    }
                 } else {
                     throw new Error(data.detail || 'Failed to process matter');
                 }

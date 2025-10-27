@@ -105,6 +105,11 @@ Respond in JSON format:
         response_format=response_format,
     )
 
+    import logging
+    logger = logging.getLogger("themis.tools.document_parser")
+    logger.info(f"Document parser LLM response for '{title}': {result}")
+    logger.info(f"Extracted {len(result.get('key_facts', []))} key facts")
+
     # Build the parsed document response
     return {
         "document": title,
