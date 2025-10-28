@@ -329,14 +329,14 @@ Then provide the final document with metadata and validation results."""
 
         # Ensure document has full_text (required by tests)
         if not document.get("full_text"):
-            # Try to get from fallback construction
-            if not document:
-                fallback = self._construct_document_from_tool_calls(result.get("tool_calls", []), document_type, jurisdiction)
-                document = fallback.get("document", {})
-                if not metadata:
-                    metadata = fallback.get("metadata", {})
+            # BUG FIX: Always try to reconstruct from tool calls first if full_text is missing
+            # This handles the case where Claude returns document metadata but not the actual text
+            fallback = self._construct_document_from_tool_calls(result.get("tool_calls", []), document_type, jurisdiction)
+            document = fallback.get("document", {})
+            if not metadata:
+                metadata = fallback.get("metadata", {})
 
-            # If still no full_text, create minimal fallback
+            # If still no full_text after reconstruction, create minimal fallback
             if not document.get("full_text"):
                 fallback_text = f"""
 {document_type.upper()}
