@@ -247,6 +247,36 @@ Then provide your complete factual analysis."""
                 # Fallback: create a placeholder timeline entry
                 facts_payload["timeline"] = [{"date": "TBD", "description": "Matter initiation - timeline to be developed"}]
 
+        # FIX: Extract facts from matter.summary if fact_pattern_summary is empty
+        # This handles cases where the web form puts detailed facts in summary instead of documents
+        import logging
+        import re
+        logger = logging.getLogger("themis.agents.lda")
+        logger.info(f"Checking fact_pattern_summary: has {len(facts_payload.get('fact_pattern_summary', []))} facts")
+
+        if not facts_payload.get("fact_pattern_summary") or len(facts_payload.get("fact_pattern_summary", [])) <= 1:
+            summary = matter.get("summary", "")
+            logger.info(f"Extracting facts from matter.summary (length: {len(summary)} chars)")
+            if summary and len(summary) > 50:  # Only process if substantial summary exists
+                # Split summary into sentences and extract as individual facts
+                # Note: Router sanitizer may have replaced newlines with spaces, so split on periods primarily
+                sentences = re.split(r'(?<=[.!?])\s+', summary)
+                extracted_facts = []
+                for sentence in sentences:
+                    sentence = sentence.strip()
+                    # Skip very short sentences, header-like text, and empty strings
+                    if sentence and len(sentence) >= 15 and not sentence.endswith(':'):
+                        extracted_facts.append(sentence)
+
+                # Only use extracted facts if we got meaningful results
+                if extracted_facts and len(extracted_facts) >= 3:
+                    facts_payload["fact_pattern_summary"] = extracted_facts
+                    logger.info(f"✓ Extracted {len(extracted_facts)} facts from matter.summary")
+                else:
+                    logger.warning(f"Only extracted {len(extracted_facts)} facts, not enough for meaningful analysis")
+            else:
+                logger.warning(f"Summary too short or missing (length: {len(summary)})")
+
         # Track unresolved issues
         unresolved = []
         if not facts_payload.get("fact_pattern_summary"):
