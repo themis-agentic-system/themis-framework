@@ -961,14 +961,35 @@ class LLMClient:
         """Generate a stub legal document based on prompt analysis."""
         import re
 
-        # Extract document type from prompt
-        doc_type = "complaint"
-        if "demand letter" in user_prompt.lower() or "demand_letter" in user_prompt.lower():
-            doc_type = "demand_letter"
-        elif "motion" in user_prompt.lower():
-            doc_type = "motion"
-        elif "memorandum" in user_prompt.lower():
-            doc_type = "memorandum"
+        # Extract document type from prompt - look for explicit "Generate a ... {doc_type}" statements
+        # This is more reliable than just keyword matching which can be fooled by examples
+        doc_type = "complaint"  # Default
+
+        # Look for "Generate a complete, professional {doc_type}" pattern (most reliable)
+        generate_match = re.search(r'generate\s+a\s+(?:complete|professional|court-ready|formal)?,?\s*(?:complete|professional|court-ready|formal)?\s+(\w+)', user_prompt.lower())
+        if generate_match:
+            detected = generate_match.group(1)
+            if detected in ("complaint", "motion", "memorandum", "demand_letter"):
+                doc_type = detected
+                logger.debug(f"Stub generator: Detected doc_type from 'Generate...' pattern: {doc_type}")
+            elif detected == "demand":
+                doc_type = "demand_letter"
+                logger.debug(f"Stub generator: Detected 'demand' -> demand_letter from 'Generate...' pattern")
+        else:
+            # Fallback: Look for keywords, but be more careful
+            # Only match if the keyword appears early in the prompt (not in examples/instructions)
+            prompt_start = user_prompt.lower()[:500]  # Only check first 500 chars
+            if "demand letter" in prompt_start or "demand_letter" in prompt_start:
+                doc_type = "demand_letter"
+                logger.debug(f"Stub generator: Detected 'demand letter' keyword in prompt start")
+            elif "motion" in prompt_start:
+                doc_type = "motion"
+                logger.debug(f"Stub generator: Detected 'motion' keyword in prompt start")
+            elif "memorandum" in prompt_start:
+                doc_type = "memorandum"
+                logger.debug(f"Stub generator: Detected 'memorandum' keyword in prompt start")
+
+        logger.debug(f"Stub generator: Final doc_type={doc_type}")
 
         # Extract key information from the prompt
         jurisdiction = self._extract_line(user_prompt, "Jurisdiction:") or "California"

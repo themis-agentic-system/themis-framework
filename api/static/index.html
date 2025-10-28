@@ -328,6 +328,19 @@
                         <label>Cause of Action</label>
                         <input type="text" id="cause_of_action" name="cause_of_action" placeholder="e.g., Personal Injury - Motor Vehicle Accident">
                     </div>
+
+                    <div class="form-group">
+                        <label>Document Type <span class="required">*</span></label>
+                        <select id="document_type" name="document_type" required>
+                            <option value="complaint" selected>Complaint</option>
+                            <option value="demand_letter">Demand Letter</option>
+                            <option value="motion">Motion</option>
+                            <option value="memorandum">Memorandum</option>
+                        </select>
+                        <div style="font-size: 0.85em; color: #666; margin-top: 5px;">
+                            Choose the type of legal document you want Themis to draft
+                        </div>
+                    </div>
                 </div>
 
                 <div class="section">
@@ -686,17 +699,22 @@
                     });
                 }
 
+                // Get document type from form (defaults to complaint)
+                const documentType = formData.get('document_type') || 'complaint';
+
                 // Build matter payload
                 const matter = {
                     summary: formData.get('summary'),
                     parties: parties,
                     documents: documents,
+                    document_type: documentType, // Add document type to root level
                     metadata: {
                         jurisdiction: formData.get('jurisdiction'),
                         cause_of_action: formData.get('cause_of_action') || undefined,
                         plaintiff_name: plaintiffName,
                         defendant_name: defendantName,
-                        party_represented: partyRepresented
+                        party_represented: partyRepresented,
+                        document_type: documentType // Also include in metadata for backwards compatibility
                     }
                 };
 
