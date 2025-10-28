@@ -119,6 +119,7 @@ Your role:
 3. Assess risks, weaknesses, and evidentiary gaps
 4. Create actionable recommendations with fallback positions
 5. Provide realistic confidence assessments for case outcomes
+6. Recommend the appropriate legal document type based on case stage and strategic objectives
 
 Use the available tools intelligently based on what data is present in the matter.
 After using tools, provide your final analysis as a JSON object with these fields:
@@ -127,6 +128,14 @@ After using tools, provide your final analysis as a JSON object with these field
 - next_steps: Array of specific actionable next steps
 - risk_level: "low", "moderate", or "high"
 - confidence: Numerical confidence score (0-100)
+- recommended_document_type: One of "complaint", "demand_letter", "motion", "memorandum"
+- document_type_reasoning: Brief explanation of why this document type is appropriate
+
+Document Type Guidelines:
+- **complaint**: File when ready to initiate litigation, statute of limitations concerns, settlement attempts failed
+- **demand_letter**: Send when pursuing pre-litigation settlement, want to negotiate before court
+- **motion**: File when responding to or initiating motion practice in active litigation
+- **memorandum**: Generate when conducting internal legal analysis without immediate filing needs
 
 Be strategic, realistic, and client-focused."""
 
@@ -221,11 +230,13 @@ Then provide your complete strategic analysis."""
                 ]
                 client_safe_text += f"Next steps: {'; '.join(step_strings)}."
 
-        # Create draft structure with client-safe summary
+        # Create draft structure with client-safe summary and document type recommendation
         draft = {
             "client_safe_summary": client_safe_text,
             "next_steps": strategy_payload.get("next_steps") or strategy.get("actions") or strategy.get("recommended_actions", []),
             "risk_level": strategy_payload.get("risk_level") or ("low" if confidence > 70 else "moderate" if confidence > 50 else "high"),
+            "recommended_document_type": strategy_payload.get("recommended_document_type"),
+            "document_type_reasoning": strategy_payload.get("document_type_reasoning"),
         }
 
         # Ensure tools_used is always non-empty (required by tests)
@@ -264,6 +275,14 @@ Then provide your complete strategic analysis."""
         if not recommended_actions:
             recommended_actions = ["Conduct thorough case review and fact verification"]
 
+        # Intelligently determine document type based on strategy content
+        recommended_document_type = self._infer_document_type_from_strategy(
+            strategy, matter, recommended_actions
+        )
+        document_type_reasoning = self._generate_document_type_reasoning(
+            recommended_document_type, strategy, confidence
+        )
+
         return {
             "strategy": {
                 "recommended_actions": recommended_actions,
@@ -276,7 +295,68 @@ Then provide your complete strategic analysis."""
             "confidence": confidence,
             "risk_level": "low" if confidence > 70 else "moderate" if confidence > 50 else "high",
             "next_steps": recommended_actions,
+            "recommended_document_type": recommended_document_type,
+            "document_type_reasoning": document_type_reasoning,
         }
+
+    def _infer_document_type_from_strategy(
+        self, strategy: dict[str, Any], matter: dict[str, Any], actions: list[str]
+    ) -> str:
+        """Infer appropriate document type from strategy and matter context."""
+        # Check summary/description for explicit intent
+        summary = (matter.get("summary", "") + " " + matter.get("description", "")).lower()
+
+        # Explicit mentions trump everything
+        if "file complaint" in summary or "sue" in summary or "lawsuit" in summary:
+            return "complaint"
+        if "demand letter" in summary or "pre-litigation" in summary:
+            return "demand_letter"
+        if "motion" in summary:
+            return "motion"
+
+        # Check actions for strategy indicators
+        actions_text = " ".join(str(a) for a in actions).lower()
+
+        # Settlement/negotiation indicates demand letter
+        if any(word in actions_text for word in ["settlement", "negotiate", "demand", "pre-litigation"]):
+            # But check if positions suggest litigation is imminent
+            positions = strategy.get("positions", {})
+            if positions and any(
+                word in str(positions).lower() for word in ["litigation", "file", "court"]
+            ):
+                return "complaint"
+            return "demand_letter"
+
+        # Litigation indicators suggest complaint
+        if any(word in actions_text for word in ["file", "litigation", "trial", "court"]):
+            return "complaint"
+
+        # Check negotiation positions - if present, suggests demand letter
+        positions = strategy.get("positions", {})
+        if positions and any(
+            key in positions for key in ["opening", "ideal", "minimum", "fallback"]
+        ):
+            return "demand_letter"
+
+        # Default to complaint for civil matters, memorandum otherwise
+        if "parties" in matter and matter.get("parties"):
+            return "complaint"
+        return "memorandum"
+
+    def _generate_document_type_reasoning(
+        self, doc_type: str, strategy: dict[str, Any], confidence: int
+    ) -> str:
+        """Generate explanation for document type recommendation."""
+        objectives = strategy.get("objectives", "the client's goals")
+
+        if doc_type == "complaint":
+            return f"File a civil complaint to initiate litigation and pursue {objectives}. The case is ready for court filing."
+        elif doc_type == "demand_letter":
+            return f"Send a pre-litigation demand letter to attempt settlement and advance {objectives} before filing suit. This preserves negotiation opportunities."
+        elif doc_type == "motion":
+            return "File a motion in ongoing litigation to advance the client's position."
+        else:  # memorandum
+            return f"Generate an internal legal memorandum analyzing the case and providing guidance on {objectives}."
 
 
 async def _default_strategy_template(matter: dict[str, Any]) -> dict[str, Any]:
