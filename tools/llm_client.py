@@ -727,11 +727,34 @@ class LLMClient:
             if "section_generator" in tool_functions:
                 logger.info("Stub: Calling section_generator")
                 try:
+                    # Extract facts from matter - could be at top level or nested under agent outputs
+                    facts = matter.get("facts", {})
+                    if not facts or not facts.get("fact_pattern_summary"):
+                        # Try to find facts from LDA output
+                        if "lda" in matter and isinstance(matter["lda"], dict):
+                            facts = matter["lda"].get("facts", {})
+
+                    # Extract legal analysis - could be from DEA
+                    legal_analysis = matter.get("legal_analysis", {})
+                    if not legal_analysis:
+                        if "dea" in matter and isinstance(matter["dea"], dict):
+                            legal_analysis = matter["dea"].get("legal_analysis", {})
+
+                    # Extract strategy - could be from LSA
+                    strategy = matter.get("strategy", {})
+                    if not strategy:
+                        if "lsa" in matter and isinstance(matter["lsa"], dict):
+                            strategy = matter["lsa"].get("strategy", {})
+
+                    logger.info(f"Stub section_generator: facts={len(facts.get('fact_pattern_summary', []))} items, "
+                              f"issues={len(legal_analysis.get('issues', []))}, "
+                              f"strategy={'yes' if strategy else 'no'}")
+
                     sections = tool_functions["section_generator"](
                         document_type=matter.get("document_type", "memorandum"),
-                        facts=matter.get("facts", {}),
-                        legal_analysis=matter.get("legal_analysis", {}),
-                        strategy=matter.get("strategy", {}),
+                        facts=facts,
+                        legal_analysis=legal_analysis,
+                        strategy=strategy,
                         jurisdiction=matter.get("jurisdiction", "federal")
                     )
                     if asyncio.iscoroutine(sections):

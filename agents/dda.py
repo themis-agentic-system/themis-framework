@@ -162,6 +162,14 @@ class DocumentDraftingAgent(BaseAgent):
         logger = logging.getLogger("themis.agents.dda")
         llm = get_llm_client()
 
+        # DEBUG: Log what matter keys DDA receives
+        logger.info(f"DDA received matter with keys: {list(matter.keys())}")
+        if "facts" in matter:
+            facts = matter.get("facts", {})
+            logger.info(f"✓ DDA has facts with {len(facts.get('fact_pattern_summary', []))} fact_pattern_summary items")
+        else:
+            logger.warning("✗ DDA does NOT have facts in matter")
+
         # Determine document type from matter - user should specify what they need
         document_type = matter.get("document_type") or matter.get("metadata", {}).get("document_type", "memorandum")
         jurisdiction = matter.get("jurisdiction") or matter.get("metadata", {}).get("jurisdiction", "federal")
@@ -475,6 +483,9 @@ async def _default_section_generator(
     jurisdiction: str,
 ) -> dict[str, Any]:
     """Generate document sections using LLM with modern legal prose."""
+    import logging
+    logger = logging.getLogger("themis.agents.dda")
+
     llm = get_llm_client()
 
     # Build context from matter data
@@ -483,6 +494,7 @@ async def _default_section_generator(
     # Facts
     if facts:
         fact_pattern = facts.get("fact_pattern_summary", [])
+        logger.info(f"section_generator received {len(fact_pattern)} facts")
         if fact_pattern:
             context_parts.append("Facts:\n" + "\n".join(f"  - {f}" for f in fact_pattern))
 
