@@ -47,7 +47,7 @@ class LLMClient:
     def __init__(
         self,
         api_key: str | None = None,
-        model: str = "claude-3-5-sonnet-20241022",
+        model: str = "claude-sonnet-4-5",
         use_extended_thinking: bool = True,  # Enabled by default for deeper reasoning
         use_prompt_caching: bool = True,     # Enabled by default for cost/latency optimization
         enable_code_execution: bool = False,

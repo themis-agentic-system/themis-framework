@@ -51,7 +51,7 @@ USE_PROMPT_CACHING=true
 ENABLE_CODE_EXECUTION=false
 
 # Model version
-MODEL=claude-3-5-sonnet-20241022
+MODEL=claude-sonnet-4-5
 ```
 
 For MCP (Model Context Protocol) integration, edit `.mcp.json` to configure external tool servers.

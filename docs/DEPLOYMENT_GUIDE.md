@@ -57,7 +57,7 @@ POSTGRES_PASSWORD=$(python -c "import secrets; print(secrets.token_urlsafe(16))"
 USE_EXTENDED_THINKING=true        # Enable deep reasoning (default: true)
 USE_PROMPT_CACHING=true           # Enable 1-hour caching (default: true)
 ENABLE_CODE_EXECUTION=false       # Enable Python execution (default: false)
-MODEL=claude-3-5-sonnet-20241022  # Claude model version
+MODEL=claude-sonnet-4-5           # Claude model version
 ```
 
 ### Step 3: Launch
@@ -242,7 +242,7 @@ GRAFANA_PASSWORD=admin        # Grafana admin password
 USE_EXTENDED_THINKING=true        # Enable deep reasoning (default: true)
 USE_PROMPT_CACHING=true           # Enable 1-hour caching (default: true)
 ENABLE_CODE_EXECUTION=false       # Enable Python execution (default: false)
-MODEL=claude-3-5-sonnet-20241022  # Claude model version
+MODEL=claude-sonnet-4-5           # Claude model version
 
 # Optional - MCP Integration
 # Configure MCP servers in .mcp.json

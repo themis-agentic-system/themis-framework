@@ -458,7 +458,7 @@ USE_PROMPT_CACHING=true            # 1-hour prompt caching
 ENABLE_CODE_EXECUTION=false        # Code execution tool
 
 # Model selection
-MODEL=claude-3-5-sonnet-20241022   # Claude model version
+MODEL=claude-sonnet-4-5            # Claude model version
 
 # MCP integration
 LEGAL_RESEARCH_MCP_URL=...         # MCP server URLs

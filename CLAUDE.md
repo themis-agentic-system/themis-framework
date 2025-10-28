@@ -217,7 +217,7 @@ THEMIS_API_KEY=your-secure-api-key
 # Optional configuration
 CACHE_TTL_SECONDS=60          # State cache TTL (default: 60)
 LOG_LEVEL=INFO                # Logging level
-MODEL=claude-3-5-sonnet-20241022  # Claude model version
+MODEL=claude-sonnet-4-5  # Claude model version
 ```
 
 ## Code Quality Standards
