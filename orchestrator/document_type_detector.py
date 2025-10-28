@@ -23,14 +23,20 @@ def _format_parties(parties: list) -> str:
 async def determine_document_type(matter: dict[str, Any]) -> str:
     """Determine appropriate legal document type based on matter context.
 
+    Decision hierarchy (in priority order):
+    1. Explicit user specification (document_type field or metadata)
+    2. LSA strategic recommendation (draft.recommended_document_type)
+    3. LLM-based contextual analysis
+    4. Heuristic keyword matching (fallback)
+
     Analyzes:
     - User intent from summary
+    - LSA strategic recommendations
     - Legal issues and strategy
     - Case stage (pre-litigation vs. litigation)
-    - Jurisdictional requirements
 
     Args:
-        matter: Full matter payload with facts, legal_analysis, strategy
+        matter: Full matter payload with facts, legal_analysis, strategy, draft
 
     Returns:
         Document type: "complaint", "demand_letter", "motion", "memorandum"
@@ -43,7 +49,21 @@ async def determine_document_type(matter: dict[str, Any]) -> str:
     if explicit_type:
         return explicit_type
 
-    # 2. Build context for LLM analysis
+    # 2. Check for LSA strategic recommendation
+    draft = matter.get("draft", {})
+    if draft and isinstance(draft, dict):
+        lsa_recommendation = draft.get("recommended_document_type")
+        if lsa_recommendation:
+            import logging
+            logger = logging.getLogger("themis.orchestrator")
+            reasoning = draft.get("document_type_reasoning", "No reasoning provided")
+            logger.info(
+                f"Using LSA's strategic document type recommendation: {lsa_recommendation}. "
+                f"Reasoning: {reasoning}"
+            )
+            return lsa_recommendation
+
+    # 3. Build context for LLM analysis
     context_parts = []
 
     # User's description/intent
@@ -92,7 +112,7 @@ async def determine_document_type(matter: dict[str, Any]) -> str:
 
     context = "\n\n".join(context_parts)
 
-    # 3. Use LLM to determine appropriate document type
+    # 4. Use LLM to determine appropriate document type (fallback if no LSA recommendation)
     llm = get_llm_client()
 
     system_prompt = """You are a legal process expert who determines what type of legal document is appropriate for a given situation.
@@ -160,7 +180,7 @@ Respond in JSON format:
         return doc_type
 
     except Exception as e:
-        # Fallback to heuristic-based detection
+        # 5. Fallback to heuristic-based detection
         import logging
         logger = logging.getLogger("themis.orchestrator")
         logger.warning(f"LLM document type detection failed: {e}. Using heuristics.")
