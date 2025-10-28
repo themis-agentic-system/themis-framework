@@ -974,20 +974,20 @@ class LLMClient:
                 logger.debug(f"Stub generator: Detected doc_type from 'Generate...' pattern: {doc_type}")
             elif detected == "demand":
                 doc_type = "demand_letter"
-                logger.debug(f"Stub generator: Detected 'demand' -> demand_letter from 'Generate...' pattern")
+                logger.debug("Stub generator: Detected 'demand' -> demand_letter from 'Generate...' pattern")
         else:
             # Fallback: Look for keywords, but be more careful
             # Only match if the keyword appears early in the prompt (not in examples/instructions)
             prompt_start = user_prompt.lower()[:500]  # Only check first 500 chars
             if "demand letter" in prompt_start or "demand_letter" in prompt_start:
                 doc_type = "demand_letter"
-                logger.debug(f"Stub generator: Detected 'demand letter' keyword in prompt start")
+                logger.debug("Stub generator: Detected 'demand letter' keyword in prompt start")
             elif "motion" in prompt_start:
                 doc_type = "motion"
-                logger.debug(f"Stub generator: Detected 'motion' keyword in prompt start")
+                logger.debug("Stub generator: Detected 'motion' keyword in prompt start")
             elif "memorandum" in prompt_start:
                 doc_type = "memorandum"
-                logger.debug(f"Stub generator: Detected 'memorandum' keyword in prompt start")
+                logger.debug("Stub generator: Detected 'memorandum' keyword in prompt start")
 
         logger.debug(f"Stub generator: Final doc_type={doc_type}")
 
