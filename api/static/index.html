@@ -768,13 +768,25 @@
                     // Log for debugging
                     console.log('Response data:', data);
                     console.log('Document text found:', documentText ? 'YES' : 'NO');
+                    if (typeof documentText === 'string') {
+                        console.log('Document text length:', documentText.length);
+                    }
                     if (data.artifacts?.dda) {
                         console.log('DDA artifacts:', data.artifacts.dda);
                     }
 
-                    if (documentText && documentText.length > 100) {
-                        // Display the formatted legal document
-                        const docType = data.artifacts?.dda?.document?.type || 'document';
+                    const hasDocumentText = typeof documentText === 'string' && documentText.trim().length > 0;
+
+                    if (hasDocumentText) {
+                        const rawDocumentText = documentText;
+                        const trimmedLength = rawDocumentText.trim().length;
+
+                        // Prefer explicit metadata for the document type but fall back gracefully
+                        const docType =
+                            data.artifacts?.dda?.metadata?.document_type ||
+                            data.artifacts?.dda?.document?.type ||
+                            'document';
+
                         result.innerHTML = `
                             <h3>✅ Legal ${docType.charAt(0).toUpperCase() + docType.slice(1)} Generated!</h3>
                             <p>Themis has drafted a formal ${docType} based on your case information.</p>
@@ -782,6 +794,9 @@
                             <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 6px;">
                                 <strong>⚠️ Attorney Review Required:</strong> This document is AI-generated and must be reviewed by a licensed attorney before filing.
                             </div>
+                            ${trimmedLength < 200 ? `<div style="margin-top: 10px; padding: 10px; background: #e9ecef; border-radius: 6px; color: #495057;">
+                                <strong>Heads up:</strong> The generated document is quite brief. Review the JSON details below to confirm all required sections are present.
+                            </div>` : ''}
                             <details style="margin-top: 15px;">
                                 <summary style="cursor: pointer; color: #666;">View Full Response Data (JSON)</summary>
                                 <pre style="background: white; padding: 15px; border-radius: 6px; overflow-x: auto; margin-top: 10px;">${JSON.stringify(data, null, 2)}</pre>
